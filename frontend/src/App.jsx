@@ -4,6 +4,8 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard/Dashboard";
+import Focus from "./pages/Focus"
+
 
 function App() {
   return (
@@ -27,6 +29,10 @@ function App() {
       path="/dashboard" 
       element={<Dashboard />} 
       />
+
+      <Route 
+      path="/dashboard/focus" 
+      element={<Focus />} />
     </Routes>
   );
 }
