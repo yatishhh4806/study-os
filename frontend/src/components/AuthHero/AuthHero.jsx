@@ -1,4 +1,4 @@
-import Lanyard from "../Lanyard/Lanyard";
+import Lanyard from "../Lanyard/lanyard";
 import logo from "/logo.png";
 
 
