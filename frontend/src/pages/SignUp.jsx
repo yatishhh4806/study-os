@@ -7,7 +7,7 @@ import AuthHero from "../components/AuthHero/AuthHero";
 
 import {
   auth,
-  googleProvider,
+  googleSignupProvider,
   githubProvider,
 } from "../firebase/firebase";
 
@@ -16,7 +16,7 @@ function Signup() {
 
   const handleGoogleSignup = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithPopup(auth, googleSignupProvider);
       navigate("/dashboard");
     } catch (error) {
       console.error(error);
