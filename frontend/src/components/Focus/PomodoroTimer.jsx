@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Pause, RotateCcw, Brain, Coffee } from "lucide-react";
+import { Play, Pause, RotateCcw, Brain, Coffee, Pencil, Check } from "lucide-react";
 
 const MODES = {
-  focus: { label: "Focus", duration: 25 * 60, sub: "Deep Work", color: "#a855f7", glow: "rgba(168,85,247,0.55)" },
-  short: { label: "Short Break", duration: 5 * 60, sub: "Stretch & Breathe", color: "#22d3ee", glow: "rgba(34,211,238,0.5)" },
-  long: { label: "Long Break", duration: 15 * 60, sub: "Recharge", color: "#f472b6", glow: "rgba(244,114,182,0.5)" },
+  focus: { label: "Focus", sub: "Deep Work", color: "#a855f7", glow: "rgba(168,85,247,0.55)", defaultMin: 25 },
+  short: { label: "Short Break", sub: "Stretch & Breathe", color: "#22d3ee", glow: "rgba(34,211,238,0.5)", defaultMin: 5 },
+  long: { label: "Long Break", sub: "Recharge", color: "#f472b6", glow: "rgba(244,114,182,0.5)", defaultMin: 15 },
 };
 
 function format(s) {
@@ -15,12 +15,22 @@ function format(s) {
 
 export default function PomodoroTimer() {
   const [mode, setMode] = useState("focus");
-  const [secondsLeft, setSecondsLeft] = useState(MODES.focus.duration);
+  // customMins stores per-mode durations, initialized from defaults
+  const [customMins, setCustomMins] = useState({
+    focus: MODES.focus.defaultMin,
+    short: MODES.short.defaultMin,
+    long: MODES.long.defaultMin,
+  });
+  const [editingDuration, setEditingDuration] = useState(false);
+  const [draftMins, setDraftMins] = useState(String(MODES.focus.defaultMin));
+
+  const currentDuration = customMins[mode] * 60;
+  const [secondsLeft, setSecondsLeft] = useState(currentDuration);
   const [running, setRunning] = useState(false);
   const [sessions, setSessions] = useState(0);
   const intervalRef = useRef(null);
 
-  const total = MODES[mode].duration;
+  const total = currentDuration;
   const progress = 1 - secondsLeft / total;
   const accent = MODES[mode].color;
   const glow = MODES[mode].glow;
@@ -45,14 +55,30 @@ export default function PomodoroTimer() {
   const switchMode = useCallback((m) => {
     clearInterval(intervalRef.current);
     setRunning(false);
+    setEditingDuration(false);
     setMode(m);
-    setSecondsLeft(MODES[m].duration);
-  }, []);
+    setSecondsLeft(customMins[m] * 60);
+  }, [customMins]);
 
   const reset = () => {
     clearInterval(intervalRef.current);
     setRunning(false);
-    setSecondsLeft(MODES[mode].duration);
+    setSecondsLeft(customMins[mode] * 60);
+  };
+
+  const startEditing = () => {
+    if (running) return;
+    setDraftMins(String(customMins[mode]));
+    setEditingDuration(true);
+  };
+
+  const saveDuration = () => {
+    const parsed = parseInt(draftMins, 10);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 480) {
+      setCustomMins((prev) => ({ ...prev, [mode]: parsed }));
+      setSecondsLeft(parsed * 60);
+    }
+    setEditingDuration(false);
   };
 
   const radius = 130;
@@ -225,6 +251,69 @@ export default function PomodoroTimer() {
             <div style={{ fontSize: 14, fontWeight: 600, color: accent, letterSpacing: 0.5 }}>
               {MODES[mode].sub}
             </div>
+            {/* Editable duration */}
+            {!running && (
+              editingDuration ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="480"
+                    value={draftMins}
+                    onChange={(e) => setDraftMins(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && saveDuration()}
+                    autoFocus
+                    style={{
+                      width: 54,
+                      padding: "4px 8px",
+                      borderRadius: 8,
+                      border: `1px solid ${accent}`,
+                      background: "rgba(168,85,247,0.12)",
+                      color: "#fff",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      textAlign: "center",
+                      outline: "none",
+                    }}
+                  />
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>min</span>
+                  <button
+                    onClick={saveDuration}
+                    style={{
+                      background: accent,
+                      border: "none",
+                      borderRadius: 6,
+                      padding: "4px 6px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Check size={12} color="#fff" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={startEditing}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    marginTop: 2,
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "rgba(255,255,255,0.45)",
+                    fontSize: 12,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Pencil size={11} />
+                  {customMins[mode]}m
+                </button>
+              )
+            )}
           </div>
         </div>
 
