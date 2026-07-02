@@ -18,7 +18,6 @@ function Sidebar() {
     { icon: <LayoutDashboard size={20} />, title: "Dashboard", path: "/dashboard" },
     { icon: <BookOpen size={20} />, title: "Notes", path: "/dashboard/notes" },
     { icon: <Calendar size={20} />, title: "Planner", path: "/dashboard/planner" },
-    { icon: <Timer size={20} />, title: "Focus", path: "/dashboard/focus" },
     { icon: <Brain size={20} />, title: "Flashcards", path: "/dashboard/flashcards" },
     { icon: <Bot size={20} />, title: "AI Tutor", path: "/dashboard/ai-tutor" },
     { icon: <BarChart3 size={20} />, title: "Analytics", path: "/dashboard/analytics" },
