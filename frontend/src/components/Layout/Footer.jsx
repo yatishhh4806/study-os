@@ -66,23 +66,6 @@ export default function Footer() {
               The academic operating system built for high-performing students.
               Everything you need to learn smarter — in one beautiful ecosystem.
             </p>
-            {/* Social icons */}
-            <div style={{ display:"flex",gap:10,marginTop:24 }}>
-              {SOCIALS.map(s=>(
-                <a key={s.label} href={s.href} target="_blank" rel="noreferrer"
-                  title={s.label}
-                  style={{
-                    width:40,height:40,borderRadius:12,display:"flex",
-                    alignItems:"center",justifyContent:"center",
-                    border:`1px solid ${s.color}33`,background:`${s.color}0d`,
-                    color:s.color,textDecoration:"none",transition:"all .18s",
-                  }}
-                  onMouseEnter={e=>{e.currentTarget.style.background=`${s.color}22`;e.currentTarget.style.transform="translateY(-2px)";}}
-                  onMouseLeave={e=>{e.currentTarget.style.background=`${s.color}0d`;e.currentTarget.style.transform="translateY(0)";}}>
-                  {s.icon}
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Newsletter / CTA strip */}
