@@ -5,6 +5,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Focus from "./pages/Focus"
+import Notes from "./pages/Notes";
+import Flashcards from "./pages/Flashcards";
 
 
 function App() {
@@ -33,6 +35,14 @@ function App() {
       <Route 
       path="/dashboard/focus" 
       element={<Focus />} />
+
+      <Route 
+      path="/dashboard/notes" 
+      element={<Notes />} />
+
+      <Route 
+      path="/dashboard/flashcards" 
+      element={<Flashcards />} />
     </Routes>
   );
 }
