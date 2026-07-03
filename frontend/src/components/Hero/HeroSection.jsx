@@ -108,11 +108,11 @@ function HeroSection() {
           {/* RIGHT SIDE — video */}
           <div className="relative flex items-center justify-center">
             {/* Purple glow behind */}
-            <div className="absolute h-[500px] w-[500px] rounded-full bg-purple-500/30 blur-[100px]" />
+            <div className="absolute h-125 w-125 rounded-full bg-purple-500/30 blur-[100px]" />
 
             {/* Video wrapper */}
             <div
-              className="relative w-full max-w-[660px]"
+              className="relative w-full max-w-165"
               style={{
                 maskImage: "radial-gradient(ellipse 65% 72% at 50% 50%, black 45%, transparent 80%)",
                 WebkitMaskImage: "radial-gradient(ellipse 65% 72% at 50% 50%, black 45%, transparent 80%)",

@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Focus from "./pages/Focus"
 import Notes from "./pages/Notes";
 import Flashcards from "./pages/Flashcards";
+import Planner from "./pages/Planner";
 
 
 function App() {
@@ -43,6 +44,10 @@ function App() {
       <Route 
       path="/dashboard/flashcards" 
       element={<Flashcards />} />
+
+      <Route 
+      path="/dashboard/planner" 
+      element={<Planner />} />
     </Routes>
   );
 }
