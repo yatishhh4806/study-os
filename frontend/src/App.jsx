@@ -9,6 +9,7 @@ import Notes from "./pages/Notes";
 import Flashcards from "./pages/Flashcards";
 import Planner from "./pages/Planner";
 import AiTutor from "./pages/AiTutor";
+import Profile from "./pages/Profile";
 
 
 function App() {
@@ -53,6 +54,10 @@ function App() {
       <Route 
       path="/dashboard/ai-tutor" 
       element={<AiTutor />} />
+
+      <Route 
+      path="/dashboard/profile" 
+      element={<Profile />} />
     </Routes>
   );
 }
