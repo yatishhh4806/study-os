@@ -5,6 +5,7 @@ import {
   Brain, Trophy, ArrowRight, TrendingUp, Zap,
   CircleCheck, Circle, BookMarked, LayoutGrid,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const currentUser = {
   name: "Yatish",
@@ -131,12 +132,12 @@ export default function DashboardHome() {
                 background:"linear-gradient(135deg,#a855f7,#a855f7bb)",
                 boxShadow:"0 8px 24px -6px rgba(168,85,247,.5)",
               }}>Continue Studying</button>
-              <button style={{
+              <Link to='/dashboard/planner' style={{
                 padding:"10px 22px",borderRadius:12,
                 border:"1px solid rgba(255,255,255,.1)",
                 background:"rgba(255,255,255,.04)",color:"rgba(255,255,255,.7)",
                 fontSize:13.5,fontWeight:600,cursor:"pointer",
-              }}>View Planner</button>
+              }}>View Planner</Link>
             </div>
           </div>
 

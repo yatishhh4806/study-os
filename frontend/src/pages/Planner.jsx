@@ -753,16 +753,6 @@ export default function Planner() {
       <div style={{ width:240,borderRight:"1px solid rgba(255,255,255,.06)",
         display:"flex",flexDirection:"column",flexShrink:0,overflowY:"auto",padding:"20px 12px" }}>
 
-        {/* Create button */}
-        <button onClick={()=>openCreate()}
-          style={{ display:"flex",alignItems:"center",gap:8,padding:"12px 16px",
-            borderRadius:14,border:"none",cursor:"pointer",marginBottom:20,
-            fontSize:14,fontWeight:700,color:"#fff",width:"100%",
-            background:`linear-gradient(135deg,${ACCENT},${ACCENT}bb)`,
-            boxShadow:`0 8px 24px -6px rgba(168,85,247,.5)` }}>
-          <Plus size={18}/> Create Event
-        </button>
-
         {/* Mini calendar */}
         <div style={{ borderRadius:16,border:"1px solid rgba(255,255,255,.07)",
           background:"rgba(255,255,255,.02)",padding:"14px 10px",marginBottom:16 }}>
