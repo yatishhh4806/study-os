@@ -154,7 +154,7 @@ export default function Leaderboard() {
       `}</style>
 
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-24 right-0 w-md h-[28rem] rounded-full blur-[140px]" style={{ background: league.glow }} />
+        <div className="absolute -top-24 right-0 w-md h-112 rounded-full blur-[140px]" style={{ background: league.glow }} />
         <div className="absolute bottom-0 -left-24 w-96 h-96 rounded-full bg-purple-500/10 blur-[140px]" />
       </div>
 
@@ -205,7 +205,7 @@ export default function Leaderboard() {
                     </span>
                   </div>
                   {i < LEAGUE_TIERS.length - 1 && (
-                    <div className="w-8 h-px bg-white/10 flex-shrink-0" />
+                    <div className="w-8 h-px bg-white/10 shrink-0" />
                   )}
                 </div>
               );
@@ -220,7 +220,7 @@ export default function Leaderboard() {
             style={{ borderColor: `${league.color}40`, background: `${league.color}0d` }}
           >
             <img src={you.avatar} alt="" className="w-14 h-14 rounded-full border-2" style={{ borderColor: league.color }} />
-            <div className="flex-1 min-w-[160px]">
+            <div className="flex-1 min-w-40">
               <p className="text-sm text-white/50">You're currently ranked</p>
               <p className="text-2xl font-black">#{you.rank} <span className="text-base font-medium text-white/50">in {league.name}</span></p>
             </div>
@@ -282,7 +282,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Rows */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
+        <div className="rounded-2xl border border-white/10 bg-white/3 backdrop-blur-xl overflow-hidden">
           {filtered.map((r, i) => {
             const inPromo = r.rank <= promoteCount;
             const inDemo = r.rank > rows.length - demoteCount;
@@ -293,11 +293,11 @@ export default function Leaderboard() {
                 key={r.id}
                 style={{ animationDelay: `${Math.min(i, 10) * 25}ms` }}
                 className={`lb-fade-up flex items-center gap-4 px-5 py-3.5 border-b border-white/5 last:border-0 transition-colors ${
-                  r.isYou ? "bg-purple-500/[0.06]" : ""
+                  r.isYou ? "bg-purple-500/6" : ""
                 } ${flashIds[r.id] ? "lb-flash" : ""}`}
               >
                 {/* rank + delta */}
-                <div className="w-10 flex flex-col items-center flex-shrink-0">
+                <div className="w-10 flex flex-col items-center shrink-0">
                   <span
                     className={`text-sm font-bold ${
                       r.rank === 1 ? "text-yellow-400" : r.rank === 2 ? "text-slate-300" : r.rank === 3 ? "text-amber-600" : "text-white/70"
@@ -315,7 +315,7 @@ export default function Leaderboard() {
                   )}
                 </div>
 
-                <img src={r.avatar} alt="" className="w-9 h-9 rounded-full flex-shrink-0" />
+                <img src={r.avatar} alt="" className="w-9 h-9 rounded-full shrink-0" />
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate flex items-center gap-1.5">
@@ -327,13 +327,13 @@ export default function Leaderboard() {
                   </p>
                 </div>
 
-                <div className="text-right flex-shrink-0">
+                <div className="text-right shrink-0">
                   <p className="text-sm font-bold tabular-nums">{r.weeklyXP.toLocaleString()}</p>
                   <p className="text-[11px] text-white/35">XP</p>
                 </div>
 
                 {(inPromo || inDemo) && (
-                  <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${inPromo ? "bg-emerald-400/70" : "bg-red-400/70"}`} />
+                  <span className={`w-1.5 h-8 rounded-full shrink-0 ${inPromo ? "bg-emerald-400/70" : "bg-red-400/70"}`} />
                 )}
               </div>
             );
