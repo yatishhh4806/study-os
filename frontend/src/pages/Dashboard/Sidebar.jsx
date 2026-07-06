@@ -30,12 +30,19 @@ function Sidebar() {
   return (
     <aside className="sticky top-0 flex h-screen w-70 flex-col border-r border-purple-500/10 bg-black/40 backdrop-blur-xl">
       {/* Logo — height + top offset matched to Topbar's h-24 + top-3, so both headers land on the same row */}
-      <div className="mt-3 h-24 flex flex-col justify-center px-8 border-b border-purple-500/10">
-        <h1 className="text-4xl font-black text-white">
-          Study
-          <span className="text-purple-400">OS</span>
-        </h1>
-        <p className="mt-1 text-sm text-gray-400">Built For Your Excellence</p>
+      <div className="mt-3 h-24 flex items-center gap-3 px-8 border-b border-purple-500/10">
+        <img
+          src="/logo.png"
+          alt="StudyOS logo"
+          className="h-9 w-9 rounded-xl object-contain flex-shrink-0"
+        />
+        <div>
+          <h1 className="text-3xl font-black text-white leading-none">
+            Study
+            <span className="text-purple-400">OS</span>
+          </h1>
+          <p className="mt-1 text-xs text-gray-400 leading-none">Built For Your Excellence</p>
+        </div>
       </div>
 
       {/* Menu */}
