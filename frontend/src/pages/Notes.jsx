@@ -229,7 +229,7 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
   return (
     <div
       ref={menuRef}
-      className="notes-menu-in fixed z-[1000] w-72 max-h-[340px] overflow-y-auto rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
+      className="notes-menu-in fixed z-1000 w-72 max-h-85 overflow-y-auto rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
       style={{ top, left }}
     >
       <p className="px-2.5 pt-2 pb-1.5 text-[10px] font-semibold tracking-[0.12em] uppercase text-white/40">
@@ -247,7 +247,7 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
             i === active ? "bg-purple-500/15 text-white" : "text-white/75"
           }`}
         >
-          <span className={`w-7 h-7 rounded-md border flex items-center justify-center flex-shrink-0 ${
+          <span className={`w-7 h-7 rounded-md border flex items-center justify-center shrink-0 ${
             i === active ? "border-purple-400/40 bg-purple-500/10 text-purple-300" : "border-white/10 bg-white/5 text-white/50"
           }`}>
             <Icon className="w-3.5 h-3.5" />
@@ -290,7 +290,7 @@ function BlockMenu({ anchorRect, onTurnInto, onDuplicate, onDelete, onClose }) {
   return (
     <div
       ref={menuRef}
-      className="notes-menu-in fixed z-[1000] w-60 rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
+      className="notes-menu-in fixed z-1000 w-60 rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
       style={{ top, left }}
     >
       <button
@@ -485,7 +485,7 @@ function BlockRow({
             </div>
           </div>
         ) : (
-          <label className="flex flex-col items-center justify-center gap-2 min-h-[160px] rounded-xl border border-dashed border-white/15 bg-white/2 text-white/50 cursor-pointer hover:border-purple-400/40 hover:text-white/70 transition-colors">
+          <label className="flex flex-col items-center justify-center gap-2 min-h-40 rounded-xl border border-dashed border-white/15 bg-white/2 text-white/50 cursor-pointer hover:border-purple-400/40 hover:text-white/70 transition-colors">
             <ImagePlus className="w-6 h-6" />
             <span className="text-sm">Upload an image</span>
             <input
@@ -1097,13 +1097,13 @@ export default function NotesPage() {
                 <span className="shrink-0">
                   {activeSubject?.emoji} {activeSubject?.name}
                 </span>
-                <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 text-white/30" />
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/30" />
                 <span className="text-white/90 font-medium truncate">
                   {activeNote.title || "Untitled"}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[11px] text-white/30 hidden sm:block">
                   Saved {relativeTime(activeNote.updatedAt)}
                 </span>
