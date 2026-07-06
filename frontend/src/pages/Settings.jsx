@@ -57,7 +57,7 @@ function Toggle({ checked, onChange }) {
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative w-11 h-6 rounded-full flex-shrink-0 transition-colors duration-200 ${
+      className={`relative w-11 h-6 rounded-full shrink-0 transition-colors duration-200 ${
         checked ? "bg-purple-500" : "bg-white/10"
       }`}
     >
@@ -144,10 +144,10 @@ function SectionCard({ id, icon: Icon, title, description, children, sectionRef,
     <section
       id={id}
       ref={sectionRef}
-      className={`scroll-mt-6 rounded-2xl border ${toneClasses} bg-white/[0.03] backdrop-blur-xl p-6 sm:p-7 transition-colors`}
+      className={`scroll-mt-6 rounded-2xl border ${toneClasses} bg-white/3 backdrop-blur-xl p-6 sm:p-7 transition-colors`}
     >
       <div className="flex items-start gap-3 mb-6">
-        <div className={`w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 ${iconTone}`}>
+        <div className={`w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 ${iconTone}`}>
           <Icon className="w-4.5 h-4.5" />
         </div>
         <div>
@@ -294,8 +294,8 @@ export default function Settings() {
 
       {/* ambient glow, consistent with the rest of StudyOS */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -right-20 -top-20 h-[30rem] w-[30rem] rounded-full bg-purple-500/10 blur-[160px]" />
-        <div className="absolute -left-20 bottom-0 h-[24rem] w-[24rem] rounded-full bg-fuchsia-500/[0.06] blur-[160px]" />
+        <div className="absolute -right-20 -top-20 h-120 w-[30rem] rounded-full bg-purple-500/10 blur-[160px]" />
+        <div className="absolute -left-20 bottom-0 h-96 w-[24rem] rounded-full bg-fuchsia-500/[0.06] blur-[160px]" />
       </div>
 
       <div className="relative z-10 flex h-screen">
