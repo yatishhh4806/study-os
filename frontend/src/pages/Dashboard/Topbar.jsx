@@ -39,10 +39,10 @@ function Topbar() {
   return (
     <header className="sticky top-3 z-50 flex h-24 items-center justify-between border-b border-purple-500/10 bg-[#09050e]/80 px-8 backdrop-blur-xl">
       {/* Search */}
-      <div className="group relative w-full max-w-[1100px]">
+      <div className="group relative w-full max-w-275">
         {/* Glow - Modified: Added a subtle resting opacity (opacity-30) so it glows slightly even when untouched */}
         <div
-          className={`absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-purple-500/30 via-purple-400/20 to-purple-500/30 blur-md transition-all duration-300 ${
+          className={`absolute -inset-px rounded-2xl bg-linear-to-r from-purple-500/30 via-purple-400/20 to-purple-500/30 blur-md transition-all duration-300 ${
             focused
               ? "opacity-100 blur-xl"
               : "opacity-30 group-hover:opacity-70 group-hover:blur-lg"
