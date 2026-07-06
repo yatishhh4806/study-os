@@ -109,7 +109,7 @@ export default function DashboardHome() {
         minHeight: "100vh",
         background:
           "radial-gradient(ellipse 80% 40% at 80% -5%,rgba(168,85,247,.1),transparent 55%),#050308",
-        padding: "28px 32px 60px",
+        padding: "44px 32px 60px",
         fontFamily:
           "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
         color: "#fff",

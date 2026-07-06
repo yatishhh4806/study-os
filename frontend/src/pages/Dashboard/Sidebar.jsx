@@ -25,23 +25,21 @@ function Sidebar() {
     { icon: <LibraryBig size={20} />, title: "Resources", path: "/dashboard/resources" },
     { icon: <Trophy size={20} />, title: "Leaderboard", path: "/dashboard/leaderboard" },
     { icon: <CircleStar size={20} />, title: "Badges", path: "/dashboard/badges" },
-    
   ];
 
   return (
-    <aside className="sticky top-0 flex h-screen w-70 flex-col border-r border-purple-500/10 bg-black/40 p-8 backdrop-blur-xl">
-      {/* Logo */}
-      <div className="mb-6">
+    <aside className="sticky top-0 flex h-screen w-70 flex-col border-r border-purple-500/10 bg-black/40 backdrop-blur-xl">
+      {/* Logo — height + top offset matched to Topbar's h-24 + top-3, so both headers land on the same row */}
+      <div className="mt-3 h-24 flex flex-col justify-center px-8 border-b border-purple-500/10">
         <h1 className="text-4xl font-black text-white">
           Study
           <span className="text-purple-400">OS</span>
         </h1>
-
-        <p className="mt-2 text-sm text-gray-400">Built For Your Excellence</p>
+        <p className="mt-1 text-sm text-gray-400">Built For Your Excellence</p>
       </div>
 
       {/* Menu */}
-      <div className="space-y-3">
+      <div className="space-y-3 px-8 pt-8">
         {menu.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -66,7 +64,7 @@ function Sidebar() {
 
       {/* Bottom Card */}
       <div
-        className="mt-auto cursor-pointer rounded-3xl border border-purple-500/20 bg-purple-500/10 p-6 transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/40 hover:bg-purple-500/20"
+        className="mt-auto mx-8 mb-8 cursor-pointer rounded-3xl border border-purple-500/20 bg-purple-500/10 p-6 transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/40 hover:bg-purple-500/20"
       >
         <h3 className="text-xl font-bold text-white">Focus Mode</h3>
 
