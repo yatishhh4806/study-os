@@ -473,8 +473,8 @@ function BlockRow({
       <div className="group/block relative py-1">
         {controls}
         {block.src ? (
-          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/[0.02]">
-            <img src={block.src} alt="" className="block w-full max-h-[420px] object-cover" />
+          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/2">
+            <img src={block.src} alt="" className="block w-full max-h-105 object-cover" />
             <div className="px-3 py-2 border-t border-white/10">
               <button
                 onClick={() => onChange({ ...block, src: "" })}
@@ -485,7 +485,7 @@ function BlockRow({
             </div>
           </div>
         ) : (
-          <label className="flex flex-col items-center justify-center gap-2 min-h-[160px] rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-white/50 cursor-pointer hover:border-purple-400/40 hover:text-white/70 transition-colors">
+          <label className="flex flex-col items-center justify-center gap-2 min-h-[160px] rounded-xl border border-dashed border-white/15 bg-white/2 text-white/50 cursor-pointer hover:border-purple-400/40 hover:text-white/70 transition-colors">
             <ImagePlus className="w-6 h-6" />
             <span className="text-sm">Upload an image</span>
             <input
@@ -551,8 +551,8 @@ function BlockRow({
     body = <div className="border-l-2 border-purple-400/70 pl-4">{textarea}</div>;
   } else if (block.type === "callout") {
     body = (
-      <div className="flex gap-3 rounded-xl bg-purple-500/[0.08] border border-purple-400/20 px-4 py-3">
-        <Lightbulb className="w-4 h-4 text-purple-300 flex-shrink-0 mt-1" />
+      <div className="flex gap-3 rounded-xl bg-purple-500/8 border border-purple-400/20 px-4 py-3">
+        <Lightbulb className="w-4 h-4 text-purple-300 shrink-0 mt-1" />
         {textarea}
       </div>
     );
@@ -565,14 +565,14 @@ function BlockRow({
   } else if (block.type === "bullet") {
     body = (
       <div className="flex gap-2">
-        <span className="text-white/50 pt-[3px] select-none">•</span>
+        <span className="text-white/50 pt-0.75 select-none">•</span>
         {textarea}
       </div>
     );
   } else if (block.type === "numbered") {
     body = (
       <div className="flex gap-2">
-        <span className="text-white/50 pt-[2px] text-sm w-5 text-right select-none">
+        <span className="text-white/50 pt-0.5 text-sm w-5 text-right select-none">
           {numberedIndex(blocks, index)}.
         </span>
         {textarea}
@@ -901,7 +901,7 @@ export default function NotesPage() {
       </div>
 
       {/* ── Sidebar: subjects ─────────────────────────────── */}
-      <aside className="w-60 flex-shrink-0 border-r border-white/10 bg-white/2 backdrop-blur-sm flex flex-col">
+      <aside className="w-60 shrink-0 border-r border-white/10 bg-white/2 backdrop-blur-sm flex flex-col">
         <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
           <div className="w-8 h-8 rounded-lg bg-linear-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-md shadow-purple-900/30">
             <BookOpen className="w-4 h-4 text-white" />
@@ -1037,7 +1037,7 @@ export default function NotesPage() {
                   className={`notes-fade-up group/card w-full text-left rounded-xl px-3 py-2.5 mb-1 border transition-colors ${
                     selected
                       ? "bg-purple-500/10 border-purple-400/30"
-                      : "border-transparent hover:bg-white/[0.04]"
+                      : "border-transparent hover:bg-white/4"
                   }`}
                 >
                   <div className="flex items-start gap-2">
