@@ -874,6 +874,18 @@ export default function NotesPage() {
     setActiveNoteId(n.id);
   };
 
+  const deleteSubject = (id) => {
+    const remainingSubjects = subjects.filter((s) => s.id !== id);
+    const remainingNotes = notes.filter((n) => n.subjectId !== id);
+    setSubjects(remainingSubjects);
+    setNotes(remainingNotes);
+    if (activeSubjectId === id) {
+      const newActive = remainingSubjects[0]?.id || null;
+      setActiveSubjectId(newActive);
+      setActiveNoteId(remainingNotes.find((n) => n.subjectId === newActive)?.id || null);
+    }
+  };
+
   return (
     <div className="relative flex h-screen w-full bg-[#09050e] text-white overflow-hidden">
       <style>{`
@@ -938,6 +950,16 @@ export default function NotesPage() {
                 <span className="text-sm">{s.emoji}</span>
                 <span className="flex-1 text-sm truncate">{s.name}</span>
                 <span className="text-[11px] text-white/35">{count}</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  title="Delete subject"
+                  onClick={(e) => { e.stopPropagation(); deleteSubject(s.id); }}
+                  onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), deleteSubject(s.id))}
+                  className="w-6 h-6 ml-1 rounded-md flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </span>
               </button>
             );
           })}
