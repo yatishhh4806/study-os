@@ -54,7 +54,7 @@ function buildTutorContext(dashboardData) {
 
   const dueCardsTotal = (subjects || []).reduce(
     (sum, s) => sum + (s.dueCards || 0),
-    0
+    0,
   );
 
   return {
@@ -88,7 +88,10 @@ export default function AiTutor() {
   const fileInputRef = useRef(null);
   const attachMenuRef = useRef(null);
 
-  const context = useMemo(() => buildTutorContext(dashboardData), [dashboardData]);
+  const context = useMemo(
+    () => buildTutorContext(dashboardData),
+    [dashboardData],
+  );
 
   const suggestions = useMemo(() => {
     if (!dashboardData?.subjects) return [];
@@ -103,7 +106,7 @@ export default function AiTutor() {
     }));
 
     const mostDue = [...dashboardData.subjects].sort(
-      (a, b) => b.dueCards - a.dueCards
+      (a, b) => b.dueCards - a.dueCards,
     )[0];
     if (mostDue?.dueCards > 0) {
       chips.push({
@@ -236,7 +239,7 @@ export default function AiTutor() {
   }
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-2rem)] max-w-4xl mx-auto overflow-hidden">
+    <div className="relative flex flex-col h-[calc(100vh-2rem)] w-full overflow-hidden">
       {/* Local keyframes — scoped, no tailwind.config changes needed */}
       <style>{`
         @keyframes tutorFadeUp {
@@ -259,6 +262,10 @@ export default function AiTutor() {
           0%, 100% { transform: translate(0, 0) scale(1); }
           50% { transform: translate(-25px, 25px) scale(1.05); }
         }
+        @keyframes tutorFloatC {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50% { transform: translate(15px, 20px) scale(1.1); }
+        }
         @keyframes tutorBounce {
           0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
           40% { transform: translateY(-4px); opacity: 1; }
@@ -280,6 +287,7 @@ export default function AiTutor() {
         }
         .tutor-blob-a { animation: tutorFloatA 14s ease-in-out infinite; }
         .tutor-blob-b { animation: tutorFloatB 18s ease-in-out infinite; }
+        .tutor-blob-c { animation: tutorFloatC 16s ease-in-out infinite; }
         .tutor-dot { animation: tutorBounce 1.2s ease-in-out infinite; }
 
         /* Composer: hover/focus glow + slight lift, pure CSS, no JS tracking */
@@ -315,197 +323,228 @@ export default function AiTutor() {
         }
       `}</style>
 
-      {/* Ambient background blobs — contained to this page, not the viewport */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="tutor-blob-a absolute top-[-4rem] right-[-3rem] w-72 h-72 rounded-full bg-purple-600/20 blur-[90px]" />
-        <div className="tutor-blob-b absolute bottom-[-3rem] left-[-3rem] w-72 h-72 rounded-full bg-fuchsia-500/10 blur-[90px]" />
+      {/* Ambient background wash + drifting blobs — full page width, sits behind content (no negative z-index needed since it's first in the DOM) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(168,85,247,0.12), transparent 60%)",
+          }}
+        />
+        <div className="tutor-blob-a absolute top-[-6rem] right-[-5rem] w-[26rem] h-[26rem] rounded-full bg-purple-600/30 blur-[100px]" />
+        <div className="tutor-blob-b absolute bottom-[-5rem] left-[-4rem] w-[24rem] h-[24rem] rounded-full bg-fuchsia-500/20 blur-[100px]" />
+        <div className="tutor-blob-c absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-blue-500/10 blur-[110px]" />
       </div>
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent backdrop-blur-sm">
-        <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
-          <Sparkles className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold tutor-shimmer-text">AI Tutor</h1>
-          <p className="text-xs text-white/50">
-            {dashboardLoading
-              ? "Loading your progress..."
-              : "Knows your subjects, mastery, and deadlines"}
-          </p>
+      <div className="relative z-10 border-b border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto flex items-center gap-3 px-6 py-5">
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-semibold tutor-shimmer-text">
+              AI Tutor
+            </h1>
+            <p className="text-xs text-white/50">
+              {dashboardLoading
+                ? "Loading your progress..."
+                : "Knows your subjects, mastery, and deadlines"}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
-        {messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center gap-4">
-            <div className="relative w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-sm">
-              <div className="absolute inset-0 rounded-2xl bg-purple-500/10 blur-xl" />
-              <BookOpen className="relative w-7 h-7 text-purple-400" />
-            </div>
-            <div>
-              <p className="text-white font-medium">What are we studying today?</p>
-              <p className="text-sm text-white/50 mt-1">
-                Ask a question, attach a file, or pick a suggestion below.
-              </p>
-            </div>
-
-            {suggestions.length > 0 && (
-              <div className="flex flex-wrap gap-2 justify-center max-w-lg mt-2">
-                {suggestions.map(({ icon: Icon, label }, i) => (
-                  <button
-                    key={i}
-                    onClick={() => sendMessage(label)}
-                    style={{ animationDelay: `${i * 80}ms` }}
-                    className="tutor-fade-up flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/80 backdrop-blur-sm hover:bg-purple-500/10 hover:border-purple-400/40 hover:text-white hover:-translate-y-0.5 transition-all"
-                  >
-                    <Icon className="w-3.5 h-3.5 text-purple-400" />
-                    {label}
-                  </button>
-                ))}
+      <div ref={scrollRef} className="relative z-10 flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-6 py-6 space-y-4 min-h-full flex flex-col">
+          {messages.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+              <div className="relative w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-sm">
+                <div className="absolute inset-0 rounded-2xl bg-purple-500/10 blur-xl" />
+                <BookOpen className="relative w-7 h-7 text-purple-400" />
               </div>
-            )}
-          </div>
-        )}
-
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            style={{ animationDelay: `${Math.min(i, 4) * 40}ms` }}
-            className={`tutor-fade-up flex items-end gap-2 ${
-              m.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            {m.role === "assistant" && (
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-900/30">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
+              <div>
+                <p className="text-white font-medium">
+                  What are we studying today?
+                </p>
+                <p className="text-sm text-white/50 mt-1">
+                  Ask a question, attach a file, or pick a suggestion below.
+                </p>
               </div>
-            )}
-            <div
-              className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
-                m.role === "user"
-                  ? "bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-br-md"
-                  : "bg-white/5 border border-white/10 text-white/90 backdrop-blur-sm rounded-bl-md"
-              }`}
-            >
-              {m.content}
-            </div>
-            {m.role === "user" && (
-              <div className="w-7 h-7 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center flex-shrink-0">
-                <User className="w-3.5 h-3.5 text-white/70" />
-              </div>
-            )}
-          </div>
-        ))}
 
-        {isSending && (
-          <div className="tutor-fade-up flex items-end gap-2 justify-start">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-900/30">
-              <Sparkles className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5 backdrop-blur-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot" style={{ animationDelay: "0ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot" style={{ animationDelay: "150ms" }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot" style={{ animationDelay: "300ms" }} />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Composer */}
-      <div className="px-6 py-4 border-t border-white/10 bg-gradient-to-t from-white/[0.03] to-transparent">
-        {/* Attached file chips */}
-        {attachedFiles.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2.5">
-            {attachedFiles.map((f, i) => (
-              <div
-                key={i}
-                className="tutor-fade-up flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg pl-2.5 pr-1.5 py-1.5 text-xs text-white/80"
-              >
-                <Paperclip className="w-3 h-3 text-purple-400 flex-shrink-0" />
-                <span className="max-w-[140px] truncate">{f.name}</span>
-                <span className="text-white/40">{formatBytes(f.size)}</span>
-                <button
-                  type="button"
-                  onClick={() => removeAttachedFile(i)}
-                  className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="tutor-composer relative">
-          {/* glow layer, purely CSS-driven by :hover / :focus-within */}
-          <div className="tutor-composer-glow" />
-
-          <div className="tutor-composer-inner relative z-[1] flex items-end gap-2 bg-[#120f17]/95 border border-white/10 rounded-2xl px-2 py-2">
-            {/* Attach button */}
-            <div className="relative" ref={attachMenuRef}>
-              <button
-                type="button"
-                onClick={() => setAttachMenuOpen((v) => !v)}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${
-                  attachMenuOpen
-                    ? "bg-purple-500/20 text-purple-300 rotate-45"
-                    : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <Plus className="w-4.5 h-4.5" />
-              </button>
-
-              {attachMenuOpen && (
-                <div className="tutor-menu-in absolute bottom-full mb-2 left-0 w-64 rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/50 p-1.5 z-20">
-                  {attachOptions.map(({ icon: Icon, label, hint, action }) => (
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 justify-center max-w-lg mt-2">
+                  {suggestions.map(({ icon: Icon, label }, i) => (
                     <button
-                      key={label}
-                      type="button"
-                      onClick={() => {
-                        setAttachMenuOpen(false);
-                        action();
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors"
+                      key={i}
+                      onClick={() => sendMessage(label)}
+                      style={{ animationDelay: `${i * 80}ms` }}
+                      className="tutor-fade-up flex items-center gap-1.5 text-sm px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/80 backdrop-blur-sm hover:bg-purple-500/10 hover:border-purple-400/40 hover:text-white hover:-translate-y-0.5 transition-all"
                     >
-                      <Icon className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                      <span className="flex-1">{label}</span>
-                      <span className="text-xs text-white/40">{hint}</span>
+                      <Icon className="w-3.5 h-3.5 text-purple-400" />
+                      {label}
                     </button>
                   ))}
                 </div>
               )}
             </div>
+          )}
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              hidden
-              accept=".pdf,.doc,.docx,.txt,image/*"
-              onChange={handleFileSelect}
-            />
-
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask about a topic, or type 'quiz me on DBMS'..."
-              className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-white placeholder-white/40 focus:outline-none max-h-40"
-            />
-
-            <button
-              type="submit"
-              disabled={isSending || (!input.trim() && attachedFiles.length === 0)}
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 disabled:opacity-40 disabled:hover:from-purple-500 disabled:hover:to-purple-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/30 flex-shrink-0"
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              style={{ animationDelay: `${Math.min(i, 4) * 40}ms` }}
+              className={`tutor-fade-up flex items-end gap-2 ${
+                m.role === "user" ? "justify-end" : "justify-start"
+              }`}
             >
-              <Send className="w-4 h-4 text-white" />
-            </button>
-          </div>
-        </form>
+              {m.role === "assistant" && (
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-900/30">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
+                </div>
+              )}
+              <div
+                className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
+                  m.role === "user"
+                    ? "bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-br-md"
+                    : "bg-white/5 border border-white/10 text-white/90 backdrop-blur-sm rounded-bl-md"
+                }`}
+              >
+                {m.content}
+              </div>
+              {m.role === "user" && (
+                <div className="w-7 h-7 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center flex-shrink-0">
+                  <User className="w-3.5 h-3.5 text-white/70" />
+                </div>
+              )}
+            </div>
+          ))}
+
+          {isSending && (
+            <div className="tutor-fade-up flex items-end gap-2 justify-start">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-900/30">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+              </div>
+              <div className="bg-white/5 border border-white/10 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5 backdrop-blur-sm">
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot"
+                  style={{ animationDelay: "150ms" }}
+                />
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot"
+                  style={{ animationDelay: "300ms" }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Composer */}
+      <div className="relative z-10 border-t border-white/10 bg-gradient-to-t from-white/[0.03] to-transparent">
+        <div className="max-w-4xl mx-auto px-6 py-4">
+          {/* Attached file chips */}
+          {attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2.5">
+              {attachedFiles.map((f, i) => (
+                <div
+                  key={i}
+                  className="tutor-fade-up flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg pl-2.5 pr-1.5 py-1.5 text-xs text-white/80"
+                >
+                  <Paperclip className="w-3 h-3 text-purple-400 flex-shrink-0" />
+                  <span className="max-w-[140px] truncate">{f.name}</span>
+                  <span className="text-white/40">{formatBytes(f.size)}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeAttachedFile(i)}
+                    className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="tutor-composer relative">
+            {/* glow layer, purely CSS-driven by :hover / :focus-within */}
+            <div className="tutor-composer-glow" />
+
+            <div className="tutor-composer-inner relative z-[1] flex items-end gap-2 bg-[#120f17]/95 border border-white/10 rounded-2xl px-2 py-2">
+              {/* Attach button */}
+              <div className="relative" ref={attachMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setAttachMenuOpen((v) => !v)}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${
+                    attachMenuOpen
+                      ? "bg-purple-500/20 text-purple-300 rotate-45"
+                      : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <Plus className="w-4.5 h-4.5" />
+                </button>
+
+                {attachMenuOpen && (
+                  <div className="tutor-menu-in absolute bottom-full mb-2 left-0 w-64 rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/50 p-1.5 z-20">
+                    {attachOptions.map(
+                      ({ icon: Icon, label, hint, action }) => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => {
+                            setAttachMenuOpen(false);
+                            action();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors"
+                        >
+                          <Icon className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                          <span className="flex-1">{label}</span>
+                          <span className="text-xs text-white/40">{hint}</span>
+                        </button>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                hidden
+                accept=".pdf,.doc,.docx,.txt,image/*"
+                onChange={handleFileSelect}
+              />
+
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask about a topic, or type 'quiz me on DBMS'..."
+                className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-white placeholder-white/40 focus:outline-none max-h-40"
+              />
+
+              <button
+                type="submit"
+                disabled={
+                  isSending || (!input.trim() && attachedFiles.length === 0)
+                }
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 disabled:opacity-40 disabled:hover:from-purple-500 disabled:hover:to-purple-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/30 flex-shrink-0"
+              >
+                <Send className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
