@@ -210,7 +210,7 @@ export default function DashboardHome() {
                 fontWeight: 900,
                 letterSpacing: -1.5,
                 margin: 0,
-                lineHeight: 1.15,
+                lineHeight: 1.5,
                 background: "linear-gradient(135deg,#fff 40%,#c4b5fd)",
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
