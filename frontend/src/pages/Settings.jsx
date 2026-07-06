@@ -294,13 +294,13 @@ export default function Settings() {
 
       {/* ambient glow, consistent with the rest of StudyOS */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -right-20 -top-20 h-120 w-[30rem] rounded-full bg-purple-500/10 blur-[160px]" />
-        <div className="absolute -left-20 bottom-0 h-96 w-[24rem] rounded-full bg-fuchsia-500/[0.06] blur-[160px]" />
+        <div className="absolute -right-20 -top-20 h-120 w-120 rounded-full bg-purple-500/10 blur-[160px]" />
+        <div className="absolute -left-20 bottom-0 h-96 w-[24rem] rounded-full bg-fuchsia-500/6 blur-[160px]" />
       </div>
 
       <div className="relative z-10 flex h-screen">
         {/* ── Left nav ─────────────────────────────────────── */}
-        <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col border-r border-white/10 bg-white/[0.02] backdrop-blur-sm px-4 py-8 relative z-30 overflow-y-auto">
+        <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-white/10 bg-white/[0.02] backdrop-blur-sm px-4 py-8 relative z-30 overflow-y-auto">
           <h1 className="text-2xl font-black px-2 mb-1">Settings</h1>
           <p className="text-sm text-white/40 px-2 mb-8">Customize your StudyOS experience.</p>
 
