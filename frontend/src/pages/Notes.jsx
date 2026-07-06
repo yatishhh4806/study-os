@@ -584,7 +584,7 @@ function BlockRow({
         <button
           type="button"
           onClick={() => onChange({ ...block, checked: !block.checked })}
-          className={`mt-[5px] w-4 h-4 rounded flex-shrink-0 border flex items-center justify-center transition-colors ${
+          className={`mt-1.25w-4 h-4 rounded shrink-0 border flex items-center justify-center transition-colors ${
             block.checked
               ? "bg-purple-500 border-purple-500"
               : "border-white/25 hover:border-purple-400"
@@ -604,7 +604,7 @@ function BlockRow({
   }
 
   return (
-    <div className="group/block relative rounded-md px-1 -mx-1 hover:bg-white/[0.02] transition-colors">
+    <div className="group/block relative rounded-md px-1 -mx-1 hover:bg-white/2 transition-colors">
       {controls}
       {body}
     </div>
@@ -983,7 +983,7 @@ export default function NotesPage() {
       </aside>
 
       {/* ── Notes list ─────────────────────────────────────── */}
-      <section className="w-72 flex-shrink-0 border-r border-white/10 flex flex-col">
+      <section className="w-72 shrink-0 border-r border-white/10 flex flex-col">
         <div className="px-4 pt-5 pb-3 border-b border-white/10">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -1094,7 +1094,7 @@ export default function NotesPage() {
             {/* toolbar */}
             <div className="h-13 flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/1.5kdrop-blur-sm">
               <div className="flex items-center gap-1.5 text-[13px] text-white/50 min-w-0">
-                <span className="flex-shrink-0">
+                <span className="shrink-0">
                   {activeSubject?.emoji} {activeSubject?.name}
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 text-white/30" />
