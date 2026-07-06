@@ -300,7 +300,7 @@ export default function Settings() {
 
       <div className="relative z-10 flex h-screen">
         {/* ── Left nav ─────────────────────────────────────── */}
-        <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-white/10 bg-white/[0.02] backdrop-blur-sm px-4 py-8 relative z-30 overflow-y-auto">
+        <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-white/10 bg-white/2 backdrop-blur-sm px-4 py-8 relative z-30 overflow-y-auto">
           <h1 className="text-2xl font-black px-2 mb-1">Settings</h1>
           <p className="text-sm text-white/40 px-2 mb-8">Customize your StudyOS experience.</p>
 
@@ -315,7 +315,7 @@ export default function Settings() {
                     : "border border-transparent text-white/55 hover:text-white hover:bg-white/5"
                 } ${id === "danger" ? "mt-4 text-red-400/80 hover:text-red-300" : ""}`}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                <Icon className="w-4 h-4 shrink-0" />
                 {label}
               </button>
             ))}
@@ -586,14 +586,14 @@ export default function Settings() {
               tone="danger"
               sectionRef={setSectionRef("danger")}
             >
-              <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/[0.04] px-5 py-4">
+              <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/4 px-5 py-4">
                 <div>
                   <p className="text-sm text-white font-medium">Delete Account</p>
                   <p className="text-xs text-white/40 mt-0.5">Permanently erase your notes, flashcards, and progress.</p>
                 </div>
                 <button
                   onClick={() => setDeleteOpen(true)}
-                  className="rounded-xl bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-sm font-semibold transition-colors flex-shrink-0"
+                  className="rounded-xl bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-sm font-semibold transition-colors shrink-0"
                 >
                   Delete Account
                 </button>
