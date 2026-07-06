@@ -26,13 +26,13 @@ function Sidebar() {
   return (
     <aside className="sticky top-0 flex h-screen w-70 flex-col border-r border-purple-500/10 bg-black/40 p-8 backdrop-blur-xl">
       {/* Logo */}
-      <div className="mb-14">
+      <div className="mb-6">
         <h1 className="text-4xl font-black text-white">
           Study
           <span className="text-purple-400">OS</span>
         </h1>
 
-        <p className="mt-2 text-sm text-gray-400">Academic Operating System</p>
+        <p className="mt-2 text-sm text-gray-400">Built For Your Excellence</p>
       </div>
 
       {/* Menu */}
