@@ -34,7 +34,7 @@ function Sidebar() {
         <img
           src="/logo.png"
           alt="StudyOS logo"
-          className="h-9 w-9 rounded-xl object-contain flex-shrink-0"
+          className="h-9 w-9 rounded-xl object-contain shrink-0"
         />
         <div>
           <h1 className="text-3xl font-black text-white leading-none">

@@ -154,7 +154,7 @@ export default function Leaderboard() {
       `}</style>
 
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-24 right-0 w-[28rem] h-[28rem] rounded-full blur-[140px]" style={{ background: league.glow }} />
+        <div className="absolute -top-24 right-0 w-md h-[28rem] rounded-full blur-[140px]" style={{ background: league.glow }} />
         <div className="absolute bottom-0 -left-24 w-96 h-96 rounded-full bg-purple-500/10 blur-[140px]" />
       </div>
 
@@ -169,7 +169,7 @@ export default function Leaderboard() {
             <p className="text-white/40 mt-1">Climb the league, hold your rank, don't get relegated.</p>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5">
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/3 px-4 py-2.5">
             <Clock className="w-4 h-4 text-purple-300" />
             <span className="text-sm text-white/60">League resets in</span>
             <span className="text-sm font-semibold text-white tabular-nums">
@@ -179,7 +179,7 @@ export default function Leaderboard() {
         </div>
 
         {/* League ladder */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-5 mb-6 overflow-x-auto">
+        <div className="rounded-2xl border border-white/10 bg-white/3 backdrop-blur-xl p-5 mb-6 overflow-x-auto">
           <div className="flex items-center gap-2 min-w-max">
             {LEAGUE_TIERS.map((tier, i) => {
               const active = i === CURRENT_LEAGUE_INDEX;

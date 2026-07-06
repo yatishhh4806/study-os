@@ -94,7 +94,7 @@ function Topbar() {
             type="button"
             onClick={openCommandPalette}
             title="Open command palette"
-            className="mr-3 hidden flex-shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-semibold text-gray-400 transition-colors hover:border-purple-400/40 hover:text-purple-300 sm:flex"
+            className="mr-3 hidden shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-semibold text-gray-400 transition-colors hover:border-purple-400/40 hover:text-purple-300 sm:flex"
           >
             {isMac ? (
               <kbd className="font-sans">⌘</kbd>
