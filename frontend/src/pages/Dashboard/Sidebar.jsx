@@ -6,7 +6,9 @@ import {
   Brain,
   Bot,
   BarChart3,
-  LibraryBig
+  LibraryBig,
+  Trophy,
+  CircleStar
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -21,6 +23,9 @@ function Sidebar() {
     { icon: <Brain size={20} />, title: "Flashcards", path: "/dashboard/flashcards" },
     { icon: <Bot size={20} />, title: "AI Tutor", path: "/dashboard/ai-tutor" },
     { icon: <LibraryBig size={20} />, title: "Resources", path: "/dashboard/resources" },
+    { icon: <Trophy size={20} />, title: "Leaderboard", path: "/dashboard/leaderboard" },
+    { icon: <CircleStar size={20} />, title: "Badges", path: "/dashboard/badges" },
+    
   ];
 
   return (

@@ -13,6 +13,8 @@ import Profile from "./pages/Profile";
 import Resources from "./pages/Resources";
 import Settings from "./pages/Settings";
 import CommandPalette from "./components/CommandPalette";
+import Leaderboard from "./pages/LeaderBoard";
+import Badges from "./pages/Badges";
 
 
 function App() {
@@ -71,6 +73,15 @@ function App() {
       <Route 
       path="/dashboard/settings" 
       element={<Settings />} />
+
+      <Route 
+      path="/dashboard/leaderboard" 
+      element={<Leaderboard />} />
+
+      <Route 
+      path="/dashboard/badges" 
+      element={<Badges />} />
+
     </Routes>
     </>
   );
