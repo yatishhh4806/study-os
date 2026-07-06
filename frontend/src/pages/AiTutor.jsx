@@ -334,16 +334,16 @@ export default function AiTutor() {
               "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(168,85,247,0.12), transparent 60%)",
           }}
         />
-        <div className="tutor-blob-a absolute top-[-6rem] right-[-5rem] w-[26rem] h-[26rem] rounded-full bg-purple-600/30 blur-[100px]" />
-        <div className="tutor-blob-b absolute bottom-[-5rem] left-[-4rem] w-[24rem] h-[24rem] rounded-full bg-fuchsia-500/20 blur-[100px]" />
+        <div className="tutor-blob-a absolute -top-24 -right-20 w-104 h-104 rounded-full bg-purple-600/30 blur-[100px]" />
+        <div className="tutor-blob-b absolute -bottom-20 -left-16 w-[24rem] h-96 rounded-full bg-fuchsia-500/20 blur-[100px]" />
         <div className="tutor-blob-c absolute top-1/3 left-1/4 w-64 h-64 rounded-full bg-blue-500/10 blur-[110px]" />
       </div>
 
       {/* Header */}
-      <div className="relative z-10 border-b border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] via-white/[0.02] to-transparent backdrop-blur-sm">
+      <div className="relative z-10 border-b border-purple-400/20 bg-linear-to-br from-purple-500/8 via-white/2 to-transparent backdrop-blur-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-brrom-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -372,7 +372,7 @@ export default function AiTutor() {
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-purple-400" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center ring-1 ring-white/20">
+            <div className="w-8 h-8 rounded-full bg-linear-to-br from-purple-500 to-purple-700 flex items-center justify-center ring-1 ring-white/20">
               <User className="w-4 h-4 text-white" />
             </div>
           </div>
@@ -424,21 +424,21 @@ export default function AiTutor() {
               }`}
             >
               {m.role === "assistant" && (
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-900/30">
+                <div className="w-7 h-7 rounded-lg bg-linear-to-br from-purple-500 to-purple-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-900/30">
                   <Sparkles className="w-3.5 h-3.5 text-white" />
                 </div>
               )}
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
                   m.role === "user"
-                    ? "bg-gradient-to-br from-purple-600 to-purple-700 text-white rounded-br-md"
+                    ? "bg-linear-to-br from-purple-600 to-purple-700 text-white rounded-br-md"
                     : "bg-white/5 border border-white/10 text-white/90 backdrop-blur-sm rounded-bl-md"
                 }`}
               >
                 {m.content}
               </div>
               {m.role === "user" && (
-                <div className="w-7 h-7 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center shrink-0">
                   <User className="w-3.5 h-3.5 text-white/70" />
                 </div>
               )}
@@ -447,7 +447,7 @@ export default function AiTutor() {
 
           {isSending && (
             <div className="tutor-fade-up flex items-end gap-2 justify-start">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-purple-900/30">
+              <div className="w-7 h-7 rounded-lg bg-linear-to-br from-purple-500 to-purple-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-900/30">
                 <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5 backdrop-blur-sm">
@@ -470,7 +470,7 @@ export default function AiTutor() {
       </div>
 
       {/* Composer */}
-      <div className="relative z-10 border-t border-white/10 bg-gradient-to-t from-white/[0.03] to-transparent">
+      <div className="relative z-10 border-t border-white/10 bg-linear-to-t from-white/3 to-transparent">
         <div className="max-w-4xl mx-auto px-6 py-4">
           {/* Attached file chips */}
           {attachedFiles.length > 0 && (
@@ -480,8 +480,8 @@ export default function AiTutor() {
                   key={i}
                   className="tutor-fade-up flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg pl-2.5 pr-1.5 py-1.5 text-xs text-white/80"
                 >
-                  <Paperclip className="w-3 h-3 text-purple-400 flex-shrink-0" />
-                  <span className="max-w-[140px] truncate">{f.name}</span>
+                  <Paperclip className="w-3 h-3 text-purple-400 shrink-0" />
+                  <span className="max-w-35 truncate">{f.name}</span>
                   <span className="text-white/40">{formatBytes(f.size)}</span>
                   <button
                     type="button"
@@ -499,13 +499,13 @@ export default function AiTutor() {
             {/* glow layer, purely CSS-driven by :hover / :focus-within */}
             <div className="tutor-composer-glow" />
 
-            <div className="tutor-composer-inner relative z-[1] flex items-end gap-2 bg-[#120f17]/95 border border-white/10 rounded-2xl px-2 py-2">
+            <div className="tutor-composer-inner relative z-1 flex items-end gap-2 bg-[#120f17]/95 border border-white/10 rounded-2xl px-2 py-2">
               {/* Attach button */}
               <div className="relative" ref={attachMenuRef}>
                 <button
                   type="button"
                   onClick={() => setAttachMenuOpen((v) => !v)}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                     attachMenuOpen
                       ? "bg-purple-500/20 text-purple-300 rotate-45"
                       : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
@@ -527,7 +527,7 @@ export default function AiTutor() {
                           }}
                           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors"
                         >
-                          <Icon className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                          <Icon className="w-4 h-4 text-purple-400 shrink-0" />
                           <span className="flex-1">{label}</span>
                           <span className="text-xs text-white/40">{hint}</span>
                         </button>
@@ -561,7 +561,7 @@ export default function AiTutor() {
                 disabled={
                   isSending || (!input.trim() && attachedFiles.length === 0)
                 }
-                className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 disabled:opacity-40 disabled:hover:from-purple-500 disabled:hover:to-purple-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/30 flex-shrink-0"
+                className="w-9 h-9 rounded-xl bg-linear-to-br from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 disabled:opacity-40 disabled:hover:from-purple-500 disabled:hover:to-purple-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/30 shrink-0"
               >
                 <Send className="w-4 h-4 text-white" />
               </button>
