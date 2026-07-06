@@ -11,6 +11,7 @@ import Planner from "./pages/Planner";
 import AiTutor from "./pages/AiTutor";
 import Profile from "./pages/Profile";
 import Resources from "./pages/Resources";
+import Settings from "./pages/Settings";
 
 
 function App() {
@@ -63,6 +64,10 @@ function App() {
       <Route 
       path="/dashboard/resources" 
       element={<Resources />} />
+
+      <Route 
+      path="/dashboard/settings" 
+      element={<Settings />} />
     </Routes>
   );
 }

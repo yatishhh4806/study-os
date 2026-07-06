@@ -207,7 +207,7 @@ function Topbar() {
                 <button
                   onClick={() => {
                     setIsProfileOpen(false);
-                    navigate("/settings");
+                    navigate("/dashboard/settings");
                   }}
                   className="
                     flex

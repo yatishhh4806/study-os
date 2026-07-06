@@ -6,7 +6,6 @@ import {
   Brain,
   Bot,
   BarChart3,
-  Settings,
   LibraryBig
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -22,7 +21,6 @@ function Sidebar() {
     { icon: <Brain size={20} />, title: "Flashcards", path: "/dashboard/flashcards" },
     { icon: <Bot size={20} />, title: "AI Tutor", path: "/dashboard/ai-tutor" },
     { icon: <LibraryBig size={20} />, title: "Resources", path: "/dashboard/resources" },
-    { icon: <Settings size={20} />, title: "Settings", path: "/dashboard/settings" },
   ];
 
   return (
