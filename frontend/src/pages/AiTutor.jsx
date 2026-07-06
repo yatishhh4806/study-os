@@ -14,6 +14,8 @@ import {
   Globe,
   X,
   Paperclip,
+  HelpCircle,
+  Bell,
 } from "lucide-react";
 import { useDashboardData } from "../hooks/useDashboardData";
 
@@ -338,20 +340,41 @@ export default function AiTutor() {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 border-b border-white/10 bg-gradient-to-b from-white/[0.03] to-transparent backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto flex items-center gap-3 px-6 py-5">
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
-            <Sparkles className="w-5 h-5 text-white" />
+      <div className="relative z-10 border-b border-purple-400/20 bg-gradient-to-br from-purple-500/[0.08] via-white/[0.02] to-transparent backdrop-blur-sm">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-base font-semibold text-white leading-tight">
+                StudyOS AI
+              </h1>
+              <p className="text-[10px] font-semibold tracking-[0.15em] text-purple-400/80 uppercase mt-0.5">
+                Your personalized ai assistant
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-semibold tutor-shimmer-text">
-              AI Tutor
-            </h1>
-            <p className="text-xs text-white/50">
-              {dashboardLoading
-                ? "Loading your progress..."
-                : "Knows your subjects, mastery, and deadlines"}
-            </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              title="Help"
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              title="Notifications"
+              className="relative w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-purple-400" />
+            </button>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center ring-1 ring-white/20">
+              <User className="w-4 h-4 text-white" />
+            </div>
           </div>
         </div>
       </div>
