@@ -12,10 +12,13 @@ import AiTutor from "./pages/AiTutor";
 import Profile from "./pages/Profile";
 import Resources from "./pages/Resources";
 import Settings from "./pages/Settings";
+import CommandPalette from "./components/CommandPalette";
 
 
 function App() {
   return (
+    <>
+    <CommandPalette></CommandPalette>
     <Routes>
       <Route
         path="/"
@@ -69,6 +72,7 @@ function App() {
       path="/dashboard/settings" 
       element={<Settings />} />
     </Routes>
+    </>
   );
 }
 

@@ -10,6 +10,12 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+// detect Mac vs Windows/Linux once, so the badge shows the shortcut
+// that's actually correct for the person's keyboard
+const isMac =
+  typeof navigator !== "undefined" &&
+  /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+
 function Topbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -36,11 +42,15 @@ function Topbar() {
     setIsProfileOpen(false);
   }
 
+  function openCommandPalette() {
+    window.dispatchEvent(new Event("studyos:open-command-palette"));
+  }
+
   return (
     <header className="sticky top-3 z-50 flex h-24 items-center justify-between border-b border-purple-500/10 bg-[#09050e]/80 px-8 backdrop-blur-xl">
       {/* Search */}
       <div className="group relative w-full max-w-275">
-        {/* Glow - Modified: Added a subtle resting opacity (opacity-30) so it glows slightly even when untouched */}
+        {/* Glow */}
         <div
           className={`absolute -inset-px rounded-2xl bg-linear-to-r from-purple-500/30 via-purple-400/20 to-purple-500/30 blur-md transition-all duration-300 ${
             focused
@@ -49,7 +59,7 @@ function Topbar() {
           }`}
         />
 
-        {/* Main Container - Modified: Increased base border to border-purple-500/25 and added a baseline resting box-shadow */}
+        {/* Main Container */}
         <div
           className={`relative flex items-center overflow-hidden rounded-2xl border bg-[#0d0716]/80 backdrop-blur-xl transition-all duration-300 ${
             focused
@@ -78,6 +88,21 @@ function Topbar() {
             placeholder="Search notes, tasks, flashcards..."
             className="flex-1 bg-transparent px-4 py-4 text-white outline-none placeholder:text-gray-400"
           />
+
+          {/* Command palette shortcut badge — shows Ctrl+K on Windows/Linux, ⌘K on Mac */}
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            title="Open command palette"
+            className="mr-3 hidden flex-shrink-0 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-semibold text-gray-400 transition-colors hover:border-purple-400/40 hover:text-purple-300 sm:flex"
+          >
+            {isMac ? (
+              <kbd className="font-sans">⌘</kbd>
+            ) : (
+              <kbd className="font-sans">Ctrl</kbd>
+            )}
+            <kbd className="font-sans">K</kbd>
+          </button>
         </div>
       </div>
 
