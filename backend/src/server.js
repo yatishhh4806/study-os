@@ -21,6 +21,7 @@ import taskRoutes from "./routes/taskRoutes.js";
 import focusRoutes from "./routes/focusRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import badgeRoutes from "./routes/badgeRoutes.js";
+import aiTutorRoutes from "./routes/aiTutorRoutes.js";
 import dns from "node:dns";
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
@@ -60,8 +61,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/focus-sessions", focusRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/badges", badgeRoutes);
-
-// NOTE: still to come — AI Tutor endpoint (proxies the Claude API)
+app.use("/api/ai-tutor", aiTutorRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

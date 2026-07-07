@@ -79,6 +79,10 @@ const userSchema = new mongoose.Schema(
 
     subscription: { type: subscriptionSchema, default: () => ({}) },
     stats: { type: statsSchema, default: () => ({}) },
+    aiUsage: {
+      dailyMessageCount: { type: Number, default: 0 },
+      lastResetDate: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );
