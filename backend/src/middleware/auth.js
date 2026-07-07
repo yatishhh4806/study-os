@@ -1,5 +1,7 @@
+// src/middleware/auth.js
 import { verifyAccessToken } from "../utils/tokens.js";
 import { User } from "../models/User.js";
+import { checkStreakStillValid } from "../utils/streak.js";
 
 export async function requireAuth(req, res, next) {
   try {
@@ -17,6 +19,14 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ error: "User no longer exists" });
     }
 
+    // lazy streak correction — see utils/streak.js for why this lives here
+    // instead of a cron job for now
+    const streakCheck = checkStreakStillValid(user.stats);
+    if (streakCheck.needsUpdate) {
+      user.stats.currentStreak = streakCheck.currentStreak;
+      await user.save();
+    }
+
     req.user = user;
     next();
   } catch (err) {
@@ -27,6 +37,7 @@ export async function requireAuth(req, res, next) {
   }
 }
 
+// gates routes/features behind an active Pro subscription
 export function requirePro(req, res, next) {
   if (!req.user?.isPro()) {
     return res.status(402).json({

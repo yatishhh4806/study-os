@@ -16,6 +16,7 @@ import noteRoutes from "./routes/noteRoutes.js";
 import deckRoutes from "./routes/deckRoutes.js";
 import flashcardRoutes from "./routes/flashcardRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
+import focusRoutes from "./routes/focusRoutes.js";
 import dns from "node:dns";
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
@@ -49,6 +50,7 @@ app.use("/api/notes", noteRoutes);
 app.use("/api/decks", deckRoutes);
 app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/focus-sessions", focusRoutes);
 
 // mount future modules here, e.g.:
 // app.use("/api/notes", notesRoutes);
