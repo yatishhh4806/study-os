@@ -13,6 +13,8 @@ import authRoutes from "./routes/authRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
 import subjectRoutes from "./routes/subjectRoutes.js";
 import noteRoutes from "./routes/noteRoutes.js";
+import deckRoutes from "./routes/deckRoutes.js";
+import flashcardRoutes from "./routes/flashcardRoutes.js";
 import dns from "node:dns";
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
@@ -43,6 +45,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/notes", noteRoutes);
+app.use("/api/decks", deckRoutes);
+app.use("/api/flashcards", flashcardRoutes);
 
 // mount future modules here, e.g.:
 // app.use("/api/notes", notesRoutes);
