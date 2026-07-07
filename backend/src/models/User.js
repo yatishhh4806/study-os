@@ -1,3 +1,4 @@
+// src/models/User.js
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
@@ -21,6 +22,9 @@ const subscriptionSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// denormalized gamification fields — kept on User for fast dashboard/leaderboard
+// reads instead of aggregating across collections on every page load. Recomputed
+// by the relevant controllers (focus sessions, quizzes, etc.) when they fire.
 const statsSchema = new mongoose.Schema(
   {
     currentStreak: { type: Number, default: 0 },
@@ -33,6 +37,16 @@ const statsSchema = new mongoose.Schema(
       enum: ["bronze", "silver", "gold", "platinum", "diamond", "obsidian"],
       default: "bronze",
     },
+    // ── badge-relevant history — these persist across weekly XP resets,
+    // since a badge earned once shouldn't be un-earned when the counter
+    // that triggered it (weeklyXP, league) resets or drops later ──
+    highestLeagueReached: {
+      type: String,
+      enum: ["bronze", "silver", "gold", "platinum", "diamond", "obsidian"],
+      default: "bronze",
+    },
+    topTenFinishes: { type: Number, default: 0 },
+    leagueChampionWins: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -55,6 +69,8 @@ const userSchema = new mongoose.Schema(
     institution: { type: String, default: null },
 
     emailVerified: { type: Boolean, default: false },
+    // TODO SWAP POINT: wire to a real email provider (Resend/SendGrid) to send
+    // this token; for now it's generated and stored but never emailed.
     emailVerificationToken: { type: String, select: false, default: null },
     passwordResetToken: { type: String, select: false, default: null },
     passwordResetExpires: { type: Date, select: false, default: null },
@@ -67,15 +83,17 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function hashPassword() {
-  if (!this.isModified("passwordHash")) return;
+userSchema.pre("save", async function hashPassword(next) {
+  if (!this.isModified("passwordHash")) return next();
   this.passwordHash = await bcrypt.hash(this.passwordHash, 12);
+  next();
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {
   return bcrypt.compare(candidate, this.passwordHash);
 };
 
+// never leak sensitive fields even if a controller forgets to .select("-x")
 userSchema.methods.toSafeJSON = function toSafeJSON() {
   const obj = this.toObject();
   delete obj.passwordHash;
