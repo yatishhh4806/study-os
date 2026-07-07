@@ -2,14 +2,9 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
-import { signInWithPopup } from "firebase/auth";
-import { fetchSignInMethodsForEmail } from "firebase/auth";
 import AuthHero from "../components/AuthHero/AuthHero";
-import {
-  auth,
-  googleSignupProvider,
-  githubProvider,
-} from "../firebase/firebase";
+import { useAuth } from "../context/AuthContext";
+import { api } from "../lib/api";
 
 const COLLEGE_COURSES = [
   "B.Tech",
@@ -39,8 +34,10 @@ function FieldError({ msg }) {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -63,7 +60,6 @@ export default function Signup() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error on change
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
@@ -106,73 +102,72 @@ export default function Signup() {
     if (validateStep1()) setStep(2);
   };
 
-  const handleSubmit = (e) => {
+  // account creation + academic profile are two separate backend calls —
+  // the account must exist (with a session) before we can attach profile
+  // data to it via the authenticated /auth/profile endpoint
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep2()) return;
-    console.log(formData);
-    navigate("/dashboard");
-  };
 
-  // ── Social auth ─────────────────────────────────────────────
-  const handleGoogleSignup = async () => {
+    setSubmitting(true);
+    setErrors((prev) => ({ ...prev, form: "" }));
+
     try {
-      const result = await signInWithPopup(auth, googleSignupProvider);
+      await register(formData.fullName.trim(), formData.email.trim(), formData.password);
 
-      setFormData((prev) => ({
-        ...prev,
-        fullName: result.user.displayName || "",
-        email: result.user.email || "",
-      }));
+      const profilePayload = {
+        institutionType: formData.institutionType,
+        institutionName: formData.institutionName.trim(),
+        ...(isSchool(formData.institutionType)
+          ? {
+              schoolClass: formData.schoolClass,
+              stream: formData.stream,
+              board: formData.board,
+            }
+          : {
+              course: formData.course,
+              branch: formData.branch.trim(),
+              year: formData.year,
+              semester: formData.semester,
+            }),
+      };
 
-      setStep(2);
-    } catch (error) {
-      if (error.code === "auth/account-exists-with-different-credential") {
-        const methods = await fetchSignInMethodsForEmail(
-          auth,
-          error.customData.email,
-        );
-
-        alert(
-          "An account with this email already exists. Please sign in using the method you originally used to create the account.",
-        );
-
-        return;
+      // if this second call fails, the account still exists and is
+      // logged in — just without the academic profile saved yet. Not
+      // ideal, but far better than losing the whole signup over a
+      // secondary, non-critical write.
+      try {
+        await api.patch("/auth/profile", profilePayload);
+      } catch (profileErr) {
+        console.error("Account created, but saving academic profile failed:", profileErr);
       }
 
-      console.error(error);
-      alert(error.message);
+      navigate("/dashboard");
+    } catch (err) {
+      setStep(1); // send them back to fix whatever the backend rejected
+      setErrors((prev) => ({
+        ...prev,
+        form: err.response?.data?.error || "Couldn't create your account. Please try again.",
+      }));
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleGithubSignup = async () => {
-    try {
-      const result = await signInWithPopup(auth, githubProvider);
-
-      setFormData((prev) => ({
-        ...prev,
-        fullName: result.user.displayName || "",
-        email: result.user.email || "",
-      }));
-
-      setStep(2);
-    } catch (error) {
-      if (error.code === "auth/account-exists-with-different-credential") {
-        const methods = await fetchSignInMethodsForEmail(
-          auth,
-          error.customData.email,
-        );
-
-        alert(
-          "An account with this email already exists. Please sign in using the method you originally used to create the account.",
-        );
-
-        return;
-      }
-
-      console.error(error);
-      alert(error.message);
-    }
-  };
+  // NOTE: Google/GitHub sign-up used Firebase Auth, but our backend has
+  // its own JWT-based session system that's never heard of Firebase.
+  // Logging in via Firebase alone would navigate to /dashboard only to
+  // have ProtectedRoute immediately bounce the person back here, since
+  // our AuthContext would still show no user. Fixing this properly needs
+  // a backend endpoint that verifies a Firebase ID token and issues our
+  // own tokens for it — a real feature to build, not a quick patch — so
+  // it's disabled with an honest message for now instead of a broken loop.
+  function handleSocialSignup(provider) {
+    setErrors((prev) => ({
+      ...prev,
+      form: `${provider} sign-up isn't connected yet — please use the form below for now.`,
+    }));
+  }
 
   const inputClass =
     "mt-3 w-full rounded-xl border border-white/10 bg-black/30 p-4 text-white outline-none transition focus:border-purple-500 placeholder:text-gray-600";
@@ -234,6 +229,12 @@ export default function Signup() {
               className={`h-2 w-20 rounded-full transition-all ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`}
             />
           </div>
+
+          {errors.form && (
+            <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {errors.form}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} noValidate>
             {/* ── STEP 1 ── */}
@@ -298,15 +299,17 @@ export default function Signup() {
                 <div className="flex gap-4">
                   <button
                     type="button"
-                    onClick={handleGoogleSignup}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white transition hover:border-purple-500/40 hover:bg-white/5"
+                    onClick={() => handleSocialSignup("Google")}
+                    title="Not connected yet"
+                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white opacity-60 transition hover:border-purple-500/40 hover:bg-white/5"
                   >
                     <FcGoogle size={24} /> Google
                   </button>
                   <button
                     type="button"
-                    onClick={handleGithubSignup}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white transition hover:border-purple-500/40 hover:bg-white/5"
+                    onClick={() => handleSocialSignup("GitHub")}
+                    title="Not connected yet"
+                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white opacity-60 transition hover:border-purple-500/40 hover:bg-white/5"
                   >
                     <FaGithub size={22} /> GitHub
                   </button>
@@ -488,9 +491,10 @@ export default function Signup() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 rounded-xl bg-purple-500 py-4 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600"
+                    disabled={submitting}
+                    className="flex-1 rounded-xl bg-purple-500 py-4 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Create Account
+                    {submitting ? "Creating account..." : "Create Account"}
                   </button>
                 </div>
               </>

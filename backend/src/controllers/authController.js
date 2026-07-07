@@ -1,3 +1,4 @@
+// src/controllers/authController.js
 import { z } from "zod";
 import { User } from "../models/User.js";
 import { AppError } from "../middleware/errorHandler.js";
@@ -49,10 +50,13 @@ export async function register(req, res, next) {
     const user = new User({
       name,
       email,
-      passwordHash: password,
+      passwordHash: password, // hashed by the pre-save hook on User
       emailVerificationToken: generateRandomToken(),
     });
     await user.save();
+
+    // TODO SWAP POINT: send user.emailVerificationToken via a real email
+    // provider here. Account works without verification for now.
 
     const accessToken = await issueSession(res, user);
     res.status(201).json({ accessToken, user: user.toSafeJSON() });
@@ -71,6 +75,7 @@ export async function login(req, res, next) {
 
     const user = await User.findOne({ email }).select("+passwordHash");
     if (!user || !(await user.comparePassword(password))) {
+      // deliberately vague — don't reveal which field was wrong
       throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
     }
 
@@ -97,10 +102,11 @@ export async function refresh(req, res, next) {
 
     const user = await User.findById(payload.sub).select("+refreshTokenHash");
     if (!user || user.refreshTokenHash !== hashToken(token)) {
+      // token reuse or revoked session — force re-login
       throw new AppError("Session no longer valid", 401, "SESSION_INVALID");
     }
 
-    const accessToken = await issueSession(res, user);
+    const accessToken = await issueSession(res, user); // rotates refresh token too
     res.json({ accessToken, user: user.toSafeJSON() });
   } catch (err) {
     next(err);
@@ -115,7 +121,7 @@ export async function logout(req, res, next) {
         const payload = verifyRefreshToken(token);
         await User.findByIdAndUpdate(payload.sub, { refreshTokenHash: null });
       } catch {
-        // already invalid — nothing to revoke
+        // token already invalid — nothing to revoke, fall through to clear cookie
       }
     }
     res.clearCookie(REFRESH_COOKIE_NAME, { path: "/api/auth" });
@@ -127,4 +133,37 @@ export async function logout(req, res, next) {
 
 export async function me(req, res) {
   res.json({ user: req.user.toSafeJSON() });
+}
+
+const profileSchema = z.object({
+  institutionType: z.enum(["College / University", "School"]).optional(),
+  institutionName: z.string().max(120).optional(),
+  course: z.string().max(40).optional(),
+  branch: z.string().max(80).optional(),
+  year: z.string().max(40).optional(),
+  semester: z.string().max(40).optional(),
+  schoolClass: z.string().max(40).optional(),
+  stream: z.string().max(40).optional(),
+  board: z.string().max(40).optional(),
+});
+
+// PATCH /api/auth/profile — saves the academic details collected in
+// signup step 2 (or editable later from a real Profile/Settings page)
+export async function updateProfile(req, res, next) {
+  try {
+    const parsed = profileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { academicProfile: { ...req.user.academicProfile.toObject(), ...parsed.data } },
+      { new: true, runValidators: true }
+    );
+
+    res.json({ user: user.toSafeJSON() });
+  } catch (err) {
+    next(err);
+  }
 }

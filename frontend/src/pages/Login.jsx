@@ -1,43 +1,49 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
-import { signInWithPopup } from "firebase/auth";
 
 import AuthHero from "../components/AuthHero/AuthHero";
-
-import {
-  auth,
-  googleProvider,
-  githubProvider,
-} from "../firebase/firebase";
+import { useAuth } from "../context/AuthContext";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
-  const handleGoogleLogin = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      navigate("/dashboard");
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleGithubLogin = async () => {
-    try {
-      await signInWithPopup(auth, githubProvider);
-      navigate("/dashboard");
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  // NOTE: Google/GitHub sign-in isn't wired yet — those buttons used
+  // Firebase Auth, but our backend has its own JWT-based session system
+  // that doesn't know about Firebase. Logging in via Firebase alone would
+  // navigate to /dashboard only to have ProtectedRoute immediately bounce
+  // the person back here, since AuthContext would still show no user.
+  // Fixing this properly needs a backend endpoint that verifies a
+  // Firebase ID token and issues our own access/refresh tokens for it —
+  // a real feature to build, not a quick patch, so it's disabled with an
+  // honest message for now instead of shipping a broken loop.
+  function handleSocialLogin(provider) {
+    setError(`${provider} sign-in isn't connected yet — please use email and password for now.`);
+  }
 
-  const handleManualLogin = (e) => {
+  async function handleManualLogin(e) {
     e.preventDefault();
-
-    // Temporary
-    navigate("/dashboard");
-  };
+    setError("");
+    setLoading(true);
+    try {
+      await login(email, password);
+      // send them back to wherever ProtectedRoute intercepted them from,
+      // or /dashboard by default if they came straight to /login
+      navigate(location.state?.from?.pathname || "/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.error || "Login failed. Please check your email and password.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#09070f]">
@@ -105,16 +111,26 @@ function Login() {
             </Link>
           </p>
 
+          {/* Error message */}
+          {error && (
+            <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {error}
+            </div>
+          )}
+
           {/* FORM */}
           <form onSubmit={handleManualLogin}>
             {/* Email */}
-            <div className="mt-12">
+            <div className="mt-8">
               <label className="text-gray-400">
                 Email
               </label>
 
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 placeholder="Enter your email"
                 className="
                   mt-3
@@ -140,6 +156,9 @@ function Login() {
 
               <input
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                 placeholder="Enter your password"
                 className="
                   mt-3
@@ -170,6 +189,7 @@ function Login() {
             {/* Sign In */}
             <button
               type="submit"
+              disabled={loading}
               className="
                 mt-8
                 w-full
@@ -180,9 +200,11 @@ function Login() {
                 text-white
                 transition
                 hover:bg-purple-600
+                disabled:opacity-50
+                disabled:cursor-not-allowed
               "
             >
-              Sign In
+              {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
@@ -197,11 +219,12 @@ function Login() {
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          {/* Social Buttons */}
+          {/* Social Buttons — see note above handleSocialLogin */}
           <div className="flex gap-4">
             {/* Google */}
             <button
-              onClick={handleGoogleLogin}
+              onClick={() => handleSocialLogin("Google")}
+              title="Not connected yet"
               className="
                 flex
                 flex-1
@@ -214,6 +237,7 @@ function Login() {
                 bg-black/20
                 py-4
                 text-white
+                opacity-60
                 transition
                 hover:border-purple-500/40
                 hover:bg-white/5
@@ -225,7 +249,8 @@ function Login() {
 
             {/* GitHub */}
             <button
-              onClick={handleGithubLogin}
+              onClick={() => handleSocialLogin("GitHub")}
+              title="Not connected yet"
               className="
                 flex
                 flex-1
@@ -238,6 +263,7 @@ function Login() {
                 bg-black/20
                 py-4
                 text-white
+                opacity-60
                 transition
                 hover:border-purple-500/40
                 hover:bg-white/5

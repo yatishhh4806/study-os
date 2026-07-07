@@ -51,6 +51,23 @@ const statsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const academicProfileSchema = new mongoose.Schema(
+  {
+    institutionType: { type: String, enum: ["College / University", "School", null], default: null },
+    institutionName: { type: String, default: "", maxlength: 120 },
+    // college fields
+    course: { type: String, default: "" },
+    branch: { type: String, default: "", maxlength: 80 },
+    year: { type: String, default: "" },
+    semester: { type: String, default: "" },
+    // school fields
+    schoolClass: { type: String, default: "" },
+    stream: { type: String, default: "" },
+    board: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const userSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
@@ -66,7 +83,8 @@ const userSchema = new mongoose.Schema(
 
     role: { type: String, enum: ["student", "admin"], default: "student" },
     avatarUrl: { type: String, default: null },
-    institution: { type: String, default: null },
+    institution: { type: String, default: null }, // legacy simple field, kept for backward compatibility
+    academicProfile: { type: academicProfileSchema, default: () => ({}) },
 
     emailVerified: { type: Boolean, default: false },
     // TODO SWAP POINT: wire to a real email provider (Resend/SendGrid) to send
