@@ -7,7 +7,20 @@ import { AppError } from "../middleware/errorHandler.js";
 
 const blockSchema = z.object({
   id: z.string(),
-  type: z.enum(["p", "h1", "h2", "h3", "bullet", "numbered", "todo", "quote", "callout", "code", "divider", "image"]),
+  type: z.enum([
+    "p",
+    "h1",
+    "h2",
+    "h3",
+    "bullet",
+    "numbered",
+    "todo",
+    "quote",
+    "callout",
+    "code",
+    "divider",
+    "image",
+  ]),
   text: z.string().default(""),
   src: z.string().default(""),
   checked: z.boolean().default(false),
@@ -65,7 +78,10 @@ export async function listNotes(req, res, next) {
 export async function getNote(req, res, next) {
   try {
     assertValidId(req.params.id);
-    const note = await Note.findOne({ _id: req.params.id, userId: req.user._id });
+    const note = await Note.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
     if (!note) throw new AppError("Note not found", 404, "NOT_FOUND");
     res.json({ note });
   } catch (err) {
@@ -77,7 +93,11 @@ export async function createNote(req, res, next) {
   try {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) {
-      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+      throw new AppError(
+        parsed.error.issues[0].message,
+        422,
+        "VALIDATION_ERROR",
+      );
     }
 
     assertValidId(parsed.data.subjectId, "subjectId");
@@ -103,13 +123,17 @@ export async function updateNote(req, res, next) {
     assertValidId(req.params.id);
     const parsed = updateSchema.safeParse(req.body);
     if (!parsed.success) {
-      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+      throw new AppError(
+        parsed.error.issues[0].message,
+        422,
+        "VALIDATION_ERROR",
+      );
     }
 
     const note = await Note.findOneAndUpdate(
       { _id: req.params.id, userId: req.user._id },
       parsed.data,
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true },
     );
     if (!note) throw new AppError("Note not found", 404, "NOT_FOUND");
 
@@ -122,7 +146,10 @@ export async function updateNote(req, res, next) {
 export async function deleteNote(req, res, next) {
   try {
     assertValidId(req.params.id);
-    const note = await Note.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    const note = await Note.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
     if (!note) throw new AppError("Note not found", 404, "NOT_FOUND");
     res.status(204).send();
   } catch (err) {
