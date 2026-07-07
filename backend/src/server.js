@@ -11,6 +11,8 @@ import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
 
 import authRoutes from "./routes/authRoutes.js";
 import billingRoutes from "./routes/billingRoutes.js";
+import subjectRoutes from "./routes/subjectRoutes.js";
+import noteRoutes from "./routes/noteRoutes.js";
 import dns from "node:dns";
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
@@ -39,6 +41,8 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/billing", billingRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/notes", noteRoutes);
 
 // mount future modules here, e.g.:
 // app.use("/api/notes", notesRoutes);
