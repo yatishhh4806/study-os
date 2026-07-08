@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, RotateCcw, Brain, Coffee, Pencil, Check } from "lucide-react";
 import { api } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
 
 const MODES = {
   focus: { label: "Focus", sub: "Deep Work", color: "#a855f7", glow: "rgba(168,85,247,0.55)", defaultMin: 25 },
@@ -18,12 +19,16 @@ function format(s) {
 // breaks are real UI features but aren't study time, so they never
 // touch the FocusSession API at all (no half-tracked, half-fake data).
 export default function PomodoroTimer({ onSessionLogged }) {
+  const { user } = useAuth();
   const [mode, setMode] = useState("focus");
-  const [customMins, setCustomMins] = useState({
-    focus: MODES.focus.defaultMin,
-    short: MODES.short.defaultMin,
-    long: MODES.long.defaultMin,
-  });
+  // seeded from the user's saved Settings preferences when available,
+  // so changing durations in Settings actually affects this timer
+  // instead of the two being disconnected from each other
+  const [customMins, setCustomMins] = useState(() => ({
+    focus: user?.preferences?.pomodoroMinutes ?? MODES.focus.defaultMin,
+    short: user?.preferences?.shortBreakMinutes ?? MODES.short.defaultMin,
+    long: user?.preferences?.longBreakMinutes ?? MODES.long.defaultMin,
+  }));
   const [editingDuration, setEditingDuration] = useState(false);
   const [draftMins, setDraftMins] = useState(String(MODES.focus.defaultMin));
 

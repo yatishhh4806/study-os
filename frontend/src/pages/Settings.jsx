@@ -1,5 +1,6 @@
 // src/pages/Settings.jsx
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Palette,
   BookOpen,
@@ -9,8 +10,6 @@ import {
   Shield,
   Trash2,
   Download,
-  Upload,
-  Timer,
   Moon,
   Sun,
   Monitor,
@@ -19,16 +18,12 @@ import {
   KeyRound,
   Smartphone,
   LogOut,
-  RotateCcw,
   GitBranch,
+  Loader2,
+  Timer,
 } from "lucide-react";
-
-// ─────────────────────────────────────────────────────────────
-// TEMPORARY: settings live in local state. SWAP POINT — once the
-// backend exists, replace the useState initial values with a fetch
-// on mount, and push each change to PATCH /api/settings instead of
-// only calling flashSaved(). The UI/interaction layer doesn't change.
-// ─────────────────────────────────────────────────────────────
+import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
 
 const NAV_SECTIONS = [
   { id: "appearance",    label: "Appearance",        icon: Palette },
@@ -57,7 +52,7 @@ function Toggle({ checked, onChange }) {
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative w-11 h-6 rounded-full shrink-0 transition-colors duration-200 ${
+      className={`relative w-11 h-6 rounded-full flex-shrink-0 transition-colors duration-200 ${
         checked ? "bg-purple-500" : "bg-white/10"
       }`}
     >
@@ -126,7 +121,7 @@ function NumberField({ label, value, onChange }) {
       <input
         type="number"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(Number(e.target.value))}
         className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-purple-400/50 transition-colors"
       />
     </div>
@@ -144,10 +139,10 @@ function SectionCard({ id, icon: Icon, title, description, children, sectionRef,
     <section
       id={id}
       ref={sectionRef}
-      className={`scroll-mt-6 rounded-2xl border ${toneClasses} bg-white/3 backdrop-blur-xl p-6 sm:p-7 transition-colors`}
+      className={`scroll-mt-6 rounded-2xl border ${toneClasses} bg-white/[0.03] backdrop-blur-xl p-6 sm:p-7 transition-colors`}
     >
       <div className="flex items-start gap-3 mb-6">
-        <div className={`w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 ${iconTone}`}>
+        <div className={`w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 ${iconTone}`}>
           <Icon className="w-4.5 h-4.5" />
         </div>
         <div>
@@ -161,37 +156,17 @@ function SectionCard({ id, icon: Icon, title, description, children, sectionRef,
 }
 
 export default function Settings() {
-  // appearance
-  const [theme, setTheme] = useState("dark");
-  const [accent, setAccent] = useState(ACCENTS[0].value);
-  const [density, setDensity] = useState("comfortable");
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  // study
-  const [studyGoal, setStudyGoal] = useState(4);
-  const [cardsPerSession, setCardsPerSession] = useState(20);
-  const [weeklyGoal, setWeeklyGoal] = useState(30);
-
-  // focus
-  const [pomodoro, setPomodoro] = useState(25);
-  const [shortBreak, setShortBreak] = useState(5);
-  const [longBreak, setLongBreak] = useState(15);
-  const [autoStartBreaks, setAutoStartBreaks] = useState(true);
-
-  // notifications
-  const [notifs, setNotifs] = useState({
-    "Study reminders": true,
-    "Flashcard reminders": true,
-    "Deadline reminders": true,
-    "Weekly reports": false,
-  });
-
-  // security
-  const [twoFactor, setTwoFactor] = useState(false);
-  const [changePwOpen, setChangePwOpen] = useState(false);
+  const [prefs, setPrefs] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   // danger zone modal
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   // toast
   const [toast, setToast] = useState(null);
@@ -202,15 +177,40 @@ export default function Settings() {
     toastTimer.current = setTimeout(() => setToast(null), 1800);
   }, []);
 
+  // debounce PATCH calls so dragging a slider doesn't fire a request per pixel
+  const saveTimer = useRef(null);
+  const savePrefs = useCallback((patch) => {
+    setPrefs((prev) => ({ ...prev, ...patch }));
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(async () => {
+      try {
+        await api.patch("/settings", patch);
+        flashSaved();
+      } catch (err) {
+        console.error("Failed to save settings:", err);
+      }
+    }, 400);
+  }, [flashSaved]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data } = await api.get("/settings");
+        setPrefs(data.preferences);
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
   // active nav highlight on scroll
   const [activeSection, setActiveSection] = useState(NAV_SECTIONS[0].id);
   const sectionRefs = useRef({});
   const scrollAreaRef = useRef(null);
 
-  // stable ref-callback factory — avoids re-creating a new inline
-  // function per render, which can otherwise leave a stale null
-  // in sectionRefs right when a click happens (React StrictMode
-  // double-invokes ref callbacks with null in between renders).
   const setSectionRef = useCallback(
     (id) => (el) => {
       if (el) sectionRefs.current[id] = el;
@@ -222,17 +222,11 @@ export default function Settings() {
     const el = scrollAreaRef.current;
     if (!el) return;
     const onScroll = () => {
-      // if we're at (or very near) the bottom of the scroll area,
-      // force-activate the last section. Without this, a section
-      // near the end of the page may never be able to physically
-      // scroll up to the "closest to top" comparison point below,
-      // so it would never register as active/clickable-looking.
       const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 4;
       if (atBottom) {
         setActiveSection(NAV_SECTIONS[NAV_SECTIONS.length - 1].id);
         return;
       }
-
       let closestId = NAV_SECTIONS[0].id;
       let closestDist = Infinity;
       for (const { id } of NAV_SECTIONS) {
@@ -254,14 +248,47 @@ export default function Settings() {
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // wrap a setter so every change flashes the "saved" toast, like
-  // an app that autosaves — mirrors the pattern most modern edtech
-  // settings pages (Duolingo, Coursera, Khan Academy) use instead
-  // of an explicit "Save changes" button.
-  const withSave = (setter) => (val) => {
-    setter(val);
-    flashSaved();
-  };
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await api.get("/account/export", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `studyos-export-${Date.now()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      flashSaved("Export downloaded");
+    } catch (err) {
+      console.error("Export failed:", err);
+      flashSaved("Export failed — try again");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    try {
+      await api.delete("/account");
+      await logout();
+      navigate("/");
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      flashSaved("Delete failed — try again");
+      setDeleting(false);
+    }
+  }
+
+  if (loading || !prefs) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#09070f]">
+        <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[#09070f] text-white overflow-hidden">
@@ -270,16 +297,11 @@ export default function Settings() {
           from { opacity: 0; transform: translate(-50%, 8px); }
           to { opacity: 1; transform: translate(-50%, 0); }
         }
-        @keyframes settingsFadeUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
         @keyframes settingsModalIn {
           from { opacity: 0; transform: scale(0.96) translateY(8px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
         .settings-toast { animation: settingsToastIn 0.25s ease-out both; }
-        .settings-fade-up { animation: settingsFadeUp 0.35s ease-out both; }
         .settings-modal-in { animation: settingsModalIn 0.2s ease-out both; }
         input[type="range"]::-webkit-slider-thumb {
           appearance: none;
@@ -292,15 +314,14 @@ export default function Settings() {
         }
       `}</style>
 
-      {/* ambient glow, consistent with the rest of StudyOS */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -right-20 -top-20 h-120 w-120 rounded-full bg-purple-500/10 blur-[160px]" />
-        <div className="absolute -left-20 bottom-0 h-96 w-[24rem] rounded-full bg-fuchsia-500/6 blur-[160px]" />
+        <div className="absolute -right-20 -top-20 h-[30rem] w-[30rem] rounded-full bg-purple-500/10 blur-[160px]" />
+        <div className="absolute -left-20 bottom-0 h-[24rem] w-[24rem] rounded-full bg-fuchsia-500/[0.06] blur-[160px]" />
       </div>
 
       <div className="relative z-10 flex h-screen">
         {/* ── Left nav ─────────────────────────────────────── */}
-        <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-white/10 bg-white/2 backdrop-blur-sm px-4 py-8 relative z-30 overflow-y-auto">
+        <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col border-r border-white/10 bg-white/[0.02] backdrop-blur-sm px-4 py-8 relative z-30 overflow-y-auto">
           <h1 className="text-2xl font-black px-2 mb-1">Settings</h1>
           <p className="text-sm text-white/40 px-2 mb-8">Customize your StudyOS experience.</p>
 
@@ -315,7 +336,7 @@ export default function Settings() {
                     : "border border-transparent text-white/55 hover:text-white hover:bg-white/5"
                 } ${id === "danger" ? "mt-4 text-red-400/80 hover:text-red-300" : ""}`}
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon className="w-4 h-4 flex-shrink-0" />
                 {label}
               </button>
             ))}
@@ -323,11 +344,8 @@ export default function Settings() {
         </aside>
 
         {/* ── Content ──────────────────────────────────────── */}
-        {/* min-w-0 lets this flex child shrink to fit instead of
-            forcing the page wider than the viewport. */}
         <div ref={scrollAreaRef} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
           <div className="max-w-3xl mx-auto px-6 py-8 lg:py-10 space-y-6">
-            {/* mobile header (left nav is hidden below lg breakpoint) */}
             <div className="lg:hidden mb-2">
               <h1 className="text-3xl font-black">Settings</h1>
               <p className="text-white/40 mt-1">Customize your StudyOS experience.</p>
@@ -345,8 +363,8 @@ export default function Settings() {
                 <div>
                   <label className="text-sm text-white/60 block mb-2.5">Theme</label>
                   <Segmented
-                    value={theme}
-                    onChange={withSave(setTheme)}
+                    value={prefs.theme}
+                    onChange={(v) => savePrefs({ theme: v })}
                     options={[
                       { value: "dark", label: "Dark", icon: Moon },
                       { value: "light", label: "Light", icon: Sun },
@@ -358,8 +376,8 @@ export default function Settings() {
                 <div>
                   <label className="text-sm text-white/60 block mb-2.5">Interface Density</label>
                   <Segmented
-                    value={density}
-                    onChange={withSave(setDensity)}
+                    value={prefs.density}
+                    onChange={(v) => savePrefs({ density: v })}
                     options={[
                       { value: "comfortable", label: "Comfortable", icon: Sun },
                       { value: "compact", label: "Compact", icon: Moon },
@@ -375,11 +393,11 @@ export default function Settings() {
                     <button
                       key={a.value}
                       title={a.name}
-                      onClick={() => withSave(setAccent)(a.value)}
+                      onClick={() => savePrefs({ accentColor: a.value })}
                       className="relative w-9 h-9 rounded-full transition-transform hover:scale-110"
                       style={{ background: a.value }}
                     >
-                      {accent === a.value && (
+                      {prefs.accentColor === a.value && (
                         <span className="absolute inset-0 flex items-center justify-center">
                           <Check className="w-4 h-4 text-white drop-shadow" />
                         </span>
@@ -387,6 +405,9 @@ export default function Settings() {
                     </button>
                   ))}
                 </div>
+                <p className="text-xs text-white/30 mt-2.5">
+                  Saved with your account — theming the whole app to this color is a bigger visual pass, coming later.
+                </p>
               </div>
             </SectionCard>
 
@@ -399,9 +420,9 @@ export default function Settings() {
               sectionRef={setSectionRef("study")}
             >
               <div className="grid gap-6 sm:grid-cols-3">
-                <NumberField label="Daily Study Goal (hrs)" value={studyGoal} onChange={withSave(setStudyGoal)} />
-                <NumberField label="Flashcards / Session" value={cardsPerSession} onChange={withSave(setCardsPerSession)} />
-                <NumberField label="Weekly Goal (hrs)" value={weeklyGoal} onChange={withSave(setWeeklyGoal)} />
+                <NumberField label="Daily Study Goal (hrs)" value={prefs.dailyStudyGoalHours} onChange={(v) => savePrefs({ dailyStudyGoalHours: v })} />
+                <NumberField label="Flashcards / Session" value={prefs.cardsPerSession} onChange={(v) => savePrefs({ cardsPerSession: v })} />
+                <NumberField label="Weekly Goal (hrs)" value={prefs.weeklyStudyGoalHours} onChange={(v) => savePrefs({ weeklyStudyGoalHours: v })} />
               </div>
             </SectionCard>
 
@@ -410,21 +431,21 @@ export default function Settings() {
               id="focus"
               icon={Timer}
               title="Focus & Pomodoro"
-              description="Timer lengths for focus sessions."
+              description="These durations are what your actual Pomodoro timer uses by default."
               sectionRef={setSectionRef("focus")}
             >
               <div className="grid gap-7 sm:grid-cols-3">
-                <SliderField label="Pomodoro Duration" value={pomodoro} onChange={withSave(setPomodoro)} min={10} max={60} unit=" min" />
-                <SliderField label="Short Break" value={shortBreak} onChange={withSave(setShortBreak)} min={1} max={15} unit=" min" />
-                <SliderField label="Long Break" value={longBreak} onChange={withSave(setLongBreak)} min={5} max={30} unit=" min" />
+                <SliderField label="Pomodoro Duration" value={prefs.pomodoroMinutes} onChange={(v) => savePrefs({ pomodoroMinutes: v })} min={10} max={60} unit=" min" />
+                <SliderField label="Short Break" value={prefs.shortBreakMinutes} onChange={(v) => savePrefs({ shortBreakMinutes: v })} min={1} max={15} unit=" min" />
+                <SliderField label="Long Break" value={prefs.longBreakMinutes} onChange={(v) => savePrefs({ longBreakMinutes: v })} min={5} max={30} unit=" min" />
               </div>
 
               <div className="flex items-center justify-between mt-7 pt-6 border-t border-white/10">
                 <div>
                   <p className="text-sm text-white">Auto-start breaks</p>
-                  <p className="text-xs text-white/40 mt-0.5">Skip the manual "start break" tap between sessions.</p>
+                  <p className="text-xs text-white/40 mt-0.5">Saved, but the timer doesn't act on this automatically yet.</p>
                 </div>
-                <Toggle checked={autoStartBreaks} onChange={withSave(setAutoStartBreaks)} />
+                <Toggle checked={prefs.autoStartBreaks} onChange={(v) => savePrefs({ autoStartBreaks: v })} />
               </div>
             </SectionCard>
 
@@ -433,16 +454,21 @@ export default function Settings() {
               id="notifications"
               icon={Bell}
               title="Notifications"
-              description="Choose what StudyOS should remind you about."
+              description="These preferences are saved, but no email/push delivery system exists yet — nothing will actually be sent until that's built."
               sectionRef={setSectionRef("notifications")}
             >
               <div className="space-y-1">
-                {Object.entries(notifs).map(([label, val]) => (
-                  <div key={label} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+                {[
+                  ["studyReminders", "Study reminders"],
+                  ["flashcardReminders", "Flashcard reminders"],
+                  ["deadlineReminders", "Deadline reminders"],
+                  ["weeklyReports", "Weekly reports"],
+                ].map(([key, label]) => (
+                  <div key={key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
                     <span className="text-sm text-white/80">{label}</span>
                     <Toggle
-                      checked={val}
-                      onChange={withSave((next) => setNotifs((prev) => ({ ...prev, [label]: next })))}
+                      checked={prefs.notifications[key]}
+                      onChange={(v) => savePrefs({ notifications: { ...prefs.notifications, [key]: v } })}
                     />
                   </div>
                 ))}
@@ -454,32 +480,22 @@ export default function Settings() {
               id="data"
               icon={Database}
               title="Data & Backup"
-              description="Export your notes and progress, or restore from a backup."
+              description="Export a real copy of everything you've created in StudyOS."
               sectionRef={setSectionRef("data")}
             >
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => flashSaved("Preparing export…")}
-                  className="flex items-center gap-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 px-5 py-3 text-sm font-medium transition-colors shadow-lg shadow-purple-900/30"
+                  onClick={handleExport}
+                  disabled={exporting}
+                  className="flex items-center gap-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 px-5 py-3 text-sm font-medium transition-colors shadow-lg shadow-purple-900/30"
                 >
-                  <Download className="w-4 h-4" />
-                  Export Data
-                </button>
-                <button
-                  onClick={() => flashSaved("Select a backup file to import")}
-                  className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-5 py-3 text-sm font-medium transition-colors"
-                >
-                  <Upload className="w-4 h-4" />
-                  Import Backup
-                </button>
-                <button
-                  onClick={() => flashSaved("Cache cleared")}
-                  className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-5 py-3 text-sm font-medium transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Clear Local Cache
+                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {exporting ? "Preparing…" : "Export Data"}
                 </button>
               </div>
+              <p className="text-xs text-white/30 mt-3">
+                Downloads a JSON file with your subjects, notes, flashcards, tasks, focus sessions, and badges.
+              </p>
             </SectionCard>
 
             {/* Integrations */}
@@ -487,14 +503,14 @@ export default function Settings() {
               id="integrations"
               icon={Cloud}
               title="Integrations"
-              description="Services connected to your StudyOS account."
+              description="Not built yet — no OAuth connections exist for these services."
               sectionRef={setSectionRef("integrations")}
             >
               <div className="space-y-1">
                 {[
-                  { name: "Google Drive", detail: "Sync notes & flashcard backups", icon: Cloud, connected: true },
-                  { name: "GitHub", detail: "Import code snippets into notes", icon: GitBranch, connected: false },
-                ].map(({ name, detail, icon: Icon, connected }) => (
+                  { name: "Google Drive", detail: "Sync notes & flashcard backups", icon: Cloud },
+                  { name: "GitHub", detail: "Import code snippets into notes", icon: GitBranch },
+                ].map(({ name, detail, icon: Icon }) => (
                   <div key={name} className="flex items-center justify-between py-3.5 border-b border-white/5 last:border-0">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/60">
@@ -505,16 +521,9 @@ export default function Settings() {
                         <p className="text-xs text-white/40">{detail}</p>
                       </div>
                     </div>
-                    <button
-                      onClick={() => flashSaved(connected ? `${name} disconnected` : `${name} connected`)}
-                      className={`text-xs font-medium px-3.5 py-1.5 rounded-lg border transition-colors ${
-                        connected
-                          ? "border-emerald-400/30 text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/15"
-                          : "border-white/10 text-white/60 hover:text-white hover:bg-white/10"
-                      }`}
-                    >
-                      {connected ? "Connected" : "Connect"}
-                    </button>
+                    <span className="text-xs font-medium px-3.5 py-1.5 rounded-lg border border-white/10 text-white/30">
+                      Not available
+                    </span>
                   </div>
                 ))}
               </div>
@@ -525,54 +534,32 @@ export default function Settings() {
               id="security"
               icon={Shield}
               title="Security"
-              description="Keep your account locked down."
+              description="These aren't built as real features yet — shown honestly disabled rather than faked."
               sectionRef={setSectionRef("security")}
             >
               <div className="space-y-1">
-                <button
-                  onClick={() => setChangePwOpen((v) => !v)}
-                  className="w-full flex items-center justify-between py-3.5 border-b border-white/5 text-left"
-                >
+                <div className="flex items-center justify-between py-3.5 border-b border-white/5 opacity-40">
                   <div className="flex items-center gap-3">
                     <KeyRound className="w-4 h-4 text-white/50" />
                     <span className="text-sm text-white">Change Password</span>
                   </div>
-                  <span className="text-xs text-white/40">{changePwOpen ? "Close" : "Update"}</span>
-                </button>
-
-                {changePwOpen && (
-                  <div className="settings-fade-up grid gap-3 sm:grid-cols-3 py-4 border-b border-white/5">
-                    <input type="password" placeholder="Current password" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm outline-none focus:border-purple-400/50" />
-                    <input type="password" placeholder="New password" className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm outline-none focus:border-purple-400/50" />
-                    <button
-                      onClick={() => { setChangePwOpen(false); flashSaved("Password updated"); }}
-                      className="rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2.5 text-sm font-medium transition-colors"
-                    >
-                      Update Password
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between py-3.5 border-b border-white/5">
+                  <span className="text-xs text-white/40">Coming soon</span>
+                </div>
+                <div className="flex items-center justify-between py-3.5 border-b border-white/5 opacity-40">
                   <div className="flex items-center gap-3">
                     <Smartphone className="w-4 h-4 text-white/50" />
-                    <div>
-                      <p className="text-sm text-white">Two-Factor Authentication</p>
-                      <p className="text-xs text-white/40 mt-0.5">Extra verification step at sign-in.</p>
-                    </div>
+                    <span className="text-sm text-white">Two-Factor Authentication</span>
                   </div>
-                  <Toggle checked={twoFactor} onChange={withSave(setTwoFactor)} />
+                  <span className="text-xs text-white/40">Coming soon</span>
                 </div>
-
                 <button
-                  onClick={() => flashSaved("Signed out of 1 other session")}
+                  onClick={async () => { await logout(); navigate("/login"); }}
                   className="w-full flex items-center justify-between py-3.5 text-left"
                 >
                   <div className="flex items-center gap-3">
                     <LogOut className="w-4 h-4 text-white/50" />
-                    <span className="text-sm text-white">Manage Sessions</span>
+                    <span className="text-sm text-white">Log out</span>
                   </div>
-                  <span className="text-xs text-white/40">2 active</span>
                 </button>
               </div>
             </SectionCard>
@@ -582,34 +569,29 @@ export default function Settings() {
               id="danger"
               icon={Trash2}
               title="Danger Zone"
-              description="These actions are permanent and cannot be undone."
+              description="This action is permanent and genuinely deletes everything — not a placeholder."
               tone="danger"
               sectionRef={setSectionRef("danger")}
             >
-              <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/4 px-5 py-4">
+              <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/[0.04] px-5 py-4">
                 <div>
                   <p className="text-sm text-white font-medium">Delete Account</p>
-                  <p className="text-xs text-white/40 mt-0.5">Permanently erase your notes, flashcards, and progress.</p>
+                  <p className="text-xs text-white/40 mt-0.5">Permanently erase your notes, flashcards, tasks, and progress.</p>
                 </div>
                 <button
                   onClick={() => setDeleteOpen(true)}
-                  className="rounded-xl bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-sm font-semibold transition-colors shrink-0"
+                  className="rounded-xl bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-sm font-semibold transition-colors flex-shrink-0"
                 >
                   Delete Account
                 </button>
               </div>
             </SectionCard>
 
-            {/* Bottom scroll headroom — without this, the last one or two
-                sections can never be scrolled up to the "active" comparison
-                point, since the container simply runs out of room to scroll
-                further once they're already near the bottom. */}
             <div className="h-[60vh]" />
           </div>
         </div>
       </div>
 
-      {/* toast */}
       {toast && (
         <div className="settings-toast fixed bottom-6 left-1/2 z-50 flex items-center gap-2 rounded-full bg-[#15111c] border border-white/10 px-4 py-2.5 text-sm shadow-2xl shadow-black/50">
           <Check className="w-4 h-4 text-emerald-400" />
@@ -617,7 +599,6 @@ export default function Settings() {
         </div>
       )}
 
-      {/* delete confirmation modal */}
       {deleteOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="settings-modal-in w-full max-w-sm rounded-2xl border border-red-500/20 bg-[#15111c] p-6 shadow-2xl">
@@ -626,7 +607,7 @@ export default function Settings() {
             </div>
             <h3 className="text-lg font-semibold text-white">Delete your account?</h3>
             <p className="text-sm text-white/50 mt-1.5">
-              This permanently deletes all notes, flashcards, and study history. This cannot be undone.
+              This permanently deletes all notes, flashcards, tasks, focus history, and badges. This cannot be undone.
             </p>
             <p className="text-xs text-white/40 mt-4 mb-1.5">
               Type <span className="text-white font-mono">DELETE</span> to confirm
@@ -645,15 +626,12 @@ export default function Settings() {
                 Cancel
               </button>
               <button
-                disabled={deleteConfirmText !== "DELETE"}
-                onClick={() => {
-                  setDeleteOpen(false);
-                  setDeleteConfirmText("");
-                  flashSaved("Account deletion requested");
-                }}
-                className="flex-1 rounded-xl bg-red-500/90 hover:bg-red-500 disabled:opacity-30 disabled:hover:bg-red-500/90 py-2.5 text-sm font-semibold transition-colors"
+                disabled={deleteConfirmText !== "DELETE" || deleting}
+                onClick={handleDeleteAccount}
+                className="flex-1 rounded-xl bg-red-500/90 hover:bg-red-500 disabled:opacity-30 disabled:hover:bg-red-500/90 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
               >
-                Delete Forever
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {deleting ? "Deleting…" : "Delete Forever"}
               </button>
             </div>
           </div>

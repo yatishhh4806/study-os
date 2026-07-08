@@ -110,6 +110,24 @@ const userSchema = new mongoose.Schema(
       dailyMessageCount: { type: Number, default: 0 },
       lastResetDate: { type: Date, default: null },
     },
+    preferences: {
+      theme: { type: String, enum: ["dark", "light", "system"], default: "dark" },
+      accentColor: { type: String, default: "#a855f7" },
+      density: { type: String, enum: ["comfortable", "compact"], default: "comfortable" },
+      dailyStudyGoalHours: { type: Number, default: 4 },
+      cardsPerSession: { type: Number, default: 20 },
+      weeklyStudyGoalHours: { type: Number, default: 30 },
+      pomodoroMinutes: { type: Number, default: 25 },
+      shortBreakMinutes: { type: Number, default: 5 },
+      longBreakMinutes: { type: Number, default: 15 },
+      autoStartBreaks: { type: Boolean, default: true },
+      notifications: {
+        studyReminders: { type: Boolean, default: true },
+        flashcardReminders: { type: Boolean, default: true },
+        deadlineReminders: { type: Boolean, default: true },
+        weeklyReports: { type: Boolean, default: false },
+      },
+    },
   },
   { timestamps: true }
 );
