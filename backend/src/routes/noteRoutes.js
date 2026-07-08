@@ -20,5 +20,3 @@ router.patch("/:id", updateNote);
 router.delete("/:id", deleteNote);
 
 export default router;
-
-//yes
