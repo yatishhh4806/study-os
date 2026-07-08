@@ -131,7 +131,7 @@ function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Enter Your Email"
+                placeholder="Enter your email"
                 className="
                   mt-3
                   w-full
@@ -159,7 +159,7 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Enter Your Password"
+                placeholder="Enter your password"
                 className="
                   mt-3
                   w-full
@@ -178,12 +178,12 @@ function Login() {
 
             {/* Forgot */}
             <div className="mt-4 flex justify-end">
-              <button
-                type="button"
+              <Link
+                to="/forgot-password"
                 className="text-sm text-purple-400 hover:text-purple-300"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
 
             {/* Sign In */}

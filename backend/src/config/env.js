@@ -23,7 +23,8 @@ const envSchema = z.object({
 
   GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
 
-  EMAIL_FROM: z.string().email().default("noreply@studyos.app"),
+  RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
+  EMAIL_FROM: z.string().email().default("onboarding@resend.dev"),
 
   // secures /api/cron/weekly-reset — Vercel sends this automatically as a
   // Bearer token when it invokes a scheduled cron job. Optional locally.

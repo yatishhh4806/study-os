@@ -11,6 +11,7 @@ import {
   REFRESH_COOKIE_NAME,
   refreshCookieOptions,
 } from "../utils/tokens.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../utils/email.js";
 
 const registerSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -47,16 +48,22 @@ export async function register(req, res, next) {
       throw new AppError("An account with this email already exists", 409, "EMAIL_TAKEN");
     }
 
+    const rawVerificationToken = generateRandomToken();
     const user = new User({
       name,
       email,
       passwordHash: password, // hashed by the pre-save hook on User
-      emailVerificationToken: generateRandomToken(),
+      emailVerificationToken: hashToken(rawVerificationToken), // store hashed, like refresh tokens — the raw one only ever goes out in the email
     });
     await user.save();
 
-    // TODO SWAP POINT: send user.emailVerificationToken via a real email
-    // provider here. Account works without verification for now.
+    // best-effort — a failed email shouldn't block account creation. The
+    // person can request a fresh verification link later if this fails.
+    try {
+      await sendVerificationEmail(user, rawVerificationToken);
+    } catch (emailErr) {
+      console.error("Failed to send verification email:", emailErr);
+    }
 
     const accessToken = await issueSession(res, user);
     res.status(201).json({ accessToken, user: user.toSafeJSON() });
@@ -195,6 +202,131 @@ export async function updateProfile(req, res, next) {
 
     await user.save();
     res.json({ user: user.toSafeJSON() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+const verifyEmailSchema = z.object({
+  token: z.string().min(1),
+});
+
+// GET /api/auth/verify-email?token=...
+export async function verifyEmail(req, res, next) {
+  try {
+    const parsed = verifyEmailSchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new AppError("A verification token is required", 422, "VALIDATION_ERROR");
+    }
+
+    const hashed = hashToken(parsed.data.token);
+    const user = await User.findOne({ emailVerificationToken: hashed }).select(
+      "+emailVerificationToken"
+    );
+
+    if (!user) {
+      throw new AppError("This verification link is invalid or has already been used", 400, "INVALID_TOKEN");
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    await user.save();
+
+    res.json({ verified: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/resend-verification — requires an active session, since
+// it's for a logged-in user whose email just hasn't been verified yet
+export async function resendVerification(req, res, next) {
+  try {
+    if (req.user.emailVerified) {
+      return res.json({ message: "Your email is already verified." });
+    }
+
+    const rawToken = generateRandomToken();
+    req.user.emailVerificationToken = hashToken(rawToken);
+    await req.user.save();
+
+    await sendVerificationEmail(req.user, rawToken);
+    res.json({ message: "Verification email sent." });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/forgot-password  { email }
+// Always responds with the same generic message regardless of whether the
+// email exists — revealing which emails are registered is a real
+// enumeration risk, so success/failure looks identical from the outside.
+export async function forgotPassword(req, res, next) {
+  try {
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+    }
+
+    const user = await User.findOne({ email: parsed.data.email });
+
+    if (user) {
+      const rawToken = generateRandomToken();
+      user.passwordResetToken = hashToken(rawToken);
+      user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await user.save();
+
+      try {
+        await sendPasswordResetEmail(user, rawToken);
+      } catch (emailErr) {
+        console.error("Failed to send password reset email:", emailErr);
+      }
+    }
+
+    res.json({
+      message: "If an account with that email exists, a password reset link has been sent.",
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// POST /api/auth/reset-password  { token, newPassword }
+export async function resetPassword(req, res, next) {
+  try {
+    const parsed = resetPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+    }
+
+    const hashed = hashToken(parsed.data.token);
+    const user = await User.findOne({
+      passwordResetToken: hashed,
+      passwordResetExpires: { $gt: new Date() },
+    }).select("+passwordResetToken +passwordResetExpires");
+
+    if (!user) {
+      throw new AppError("This reset link is invalid or has expired", 400, "INVALID_OR_EXPIRED_TOKEN");
+    }
+
+    user.passwordHash = parsed.data.newPassword; // re-hashed by the pre-save hook
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    // resetting the password invalidates any existing session — a stolen
+    // refresh token shouldn't survive a password reset
+    user.refreshTokenHash = null;
+    await user.save();
+
+    res.json({ message: "Password updated. Please log in with your new password." });
   } catch (err) {
     next(err);
   }
