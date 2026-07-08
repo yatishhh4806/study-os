@@ -131,7 +131,7 @@ function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Enter your email"
+                placeholder="Enter Your Email"
                 className="
                   mt-3
                   w-full
@@ -159,7 +159,7 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="Enter your password"
+                placeholder="Enter Your Password"
                 className="
                   mt-3
                   w-full
