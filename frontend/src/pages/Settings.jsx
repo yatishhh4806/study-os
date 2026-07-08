@@ -21,12 +21,15 @@ import {
   GitBranch,
   Loader2,
   Timer,
+  CreditCard,
+  Crown,
 } from "lucide-react";
 import { api } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 const NAV_SECTIONS = [
   { id: "appearance",    label: "Appearance",        icon: Palette },
+  { id: "billing",       label: "Billing",           icon: CreditCard },
   { id: "study",         label: "Study Preferences", icon: BookOpen },
   { id: "focus",         label: "Focus & Pomodoro",  icon: Timer },
   { id: "notifications", label: "Notifications",     icon: Bell },
@@ -157,11 +160,14 @@ function SectionCard({ id, icon: Icon, title, description, children, sectionRef,
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user, refreshUser } = useAuth();
 
   const [prefs, setPrefs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [billingInterval, setBillingInterval] = useState("monthly");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // danger zone modal
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -205,6 +211,49 @@ export default function Settings() {
     }
     load();
   }, []);
+
+  // handles landing back here after Stripe Checkout redirects to
+  // /dashboard/settings?billing=success (or canceled) — refetches the
+  // real user object so subscription.plan reflects what actually happened,
+  // rather than trusting the URL param itself
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const billingResult = params.get("billing");
+    if (!billingResult) return;
+
+    if (billingResult === "success") {
+      refreshUser().then(() => flashSaved("Welcome to Pro! 🎉"));
+    } else if (billingResult === "canceled") {
+      flashSaved("Checkout canceled — no changes made");
+    }
+    // strip the query param so a refresh doesn't re-trigger this
+    window.history.replaceState({}, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleUpgrade() {
+    setCheckoutLoading(true);
+    try {
+      const { data } = await api.post("/billing/checkout", { interval: billingInterval });
+      window.location.href = data.url; // hands off to Stripe's hosted checkout page
+    } catch (err) {
+      console.error("Failed to start checkout:", err);
+      flashSaved("Couldn't start checkout — try again");
+      setCheckoutLoading(false);
+    }
+  }
+
+  async function handleManageBilling() {
+    setPortalLoading(true);
+    try {
+      const { data } = await api.post("/billing/portal");
+      window.location.href = data.url; // Stripe's hosted portal handles cancel/upgrade/payment method changes
+    } catch (err) {
+      console.error("Failed to open billing portal:", err);
+      flashSaved("Couldn't open billing portal — try again");
+      setPortalLoading(false);
+    }
+  }
 
   // active nav highlight on scroll
   const [activeSection, setActiveSection] = useState(NAV_SECTIONS[0].id);
@@ -409,6 +458,90 @@ export default function Settings() {
                   Saved with your account — theming the whole app to this color is a bigger visual pass, coming later.
                 </p>
               </div>
+            </SectionCard>
+
+            {/* Billing */}
+            <SectionCard
+              id="billing"
+              icon={CreditCard}
+              title="Billing"
+              description={
+                user?.subscription?.plan === "pro"
+                  ? "You're on the Pro plan."
+                  : "Upgrade for higher AI Tutor limits and more."
+              }
+              sectionRef={setSectionRef("billing")}
+            >
+              {user?.subscription?.plan === "pro" ? (
+                <div className="flex items-center justify-between rounded-xl border border-purple-400/25 bg-purple-500/[0.06] px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-400/30 flex items-center justify-center">
+                      <Crown className="w-4 h-4 text-purple-300" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-white font-medium">Pro plan</p>
+                      <p className="text-xs text-white/40 mt-0.5">
+                        {user.subscription.cancelAtPeriodEnd
+                          ? `Cancels on ${new Date(user.subscription.currentPeriodEnd).toLocaleDateString()}`
+                          : user.subscription.currentPeriodEnd
+                          ? `Renews ${new Date(user.subscription.currentPeriodEnd).toLocaleDateString()}`
+                          : "Active"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleManageBilling}
+                    disabled={portalLoading}
+                    className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50 px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2"
+                  >
+                    {portalLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    Manage Billing
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="inline-flex rounded-xl bg-white/5 border border-white/10 p-1 gap-1 mb-5">
+                    {[
+                      { value: "monthly", label: "Monthly" },
+                      { value: "yearly", label: "Yearly — save more" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setBillingInterval(opt.value)}
+                        className={`px-3.5 py-1.5 rounded-lg text-sm transition-colors ${
+                          billingInterval === opt.value
+                            ? "bg-purple-500 text-white"
+                            : "text-white/55 hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl border border-purple-400/20 bg-purple-500/[0.04] px-5 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-400/25 flex items-center justify-center">
+                        <Crown className="w-4 h-4 text-purple-300" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-white font-medium">Upgrade to Pro</p>
+                        <p className="text-xs text-white/40 mt-0.5">
+                          Higher daily AI Tutor limit, unlimited flashcard decks
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleUpgrade}
+                      disabled={checkoutLoading}
+                      className="rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 px-4 py-2.5 text-sm font-semibold transition-colors shadow-lg shadow-purple-900/30 flex items-center gap-2 flex-shrink-0"
+                    >
+                      {checkoutLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      {checkoutLoading ? "Redirecting…" : "Upgrade"}
+                    </button>
+                  </div>
+                </>
+              )}
             </SectionCard>
 
             {/* Study Preferences */}
