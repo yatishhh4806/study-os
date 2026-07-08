@@ -1,5 +1,5 @@
 import { getDashboardGreeting } from "../../utils/DashboardGreeting";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   BookOpen,
   Calendar,
@@ -11,80 +11,14 @@ import {
   ArrowRight,
   TrendingUp,
   Zap,
-  CircleCheck,
   Circle,
   BookMarked,
   LayoutGrid,
+  Loader2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const currentUser = {
-  name: "Yatish",
-  studyStreak: 18,
-  pendingTasks: 6,
-  productivity: 87,
-  focusScore: 82,
-};
-
-const TASKS = [
-  { label: "Complete React Dashboard", done: true },
-  { label: "Practice DSA Graphs", done: true },
-  { label: "Review DBMS Notes", done: false },
-  { label: "Study Machine Learning", done: false },
-];
-
-const DEADLINES = [
-  { title: "SEPM Assignment", date: "Tomorrow", urgency: "high" },
-  { title: "ML Project", date: "3 Days", urgency: "medium" },
-  { title: "React Project", date: "5 Days", urgency: "low" },
-];
-
-const SUBJECTS = [
-  { name: "Data Structures", mastery: 78, color: "#a855f7", due: 5 },
-  { name: "Machine Learning", mastery: 54, color: "#22d3ee", due: 12 },
-  { name: "DBMS", mastery: 91, color: "#34d399", due: 2 },
-  { name: "Computer Networks", mastery: 42, color: "#fb923c", due: 9 },
-];
-
-const HEATMAP = [
-  0, 1, 0, 2, 3, 2, 1, 0, 0, 2, 3, 1, 0, 1, 2, 3, 3, 1, 0, 2, 3, 1, 0, 3, 2, 1,
-  2, 3, 1, 2,
-];
-
-const ACTIVITY = [
-  {
-    icon: "🧠",
-    text: "Reviewed 12 DSA flashcards",
-    time: "2h ago",
-    color: "#a855f7",
-  },
-  {
-    icon: "📝",
-    text: "Updated Graph Traversal notes",
-    time: "4h ago",
-    color: "#22d3ee",
-  },
-  {
-    icon: "⏱",
-    text: "Completed 2 × 25min focus blocks",
-    time: "5h ago",
-    color: "#34d399",
-  },
-  {
-    icon: "📄",
-    text: "Generated ML flashcards from PDF",
-    time: "Yesterday",
-    color: "#fb923c",
-  },
-];
-
-const SCHEDULE = [
-  { time: "10:00", label: "DSA Study Block", done: true },
-  { time: "12:00", label: "DBMS Revision", done: true },
-  { time: "15:00", label: "ML Flashcards Review", done: false, active: true },
-  { time: "18:00", label: "React Project Work", done: false },
-  { time: "21:00", label: "Evening Focus Session", done: false },
-];
+import { useAuth } from "../../context/AuthContext";
+import { api } from "../../lib/api";
 
 const URGENCY = { high: "#f87171", medium: "#fb923c", low: "#34d399" };
 
@@ -98,10 +32,108 @@ const glass = {
   transition: "border-color .2s",
 };
 
+// ── small formatting helpers ──────────────────────────────────
+function relativeTime(iso) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function deadlineLabel(iso) {
+  const target = new Date(iso);
+  target.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((target - today) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  return `${days} Days`;
+}
+
+// is "now" within this task's startTime–endTime window today? (used to
+// mark the current schedule block as active, like the old mock's `active` flag)
+function isActiveNow(task) {
+  if (!task.startTime || !task.endTime) return false;
+  const now = new Date();
+  const [sh, sm] = task.startTime.split(":").map(Number);
+  const [eh, em] = task.endTime.split(":").map(Number);
+  const start = new Date(now); start.setHours(sh, sm, 0, 0);
+  const end = new Date(now); end.setHours(eh, em, 0, 0);
+  return now >= start && now <= end;
+}
+
 export default function DashboardHome() {
-  const greeting = useMemo(() => getDashboardGreeting(currentUser), []);
-  const doneCount = TASKS.filter((t) => t.done).length;
-  const taskPct = Math.round((doneCount / TASKS.length) * 100);
+  const { user } = useAuth();
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const { data } = await api.get("/dashboard/summary");
+        setSummary(data);
+      } catch (err) {
+        console.error("Failed to load dashboard summary:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const greeting = useMemo(() => {
+    if (!user || !summary) return { title: "", subtitle: "" };
+    return getDashboardGreeting({ name: user.name, studyStreak: summary.streak });
+  }, [user, summary]);
+
+  // optimistic toggle for Study Plan checklist items, calls the real
+  // toggle endpoint and rolls back on failure
+  async function toggleTask(taskId) {
+    setSummary((prev) => ({
+      ...prev,
+      studyPlan: prev.studyPlan.map((t) =>
+        t._id === taskId ? { ...t, completed: !t.completed } : t
+      ),
+    }));
+    try {
+      await api.patch(`/tasks/${taskId}/toggle`);
+    } catch (err) {
+      console.error("Failed to toggle task:", err);
+      setSummary((prev) => ({
+        ...prev,
+        studyPlan: prev.studyPlan.map((t) =>
+          t._id === taskId ? { ...t, completed: !t.completed } : t
+        ),
+      }));
+    }
+  }
+
+  if (loading || !summary) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#050308",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Loader2 className="animate-spin" size={28} color="#a855f7" />
+      </div>
+    );
+  }
+
+  const doneCount = summary.studyPlan.filter((t) => t.completed).length;
+  const taskPct = summary.studyPlan.length
+    ? Math.round((doneCount / summary.studyPlan.length) * 100)
+    : 0;
 
   return (
     <div
@@ -109,7 +141,7 @@ export default function DashboardHome() {
         minHeight: "100vh",
         background:
           "radial-gradient(ellipse 80% 40% at 80% -5%,rgba(168,85,247,.1),transparent 55%),#050308",
-        padding: "44px 32px 60px",
+        padding: "28px 32px 60px",
         fontFamily:
           "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
         color: "#fff",
@@ -137,7 +169,7 @@ export default function DashboardHome() {
           boxShadow:
             "0 0 1px rgba(255,255,255,.02),0 30px 60px -20px rgba(0,0,0,.6),0 0 80px -30px rgba(168,85,247,.25)",
           position: "relative",
-          borderRadius: 20, // match whatever your `glass` token already uses here
+          borderRadius: 20,
         }}
       >
         {/* decorative blob — clipped to its OWN box, not the whole card */}
@@ -186,7 +218,7 @@ export default function DashboardHome() {
               <span
                 style={{ fontSize: 12.5, fontWeight: 700, color: "#fb923c" }}
               >
-                {currentUser.studyStreak}-day streak
+                {summary.streak}-day streak
               </span>
               <span
                 style={{
@@ -210,7 +242,7 @@ export default function DashboardHome() {
                 fontWeight: 900,
                 letterSpacing: -1.5,
                 margin: 0,
-                lineHeight: 1.5,
+                lineHeight: 1.2,
                 background: "linear-gradient(135deg,#fff 40%,#c4b5fd)",
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
@@ -232,7 +264,8 @@ export default function DashboardHome() {
               {greeting.subtitle}
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-              <button
+              <Link
+                to="/dashboard/focus"
                 style={{
                   padding: "10px 22px",
                   borderRadius: 12,
@@ -243,10 +276,12 @@ export default function DashboardHome() {
                   color: "#fff",
                   background: "linear-gradient(135deg,#a855f7,#a855f7bb)",
                   boxShadow: "0 8px 24px -6px rgba(168,85,247,.5)",
+                  textDecoration: "none",
+                  display: "inline-block",
                 }}
               >
                 Continue Studying
-              </button>
+              </Link>
               <Link
                 to="/dashboard/planner"
                 style={{
@@ -277,25 +312,25 @@ export default function DashboardHome() {
             {[
               {
                 label: "Study Hours",
-                value: "24.5h",
+                value: `${summary.studyHours}h`,
                 color: "#a855f7",
                 icon: <Clock size={14} />,
               },
               {
                 label: "Streak",
-                value: `${currentUser.studyStreak}d`,
+                value: `${summary.streak}d`,
                 color: "#fb923c",
                 icon: <Flame size={14} />,
               },
               {
-                label: "Productivity",
-                value: `${currentUser.productivity}%`,
+                label: "Today's Progress",
+                value: `${summary.todayCompletionPct}%`,
                 color: "#22d3ee",
                 icon: <TrendingUp size={14} />,
               },
               {
                 label: "Due Cards",
-                value: `${SUBJECTS.reduce((s, x) => s + x.due, 0)}`,
+                value: `${summary.dueCardsTotal}`,
                 color: "#f472b6",
                 icon: <Brain size={14} />,
               },
@@ -357,7 +392,7 @@ export default function DashboardHome() {
               </h2>
             </div>
             <span style={{ fontSize: 12, color: "#a855f7", fontWeight: 700 }}>
-              {doneCount}/{TASKS.length} done
+              {doneCount}/{summary.studyPlan.length} done
             </span>
           </div>
           <div
@@ -380,10 +415,16 @@ export default function DashboardHome() {
               }}
             />
           </div>
-          {TASKS.map((t, i) => (
+          {summary.studyPlan.length === 0 && (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)", padding: "8px 4px" }}>
+              No checklist items yet — add some from the Planner.
+            </p>
+          )}
+          {summary.studyPlan.map((t) => (
             <div
-              key={i}
+              key={t._id}
               className="hov-row"
+              onClick={() => toggleTask(t._id)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -392,14 +433,14 @@ export default function DashboardHome() {
                 borderRadius: 12,
                 marginBottom: 8,
                 border: "1px solid rgba(255,255,255,.06)",
-                background: t.done
+                background: t.completed
                   ? "rgba(168,85,247,.04)"
                   : "rgba(255,255,255,.02)",
                 transition: "all .15s",
                 cursor: "pointer",
               }}
             >
-              {t.done ? (
+              {t.completed ? (
                 <CheckCircle2 size={15} color="#a855f7" />
               ) : (
                 <Circle size={15} color="rgba(255,255,255,.2)" />
@@ -408,13 +449,13 @@ export default function DashboardHome() {
                 style={{
                   fontSize: 13.5,
                   flex: 1,
-                  color: t.done
+                  color: t.completed
                     ? "rgba(255,255,255,.4)"
                     : "rgba(255,255,255,.85)",
-                  textDecoration: t.done ? "line-through" : "none",
+                  textDecoration: t.completed ? "line-through" : "none",
                 }}
               >
-                {t.label}
+                {t.title}
               </span>
             </div>
           ))}
@@ -435,98 +476,107 @@ export default function DashboardHome() {
               Today's Schedule
             </h2>
           </div>
-          <div style={{ position: "relative", paddingLeft: 18 }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 6,
-                top: 6,
-                bottom: 6,
-                width: 1.5,
-                background: "rgba(168,85,247,.2)",
-                borderRadius: 999,
-              }}
-            />
-            {SCHEDULE.map((s, i) => (
+          {summary.schedule.length === 0 ? (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)" }}>
+              Nothing scheduled today.
+            </p>
+          ) : (
+            <div style={{ position: "relative", paddingLeft: 18 }}>
               <div
-                key={i}
                 style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 12,
-                  position: "relative",
-                  marginBottom: i < SCHEDULE.length - 1 ? 14 : 0,
+                  position: "absolute",
+                  left: 6,
+                  top: 6,
+                  bottom: 6,
+                  width: 1.5,
+                  background: "rgba(168,85,247,.2)",
+                  borderRadius: 999,
                 }}
-              >
-                <div
-                  style={{
-                    position: "absolute",
-                    left: -22,
-                    top: 4,
-                    width: 9,
-                    height: 9,
-                    borderRadius: "50%",
-                    background: s.done
-                      ? "#a855f7"
-                      : s.active
-                        ? "#22d3ee"
-                        : "rgba(255,255,255,.15)",
-                    boxShadow: s.active
-                      ? "0 0 10px rgba(34,211,238,.8)"
-                      : s.done
-                        ? "0 0 6px rgba(168,85,247,.5)"
-                        : "none",
-                    animation: s.active
-                      ? "pulse 2s ease-in-out infinite"
-                      : "none",
-                  }}
-                />
-                <div style={{ flex: 1 }}>
+              />
+              {summary.schedule.map((s, i) => {
+                const active = !s.completed && isActiveNow(s);
+                return (
                   <div
+                    key={s._id}
                     style={{
                       display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      alignItems: "flex-start",
+                      gap: 12,
+                      position: "relative",
+                      marginBottom: i < summary.schedule.length - 1 ? 14 : 0,
                     }}
                   >
-                    <span
+                    <div
                       style={{
-                        fontSize: 13.5,
-                        fontWeight: s.active ? 700 : 500,
-                        color: s.done
-                          ? "rgba(255,255,255,.35)"
-                          : s.active
-                            ? "#fff"
-                            : "rgba(255,255,255,.75)",
-                        textDecoration: s.done ? "line-through" : "none",
+                        position: "absolute",
+                        left: -22,
+                        top: 4,
+                        width: 9,
+                        height: 9,
+                        borderRadius: "50%",
+                        background: s.completed
+                          ? "#a855f7"
+                          : active
+                            ? "#22d3ee"
+                            : "rgba(255,255,255,.15)",
+                        boxShadow: active
+                          ? "0 0 10px rgba(34,211,238,.8)"
+                          : s.completed
+                            ? "0 0 6px rgba(168,85,247,.5)"
+                            : "none",
+                        animation: active
+                          ? "pulse 2s ease-in-out infinite"
+                          : "none",
                       }}
-                    >
-                      {s.label}
-                    </span>
-                    {s.active && (
-                      <span
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div
                         style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          padding: "2px 7px",
-                          borderRadius: 6,
-                          background: "rgba(34,211,238,.15)",
-                          color: "#22d3ee",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
-                        NOW
+                        <span
+                          style={{
+                            fontSize: 13.5,
+                            fontWeight: active ? 700 : 500,
+                            color: s.completed
+                              ? "rgba(255,255,255,.35)"
+                              : active
+                                ? "#fff"
+                                : "rgba(255,255,255,.75)",
+                            textDecoration: s.completed ? "line-through" : "none",
+                          }}
+                        >
+                          {s.title}
+                        </span>
+                        {active && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "2px 7px",
+                              borderRadius: 6,
+                              background: "rgba(34,211,238,.15)",
+                              color: "#22d3ee",
+                            }}
+                          >
+                            NOW
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        style={{ fontSize: 11.5, color: "rgba(255,255,255,.3)" }}
+                      >
+                        {s.startTime || ""}
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <span
-                    style={{ fontSize: 11.5, color: "rgba(255,255,255,.3)" }}
-                  >
-                    {s.time}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Deadlines */}
@@ -545,7 +595,8 @@ export default function DashboardHome() {
                 Deadlines
               </h2>
             </div>
-            <button
+            <Link
+              to="/dashboard/planner"
               style={{
                 fontSize: 12,
                 color: "#a855f7",
@@ -556,14 +607,20 @@ export default function DashboardHome() {
                 alignItems: "center",
                 gap: 4,
                 fontWeight: 700,
+                textDecoration: "none",
               }}
             >
               All <ArrowRight size={11} />
-            </button>
+            </Link>
           </div>
-          {DEADLINES.map((d, i) => (
+          {summary.deadlines.length === 0 && (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)" }}>
+              No upcoming deadlines.
+            </p>
+          )}
+          {summary.deadlines.map((d) => (
             <div
-              key={i}
+              key={d._id}
               className="hov-row"
               style={{
                 padding: "13px 15px",
@@ -606,7 +663,7 @@ export default function DashboardHome() {
                     borderRadius: 7,
                   }}
                 >
-                  {d.date}
+                  {deadlineLabel(d.date)}
                 </span>
               </div>
             </div>
@@ -670,10 +727,15 @@ export default function DashboardHome() {
               via flashcards
             </span>
           </div>
-          {SUBJECTS.map((s, i) => (
+          {summary.subjects.length === 0 && (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)" }}>
+              Create a subject to start tracking mastery.
+            </p>
+          )}
+          {summary.subjects.map((s, i) => (
             <div
-              key={i}
-              style={{ marginBottom: i < SUBJECTS.length - 1 ? 16 : 0 }}
+              key={s.id}
+              style={{ marginBottom: i < summary.subjects.length - 1 ? 16 : 0 }}
             >
               <div
                 style={{
@@ -703,7 +765,7 @@ export default function DashboardHome() {
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {s.due > 0 && (
+                  {s.dueCards > 0 && (
                     <span
                       style={{
                         fontSize: 10.5,
@@ -714,13 +776,13 @@ export default function DashboardHome() {
                         borderRadius: 6,
                       }}
                     >
-                      {s.due} due
+                      {s.dueCards} due
                     </span>
                   )}
                   <span
                     style={{ fontSize: 13, fontWeight: 800, color: s.color }}
                   >
-                    {s.mastery}%
+                    {s.masteryPct}%
                   </span>
                 </div>
               </div>
@@ -735,7 +797,7 @@ export default function DashboardHome() {
                 <div
                   style={{
                     height: "100%",
-                    width: `${s.mastery}%`,
+                    width: `${s.masteryPct}%`,
                     borderRadius: 999,
                     background: `linear-gradient(90deg,${s.color},${s.color}88)`,
                     boxShadow: `0 0 8px ${s.color}55`,
@@ -775,7 +837,7 @@ export default function DashboardHome() {
               marginBottom: 12,
             }}
           >
-            {HEATMAP.map((v, i) => {
+            {summary.heatmap.map((v, i) => {
               const bg = [
                 "rgba(255,255,255,.06)",
                 "rgba(168,85,247,.25)",
@@ -846,11 +908,11 @@ export default function DashboardHome() {
             {[
               {
                 label: "Current Streak",
-                value: `${currentUser.studyStreak}d`,
+                value: `${summary.streak}d`,
                 color: "#fb923c",
               },
-              { label: "Best Streak", value: "24d", color: "#a855f7" },
-              { label: "This Month", value: "22d", color: "#34d399" },
+              { label: "Best Streak", value: `${summary.bestStreak}d`, color: "#a855f7" },
+              { label: "Weekly XP", value: `${summary.weeklyXP}`, color: "#34d399" },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: s.color }}>
@@ -885,7 +947,12 @@ export default function DashboardHome() {
               Recent Activity
             </h2>
           </div>
-          {ACTIVITY.map((a, i) => (
+          {summary.activity.length === 0 && (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)" }}>
+              Nothing yet — go study something!
+            </p>
+          )}
+          {summary.activity.map((a, i) => (
             <div
               key={i}
               style={{
@@ -894,7 +961,7 @@ export default function DashboardHome() {
                 gap: 12,
                 padding: "12px 0",
                 borderBottom:
-                  i < ACTIVITY.length - 1
+                  i < summary.activity.length - 1
                     ? "1px solid rgba(255,255,255,.05)"
                     : "none",
               }}
@@ -927,31 +994,11 @@ export default function DashboardHome() {
                   {a.text}
                 </p>
                 <span style={{ fontSize: 11.5, color: "rgba(255,255,255,.3)" }}>
-                  {a.time}
+                  {relativeTime(a.time)}
                 </span>
               </div>
             </div>
           ))}
-          <button
-            style={{
-              width: "100%",
-              marginTop: 14,
-              padding: "10px",
-              borderRadius: 12,
-              border: "1px solid rgba(168,85,247,.2)",
-              background: "rgba(168,85,247,.07)",
-              color: "#a855f7",
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}
-          >
-            View All <ArrowRight size={13} />
-          </button>
         </div>
       </div>
     </div>

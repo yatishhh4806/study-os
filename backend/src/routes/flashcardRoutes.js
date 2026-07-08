@@ -7,6 +7,7 @@ import {
   updateFlashcard,
   deleteFlashcard,
   reviewFlashcard,
+  generateFlashcardsFromText,
 } from "../controllers/flashcardController.js";
 
 const router = Router();
@@ -15,6 +16,7 @@ router.use(requireAuth);
 
 router.get("/", listFlashcards);
 router.post("/", createFlashcard);
+router.post("/generate", generateFlashcardsFromText);
 router.patch("/:id", updateFlashcard);
 router.delete("/:id", deleteFlashcard);
 router.post("/:id/review", reviewFlashcard);

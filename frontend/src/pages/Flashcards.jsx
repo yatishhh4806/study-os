@@ -1,119 +1,73 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Brain, Plus, Upload, PlayCircle, Sparkles, BookOpen,
-  ChevronRight, RotateCcw, Check, X, Zap, Clock,
-  Trophy, Target, Play, Pause, SkipForward, SkipBack,
-  FileText, Loader2, ChevronDown, Star, Trash2,
-  BarChart3, AlignLeft, PenLine, Layers, Search,
+  Brain, Plus, Upload, PlayCircle, Sparkles,
+  ChevronRight, X, Clock,
+  Trophy, Target, Play,
+  FileText, Loader2, ChevronDown, Trash2,
+  PenLine, Layers, Search,
   AlertCircle,
 } from "lucide-react";
+import { api } from "../lib/api";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
 const ACCENT = "#a855f7";
 const GLOW   = "rgba(168,85,247,0.45)";
 
-const PDF_LIMIT  = 3;   // free tier: max PDFs per user
+const PDF_LIMIT  = 3;   // free tier: max PDFs per user, enforced against real usage now
 const CARD_LIMIT = 30;  // max cards generated per source
 
 const SUBJECT_COLORS = ["#a855f7","#22d3ee","#f472b6","#fb923c","#34d399","#facc15","#60a5fa","#f87171"];
 
 const DIFFICULTIES = [
-  { label:"Again", value:1, color:"#f87171", short:"Again" },
-  { label:"Hard",  value:2, color:"#fb923c", short:"Hard"  },
-  { label:"Good",  value:3, color:"#a855f7", short:"Good"  },
-  { label:"Easy",  value:4, color:"#34d399", short:"Easy"  },
+  { label:"Again", value:1, color:"#f87171" },
+  { label:"Hard",  value:2, color:"#fb923c" },
+  { label:"Good",  value:3, color:"#a855f7" },
+  { label:"Easy",  value:4, color:"#34d399" },
 ];
+
+// maps the UI's 4-button difficulty scale to the SM-2 quality scale (0-5)
+// the backend actually schedules against — "Again" is a genuine fail
+// (resets repetitions), the rest are graded passes.
+const QUALITY_MAP = { 1: 1, 2: 3, 3: 4, 4: 5 };
 
 const SOURCES = [
-  { id:"manual",  icon:<PenLine size={16}/>,   label:"Manual",        desc:"Write cards yourself"         },
-  { id:"pdf",     icon:<FileText size={16}/>,  label:"From PDF",      desc:`Up to ${PDF_LIMIT} PDFs`      },
-  { id:"youtube", icon:<PlayCircle size={16}/>,  label:"YouTube",       desc:"Paste a video link"            },
-  { id:"ai",      icon:<Sparkles size={16}/>,  label:"AI Generate",   desc:"Paste any text"               },
+  { id:"pdf",     icon:<FileText size={16}/>,   label:"From PDF",    desc:`Up to ${PDF_LIMIT} PDFs`  },
+  { id:"youtube", icon:<PlayCircle size={16}/>, label:"YouTube",     desc:"Paste a video link"        },
+  { id:"ai",      icon:<Sparkles size={16}/>,   label:"AI Generate", desc:"Paste any text"            },
 ];
 
-const SAMPLE_SUBJECTS = [
-  { id:"s1", name:"Data Structures", color:"#a855f7", emoji:"🌲" },
-  { id:"s2", name:"Machine Learning",color:"#22d3ee", emoji:"🤖" },
-  { id:"s3", name:"DBMS",            color:"#f472b6", emoji:"🗄️" },
-];
-
-const makeId = () => crypto.randomUUID();
-
-const makeCard = (subjectId, q="", a="", source="manual") => ({
-  id: makeId(), subjectId, source,
-  question: q, answer: a,
-  difficulty: 0,
-  interval: 1, repetitions: 0, easeFactor: 2.5,
-  nextReviewDate: new Date().toISOString(),
-  lastReviewed: null,
-  createdAt: new Date().toISOString(),
-  mastered: false,
-});
-
-// SM-2 spaced repetition
-function sm2(card, quality) {
-  let { easeFactor, repetitions, interval } = card;
-  if (quality >= 3) {
-    if (repetitions === 0) interval = 1;
-    else if (repetitions === 1) interval = 6;
-    else interval = Math.round(interval * easeFactor);
-    repetitions++;
-  } else {
-    repetitions = 0;
-    interval = 1;
-  }
-  easeFactor = Math.max(1.3, easeFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  const nextReviewDate = new Date(Date.now() + interval * 86400000).toISOString();
-  return { ...card, easeFactor, repetitions, interval, nextReviewDate, lastReviewed: new Date().toISOString(), mastered: repetitions >= 3 };
+// ── backend <-> frontend card shape mapping ──
+// backend: { _id, front, back, source, easeFactor, interval, repetitions, dueDate, lastReviewedAt, totalReviews }
+// frontend (unchanged from the original UI): { id, subjectId, source, question, answer, ...sm2 fields, mastered }
+function toFrontendCard(fc, subjectId) {
+  return {
+    id: fc._id,
+    subjectId,
+    source: fc.source || "manual",
+    question: fc.front,
+    answer: fc.back,
+    interval: fc.interval,
+    repetitions: fc.repetitions,
+    easeFactor: fc.easeFactor,
+    nextReviewDate: fc.dueDate,
+    lastReviewed: fc.lastReviewedAt,
+    createdAt: fc.createdAt,
+    mastered: fc.repetitions >= 3, // same "mature card" convention used on the Dashboard/Badges
+  };
 }
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-async function callClaude(prompt) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      messages: [{ role:"user", content: prompt }],
-    }),
-  });
-  const data = await res.json();
-  return data.content?.[0]?.text || "";
-}
-
-async function generateCardsFromText(text, count, subject) {
-  const prompt = `You are a study assistant. Generate exactly ${count} high-quality spaced-repetition flashcards from the following content about "${subject}".
-
-CONTENT:
-${text.slice(0, 3000)}
-
-Rules:
-- Questions should test understanding, not just recall
-- Answers should be concise (1-3 sentences)
-- Cover different concepts
-- Return ONLY a JSON array, no markdown, no explanation
-
-Format:
-[{"question":"...","answer":"..."},...]`;
-
-  const raw = await callClaude(prompt);
-  try {
-    const clean = raw.replace(/```json|```/g, "").trim();
-    return JSON.parse(clean);
-  } catch {
-    return [];
-  }
-}
+// ─── HELPERS (client-side only — PDF text extraction, YouTube mock) ──────────
 
 async function extractYouTubeTranscript(url) {
   const match = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
   if (!match) return null;
-  // In production, use your backend: GET /api/transcript?videoId=...
-  // For now return a mock so the UI is fully wired
-  return `[Transcript would be fetched from YouTube video ID: ${match[1]}. In production, connect this to your Velora backend with a YouTube Data API v3 or youtube-transcript npm package.]`;
+  // NOTE: real transcript extraction isn't built yet — that needs either
+  // the YouTube Data API (captions endpoint, requires OAuth for many
+  // videos) or a package like youtube-transcript. This is an honest
+  // placeholder, not a working feature, so the generation pipeline can
+  // still be exercised end-to-end.
+  return `[Transcript would be fetched from YouTube video ID: ${match[1]}. Real caption extraction isn't wired up yet.]`;
 }
 
 // ─── FLIP CARD ───────────────────────────────────────────────────────────────
@@ -130,7 +84,6 @@ function FlipCard({ card, flipped, onFlip }) {
         transformStyle:"preserve-3d",
         transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
       }}>
-        {/* Front */}
         <div style={{
           position:"absolute",inset:0,borderRadius:24,
           background:"linear-gradient(135deg,rgba(22,14,32,.95),rgba(10,7,15,.98))",
@@ -150,7 +103,6 @@ function FlipCard({ card, flipped, onFlip }) {
           </p>
           <span style={{fontSize:12,color:"rgba(255,255,255,.25)",marginTop:8}}>Click to reveal answer</span>
         </div>
-        {/* Back */}
         <div style={{
           position:"absolute",inset:0,borderRadius:24,
           background:"linear-gradient(135deg,rgba(168,85,247,.12),rgba(10,7,15,.98))",
@@ -177,9 +129,9 @@ function FlipCard({ card, flipped, onFlip }) {
 
 // ─── GENERATE MODAL ──────────────────────────────────────────────────────────
 
-function GenerateModal({ subjects, pdfCount, onGenerated, onClose }) {
+function GenerateModal({ subjects, pdfCount, getDeckId, onGenerated, onClose }) {
   const [source,     setSource]     = useState("ai");
-  const [subjId,     setSubjId]     = useState(subjects[0]?.id || "");
+  const [subjId,     setSubjId]     = useState(subjects[0]?._id || "");
   const [cardCount,  setCardCount]  = useState(10);
   const [text,       setText]       = useState("");
   const [ytUrl,      setYtUrl]      = useState("");
@@ -189,8 +141,6 @@ function GenerateModal({ subjects, pdfCount, onGenerated, onClose }) {
   const [status,     setStatus]     = useState("");
   const [error,      setError]      = useState("");
   const fileRef = useRef();
-
-  const subj = subjects.find(s=>s.id===subjId);
 
   const extractPdfText = async (file) => {
     if (typeof window.pdfjsLib === "undefined") {
@@ -239,15 +189,20 @@ function GenerateModal({ subjects, pdfCount, onGenerated, onClose }) {
         setStatus("Generating cards with AI…");
       }
 
-      const count  = Math.min(cardCount, CARD_LIMIT);
-      const pairs  = await generateCardsFromText(content, count, subj?.name || "");
-      if (!pairs.length) { setError("No cards generated. Try different content."); setLoading(false); return; }
+      const count = Math.min(cardCount, CARD_LIMIT);
+      const deckId = await getDeckId(subjId);
 
-      const cards = pairs.map(p => makeCard(subjId, p.question, p.answer, source));
-      onGenerated(cards);
+      const { data } = await api.post("/flashcards/generate", {
+        deckId,
+        text: content,
+        count,
+        source,
+      });
+
+      onGenerated(subjId, data.flashcards);
       onClose();
-    } catch(e) {
-      setError("Generation failed. Check your connection and try again.");
+    } catch (e) {
+      setError(e.response?.data?.error || "Generation failed. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -280,23 +235,21 @@ function GenerateModal({ subjects, pdfCount, onGenerated, onClose }) {
           </button>
         </div>
 
-        {/* Subject */}
         <div style={{marginBottom:20}}>
           <label style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.5)",letterSpacing:.8,display:"block",marginBottom:8}}>SUBJECT</label>
           <select value={subjId} onChange={e=>setSubjId(e.target.value)}
             style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",
               borderRadius:12,padding:"12px 14px",color:"#fff",fontSize:14,outline:"none",cursor:"pointer"}}>
             {subjects.map(s=>(
-              <option key={s.id} value={s.id} style={{background:"#09070f"}}>{s.emoji} {s.name}</option>
+              <option key={s._id} value={s._id} style={{background:"#09070f"}}>{s.emoji} {s.name}</option>
             ))}
           </select>
         </div>
 
-        {/* Source tabs */}
         <div style={{marginBottom:20}}>
           <label style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.5)",letterSpacing:.8,display:"block",marginBottom:8}}>SOURCE</label>
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
-            {SOURCES.filter(s=>s.id!=="manual").map(s=>{
+            {SOURCES.map(s=>{
               const isA = source===s.id;
               const locked = s.id==="pdf" && pdfCount>=PDF_LIMIT;
               return (
@@ -322,7 +275,6 @@ function GenerateModal({ subjects, pdfCount, onGenerated, onClose }) {
           </div>
         </div>
 
-        {/* Source-specific input */}
         {source==="ai" && (
           <div style={{marginBottom:20}}>
             <label style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.5)",letterSpacing:.8,display:"block",marginBottom:8}}>
@@ -369,12 +321,11 @@ function GenerateModal({ subjects, pdfCount, onGenerated, onClose }) {
                 border:"1px solid rgba(255,255,255,.1)",borderRadius:12,
                 padding:"12px 14px",color:"#fff",fontSize:14,outline:"none",boxSizing:"border-box"}}/>
             <p style={{fontSize:12,color:"rgba(255,255,255,.3)",marginTop:8,lineHeight:1.5}}>
-              ⚠ Requires transcript API connected in your Velora backend. Wires automatically once added.
+              ⚠ Transcript extraction isn't wired up yet — this will generate cards from a placeholder for now.
             </p>
           </div>
         )}
 
-        {/* Card count */}
         <div style={{marginBottom:24}}>
           <label style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.5)",letterSpacing:.8,display:"block",marginBottom:10}}>
             NUMBER OF CARDS — <span style={{color:ACCENT}}>{cardCount}</span>
@@ -424,16 +375,27 @@ function GenerateModal({ subjects, pdfCount, onGenerated, onClose }) {
 
 // ─── CREATE CARD MODAL ───────────────────────────────────────────────────────
 
-function CreateCardModal({ subjects, onSave, onClose }) {
-  const [subjId, setSubjId] = useState(subjects[0]?.id||"");
+function CreateCardModal({ subjects, getDeckId, onSave, onClose }) {
+  const [subjId, setSubjId] = useState(subjects[0]?._id || "");
   const [q, setQ] = useState("");
   const [a, setA] = useState("");
-  const [diff, setDiff] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  const save = () => {
+  const save = async () => {
     if (!q.trim()||!a.trim()) return;
-    onSave(makeCard(subjId,q,a,"manual"));
-    onClose();
+    setSaving(true);
+    setError("");
+    try {
+      const deckId = await getDeckId(subjId);
+      const { data } = await api.post("/flashcards", { deckId, front: q, back: a, source: "manual" });
+      onSave(subjId, data.flashcard);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to save card.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -458,7 +420,7 @@ function CreateCardModal({ subjects, onSave, onClose }) {
           <select value={subjId} onChange={e=>setSubjId(e.target.value)}
             style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.1)",
               borderRadius:10,padding:"10px 12px",color:"#fff",fontSize:14,outline:"none",cursor:"pointer"}}>
-            {subjects.map(s=><option key={s.id} value={s.id} style={{background:"#09070f"}}>{s.emoji} {s.name}</option>)}
+            {subjects.map(s=><option key={s._id} value={s._id} style={{background:"#09070f"}}>{s.emoji} {s.name}</option>)}
           </select>
         </div>
 
@@ -470,7 +432,7 @@ function CreateCardModal({ subjects, onSave, onClose }) {
               resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
         </div>
 
-        <div style={{marginBottom:20}}>
+        <div style={{marginBottom:12}}>
           <label style={{fontSize:12,fontWeight:600,color:"rgba(255,255,255,.45)",letterSpacing:.8,display:"block",marginBottom:6}}>ANSWER</label>
           <textarea value={a} onChange={e=>setA(e.target.value)} placeholder="Depth First Search — explores as deep as possible before backtracking."
             style={{width:"100%",minHeight:90,background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.09)",
@@ -478,12 +440,20 @@ function CreateCardModal({ subjects, onSave, onClose }) {
               resize:"none",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
         </div>
 
-        <button onClick={save} disabled={!q.trim()||!a.trim()}
+        {error && (
+          <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 14px",borderRadius:10,
+            background:"rgba(248,113,113,.1)",border:"1px solid rgba(248,113,113,.3)",marginBottom:16}}>
+            <AlertCircle size={14} color="#f87171"/>
+            <span style={{fontSize:13,color:"#f87171"}}>{error}</span>
+          </div>
+        )}
+
+        <button onClick={save} disabled={!q.trim()||!a.trim()||saving}
           style={{width:"100%",padding:"13px",borderRadius:12,border:"none",
-            cursor:(!q.trim()||!a.trim())?"not-allowed":"pointer",fontSize:15,fontWeight:700,color:"#fff",
+            cursor:(!q.trim()||!a.trim()||saving)?"not-allowed":"pointer",fontSize:15,fontWeight:700,color:"#fff",
             background:(!q.trim()||!a.trim())?"rgba(168,85,247,.25)":`linear-gradient(135deg,${ACCENT},${ACCENT}bb)`,
             boxShadow:`0 8px 24px -8px ${GLOW}`,transition:"all .2s"}}>
-          Save Card
+          {saving ? "Saving…" : "Save Card"}
         </button>
       </div>
     </div>
@@ -551,7 +521,6 @@ function StudyMode({ cards, allCards, onRate, onExit }) {
 
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",padding:"32px 24px",gap:28}}>
-      {/* Header */}
       <div style={{width:"100%",maxWidth:580,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <button onClick={onExit}
           style={{display:"flex",alignItems:"center",gap:6,background:"transparent",border:"none",
@@ -566,7 +535,6 @@ function StudyMode({ cards, allCards, onRate, onExit }) {
         </span>
       </div>
 
-      {/* Progress bar */}
       <div style={{width:"100%",maxWidth:580,height:4,borderRadius:999,background:"rgba(255,255,255,.08)"}}>
         <div style={{height:"100%",borderRadius:999,
           background:`linear-gradient(90deg,${ACCENT},#22d3ee)`,
@@ -574,10 +542,8 @@ function StudyMode({ cards, allCards, onRate, onExit }) {
           boxShadow:`0 0 10px -2px ${GLOW}`}}/>
       </div>
 
-      {/* Card */}
       <FlipCard card={card} flipped={flipped} onFlip={()=>setFlipped(f=>!f)}/>
 
-      {/* Rating buttons — shown after flip */}
       <div style={{
         display:"flex",gap:12,
         opacity:flipped?1:0,transform:flipped?"translateY(0)":"translateY(10px)",
@@ -607,7 +573,7 @@ function StudyMode({ cards, allCards, onRate, onExit }) {
 
 // ─── DASHBOARD STATS ─────────────────────────────────────────────────────────
 
-function SubjectDashboard({ cards, subject, onStudy, onAdd, onGenerate }) {
+function SubjectDashboard({ cards, subject, loading, onStudy, onAdd, onGenerate }) {
   const total    = cards.length;
   const mastered = cards.filter(c=>c.mastered).length;
   const due      = cards.filter(c=>new Date(c.nextReviewDate)<=new Date()).length;
@@ -622,7 +588,6 @@ function SubjectDashboard({ cards, subject, onStudy, onAdd, onGenerate }) {
 
   return (
     <div style={{flex:1,overflowY:"auto",padding:"32px 36px"}}>
-      {/* Header */}
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:32}}>
         <div>
           <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
@@ -646,16 +611,16 @@ function SubjectDashboard({ cards, subject, onStudy, onAdd, onGenerate }) {
             </button>
           ))}
           <button onClick={()=>onStudy(due > 0 ? cards.filter(c=>new Date(c.nextReviewDate)<=new Date()) : cards, cards)}
+            disabled={total === 0}
             style={{display:"flex",alignItems:"center",gap:7,padding:"10px 20px",borderRadius:12,
-              border:"none",cursor:"pointer",fontSize:14,fontWeight:700,color:"#fff",
-              background:`linear-gradient(135deg,${ACCENT},${ACCENT}bb)`,
-              boxShadow:`0 10px 28px -8px ${GLOW}`}}>
+              border:"none",cursor:total===0?"not-allowed":"pointer",fontSize:14,fontWeight:700,color:"#fff",
+              background:total===0?"rgba(168,85,247,.3)":`linear-gradient(135deg,${ACCENT},${ACCENT}bb)`,
+              boxShadow:total===0?"none":`0 10px 28px -8px ${GLOW}`}}>
             <Play size={15}/> {due > 0 ? `Study Due (${due})` : "Study All"}
           </button>
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:36}}>
         {stats.map(s=>(
           <div key={s.label}
@@ -671,19 +636,22 @@ function SubjectDashboard({ cards, subject, onStudy, onAdd, onGenerate }) {
         ))}
       </div>
 
-      {/* Card list */}
       <div style={{display:"flex",flexDirection:"column",gap:10}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
           <h3 style={{fontSize:16,fontWeight:800,margin:0}}>All Cards</h3>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.3)"}}>Drag to reorder · click to preview</span>
         </div>
-        {!total && (
+        {loading && (
+          <div style={{padding:"60px 20px",textAlign:"center",color:"rgba(255,255,255,.3)"}}>
+            <Loader2 size={24} style={{animation:"spin 1s linear infinite",margin:"0 auto"}}/>
+          </div>
+        )}
+        {!loading && !total && (
           <div style={{padding:"60px 20px",textAlign:"center",color:"rgba(255,255,255,.25)"}}>
             <Brain size={36} style={{margin:"0 auto 14px",display:"block",opacity:.3}}/>
             <p style={{fontSize:15,margin:0}}>No cards yet. Add manually or generate from a source.</p>
           </div>
         )}
-        {cards.map((c,i)=>(
+        {!loading && cards.map((c,i)=>(
           <div key={c.id}
             style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",
               borderRadius:14,border:"1px solid rgba(255,255,255,.06)",
@@ -713,38 +681,152 @@ function SubjectDashboard({ cards, subject, onStudy, onAdd, onGenerate }) {
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 
 export default function Flashcards() {
-  const [subjects,      setSubjects]      = useState(SAMPLE_SUBJECTS);
-  const [cards,         setCards]         = useState([
-    makeCard("s1","What is DFS?","Depth First Search — explores as deep as possible before backtracking using a stack or recursion.","manual"),
-    makeCard("s1","What is the time complexity of BFS?","O(V + E) where V = vertices and E = edges.","manual"),
-    makeCard("s1","What is a balanced BST?","A Binary Search Tree where the height difference between left and right subtrees is at most 1.","manual"),
-    makeCard("s2","What is gradient descent?","An optimization algorithm that iteratively adjusts model parameters in the direction of steepest descent of the loss function.","manual"),
-  ]);
+  const [subjects,       setSubjects]       = useState([]);
+  const [decksBySubject, setDecksBySubject] = useState({}); // subjectId -> { _id, dueCards, totalCards }
+  const [cards,          setCards]          = useState([]); // active subject's cards only
+  const [pdfCount,       setPdfCount]       = useState(0);  // global, across all subjects
+  const [activeSubject,  setActiveSubject]  = useState(null);
+  const [mode,           setMode]           = useState("dashboard"); // dashboard | study
+  const [studyDeck,      setStudyDeck]      = useState([]);
+  const [studyAll,       setStudyAll]       = useState([]);
+  const [showGenerate,   setShowGenerate]   = useState(false);
+  const [showCreate,     setShowCreate]     = useState(false);
+  const [addingSubject,  setAddingSubject]  = useState(false);
+  const [newSubjName,    setNewSubjName]    = useState("");
+  const [search,         setSearch]         = useState("");
+  const [loadingSubjects,setLoadingSubjects]= useState(true);
+  const [loadingCards,   setLoadingCards]   = useState(false);
 
-  const [activeSubject, setActiveSubject] = useState("s1");
-  const [mode,          setMode]          = useState("dashboard"); // dashboard | study
-  const [studyDeck,     setStudyDeck]     = useState([]);
-  const [showGenerate,  setShowGenerate]  = useState(false);
-  const [showCreate,    setShowCreate]    = useState(false);
-  const [addingSubject, setAddingSubject] = useState(false);
-  const [newSubjName,   setNewSubjName]   = useState("");
-  const [search,        setSearch]        = useState("");
+  // ── initial load: subjects (shared with Notes), decks, global PDF count ──
+  useEffect(() => {
+    async function load() {
+      try {
+        const [subjectsRes, decksRes, pdfRes] = await Promise.all([
+          api.get("/subjects"),
+          api.get("/decks"),
+          api.get("/flashcards", { params: { source: "pdf" } }),
+        ]);
+        setSubjects(subjectsRes.data.subjects);
+        setPdfCount(pdfRes.data.flashcards.length);
 
-  const pdfCount     = cards.filter(c=>c.source==="pdf").length;
-  const subjCards    = cards.filter(c=>c.subjectId===activeSubject&&
-    (c.question.toLowerCase().includes(search.toLowerCase())||c.answer.toLowerCase().includes(search.toLowerCase())));
-  const activeSubj   = subjects.find(s=>s.id===activeSubject);
+        const map = {};
+        for (const deck of decksRes.data.decks) {
+          if (deck.subjectId) map[deck.subjectId] = deck;
+        }
+        setDecksBySubject(map);
 
-  const addCards  = (newCards) => setCards(p=>[...p,...newCards]);
-  const rateCard  = (id,quality) => setCards(p=>p.map(c=>c.id===id?sm2(c,quality):c));
+        if (subjectsRes.data.subjects.length) {
+          setActiveSubject(subjectsRes.data.subjects[0]._id);
+        }
+      } catch (err) {
+        console.error("Failed to load flashcards data:", err);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    }
+    load();
+  }, []);
 
-  const addSubject = () => {
+  // ── load cards whenever the active subject changes ──
+  useEffect(() => {
+    if (!activeSubject) { setCards([]); return; }
+    const deck = decksBySubject[activeSubject];
+    if (!deck) { setCards([]); return; } // no deck created yet for this subject
+
+    let cancelled = false;
+    async function loadCards() {
+      setLoadingCards(true);
+      try {
+        const { data } = await api.get("/flashcards", { params: { deckId: deck._id } });
+        if (!cancelled) setCards(data.flashcards.map((c) => toFrontendCard(c, activeSubject)));
+      } catch (err) {
+        console.error("Failed to load cards:", err);
+      } finally {
+        if (!cancelled) setLoadingCards(false);
+      }
+    }
+    loadCards();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSubject, decksBySubject[activeSubject]?._id]);
+
+  const activeSubj = subjects.find(s=>s._id===activeSubject);
+  const filteredCards = cards.filter(c =>
+    c.question.toLowerCase().includes(search.toLowerCase()) ||
+    c.answer.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // resolves (or lazily creates) the single hidden deck backing a subject
+  async function getDeckId(subjectId) {
+    const existing = decksBySubject[subjectId];
+    if (existing) return existing._id;
+
+    const subject = subjects.find(s => s._id === subjectId);
+    const { data } = await api.post("/decks", {
+      subjectId,
+      name: `${subject?.name || "Subject"} Cards`,
+    });
+    setDecksBySubject(prev => ({ ...prev, [subjectId]: { ...data.deck, dueCards: 0, totalCards: 0 } }));
+    return data.deck._id;
+  }
+
+  // called after manual create or AI generation — appends to local state
+  // if the cards belong to the currently active subject, and bumps the
+  // sidebar's due/total counters for that subject either way
+  function addCards(subjectId, backendCards) {
+    if (subjectId === activeSubject) {
+      setCards(prev => [...prev, ...backendCards.map(c => toFrontendCard(c, subjectId))]);
+    }
+    setDecksBySubject(prev => {
+      const deck = prev[subjectId];
+      if (!deck) return prev;
+      return {
+        ...prev,
+        [subjectId]: {
+          ...deck,
+          totalCards: (deck.totalCards || 0) + backendCards.length,
+          dueCards: (deck.dueCards || 0) + backendCards.length, // new cards are due immediately
+        },
+      };
+    });
+    if (backendCards.some(c => c.source === "pdf")) {
+      setPdfCount(prev => prev + backendCards.filter(c => c.source === "pdf").length);
+    }
+  }
+
+  async function rateCard(cardId, difficultyValue) {
+    const quality = QUALITY_MAP[difficultyValue] ?? 3;
+    try {
+      const { data } = await api.post(`/flashcards/${cardId}/review`, { quality });
+      setCards(prev => prev.map(c => c.id === cardId ? toFrontendCard(data.flashcard, activeSubject) : c));
+      // that card was due before this review and (almost always) won't be
+      // immediately after — nudge the sidebar count down optimistically
+      setDecksBySubject(prev => {
+        const deck = prev[activeSubject];
+        if (!deck) return prev;
+        return { ...prev, [activeSubject]: { ...deck, dueCards: Math.max(0, (deck.dueCards || 0) - 1) } };
+      });
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+    }
+  }
+
+  async function addSubject() {
     if (!newSubjName.trim()) return;
-    const s={id:makeId(),name:newSubjName.trim(),color:SUBJECT_COLORS[subjects.length%8],emoji:"📖"};
-    setSubjects(p=>[...p,s]); setActiveSubject(s.id); setNewSubjName(""); setAddingSubject(false);
-  };
-
-  const [studyAll,    setStudyAll]    = useState([]);
+    try {
+      const { data } = await api.post("/subjects", {
+        name: newSubjName.trim(),
+        emoji: "📖",
+        color: SUBJECT_COLORS[subjects.length % SUBJECT_COLORS.length],
+      });
+      setSubjects(prev => [...prev, data.subject]);
+      setActiveSubject(data.subject._id);
+      setNewSubjName("");
+      setAddingSubject(false);
+    } catch (err) {
+      console.error("Failed to create subject:", err);
+    }
+  }
 
   const startStudy = (deck, all) => {
     if (!deck.length) return;
@@ -752,6 +834,15 @@ export default function Flashcards() {
     setStudyAll(all || deck);
     setMode("study");
   };
+
+  if (loadingSubjects) {
+    return (
+      <div style={{ display:"flex", height:"100vh", width:"100%", alignItems:"center", justifyContent:"center", background:"#050308" }}>
+        <Loader2 size={28} color={ACCENT} style={{ animation: "spin 1s linear infinite" }} />
+        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -765,6 +856,7 @@ export default function Flashcards() {
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:rgba(168,85,247,.3);border-radius:99px}
         @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
         .fade-in{animation:fadeUp .22s ease both}
         .subj-btn:hover{background:rgba(255,255,255,.04)!important}
       `}</style>
@@ -784,12 +876,13 @@ export default function Flashcards() {
           padding:"0 10px",marginBottom:4,textTransform:"uppercase"}}>Subjects</p>
 
         {subjects.map(s=>{
-          const isA=s.id===activeSubject;
-          const cnt=cards.filter(c=>c.subjectId===s.id).length;
-          const due=cards.filter(c=>c.subjectId===s.id&&new Date(c.nextReviewDate)<=new Date()).length;
+          const isA = s._id===activeSubject;
+          const deck = decksBySubject[s._id];
+          const cnt = deck?.totalCards || 0;
+          const due = deck?.dueCards || 0;
           return (
-            <button key={s.id} className="subj-btn"
-              onClick={()=>{setActiveSubject(s.id);setMode("dashboard");}}
+            <button key={s._id} className="subj-btn"
+              onClick={()=>{setActiveSubject(s._id);setMode("dashboard");}}
               style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:12,
                 border:"none",background:isA?`${s.color}18`:"transparent",cursor:"pointer",width:"100%",
                 textAlign:"left",boxShadow:isA?`inset 0 0 0 1px ${s.color}40`:"none"}}>
@@ -827,7 +920,6 @@ export default function Flashcards() {
           </button>
         )}
 
-        {/* Quick search */}
         <div style={{marginTop:"auto",paddingTop:16,borderTop:"1px solid rgba(255,255,255,.06)"}}>
           <div style={{position:"relative"}}>
             <Search size={12} color="rgba(255,255,255,.25)"
@@ -842,12 +934,18 @@ export default function Flashcards() {
 
       {/* ── MAIN CONTENT ─────────────────────────────────────── */}
       <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        {mode==="study" ? (
+        {!activeSubj ? (
+          <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12}}>
+            <Layers size={32} color="rgba(255,255,255,.2)"/>
+            <p style={{color:"rgba(255,255,255,.4)",fontSize:15}}>No subjects yet — create one to add flashcards.</p>
+          </div>
+        ) : mode==="study" ? (
           <StudyMode cards={studyDeck} allCards={studyAll} onRate={rateCard} onExit={()=>setMode("dashboard")}/>
         ) : (
           <SubjectDashboard
-            cards={subjCards}
+            cards={filteredCards}
             subject={activeSubj}
+            loading={loadingCards}
             onStudy={startStudy}
             onAdd={()=>setShowCreate(true)}
             onGenerate={()=>setShowGenerate(true)}
@@ -860,6 +958,7 @@ export default function Flashcards() {
         <GenerateModal
           subjects={subjects}
           pdfCount={pdfCount}
+          getDeckId={getDeckId}
           onGenerated={addCards}
           onClose={()=>setShowGenerate(false)}
         />
@@ -867,7 +966,8 @@ export default function Flashcards() {
       {showCreate && (
         <CreateCardModal
           subjects={subjects}
-          onSave={c=>{ setCards(p=>[...p,c]); }}
+          getDeckId={getDeckId}
+          onSave={(subjectId, card) => addCards(subjectId, [card])}
           onClose={()=>setShowCreate(false)}
         />
       )}

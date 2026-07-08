@@ -17,6 +17,11 @@ const flashcardSchema = new mongoose.Schema(
     },
     front: { type: String, required: true, trim: true, maxlength: 500 },
     back: { type: String, required: true, trim: true, maxlength: 1000 },
+    source: {
+      type: String,
+      enum: ["manual", "pdf", "youtube", "ai"],
+      default: "manual",
+    },
 
     // ── SM-2 scheduling state ──
     easeFactor: { type: Number, default: 2.5 },

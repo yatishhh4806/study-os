@@ -1,4 +1,4 @@
-// src/pages/NotesPage.jsx
+// src/pages/Notes.jsx
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   Plus,
@@ -25,20 +25,9 @@ import {
   Copy,
   RefreshCw,
   FileText,
+  Loader2,
 } from "lucide-react";
-
-// ─────────────────────────────────────────────────────────────
-// TEMPORARY: all notes live in React state (mock-data-first).
-// SWAP POINT — when the backend exists, replace the useState
-// initialisers with a fetch to /api/notes and call the API inside
-// updateNote / addNote / deleteNote. The component tree doesn't
-// need to change; only where the data comes from.
-// ─────────────────────────────────────────────────────────────
-
-const SUBJECT_COLORS = [
-  "#a855f7", "#22d3ee", "#f472b6", "#fb923c",
-  "#34d399", "#facc15", "#60a5fa", "#f87171",
-];
+import { api } from "../lib/api";
 
 const BLOCK_TYPES = [
   { type: "p",        label: "Text",           icon: Type,        hint: "Plain paragraph" },
@@ -77,68 +66,22 @@ const COVERS = [
   "linear-gradient(135deg, #1e3a8a 0%, #172554 100%)",
 ];
 
-const makeId = () =>
+const makeBlockId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2, 11);
 
 const createBlock = (type = "p", text = "") => ({
-  id: makeId(),
+  id: makeBlockId(),
   type,
   text,
   src: "",
   checked: false,
 });
 
-const createNote = (subjectId) => ({
-  id: makeId(),
-  subjectId,
-  title: "",
-  starred: false,
-  cover: "",
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  blocks: [createBlock("p", "")],
-});
-
-const initialSubjects = [
-  { id: "sub-1", name: "Data Structures",  emoji: "🌲", color: SUBJECT_COLORS[0] },
-  { id: "sub-2", name: "Machine Learning", emoji: "🤖", color: SUBJECT_COLORS[1] },
-  { id: "sub-3", name: "Web Development",  emoji: "🌐", color: SUBJECT_COLORS[2] },
-];
-
-const initialNotes = [
-  {
-    ...createNote("sub-1"),
-    id: "note-1",
-    title: "Binary Trees",
-    starred: true,
-    cover: COVERS[1],
-    blocks: [
-      createBlock("p", "A binary tree is a hierarchical structure where each node has at most two children."),
-      createBlock("h2", "Types"),
-      createBlock("bullet", "Full binary tree"),
-      createBlock("bullet", "Complete binary tree"),
-      createBlock("bullet", "Perfect binary tree"),
-      { ...createBlock("callout", "Height of a balanced BST with n nodes is O(log n) — this is why lookups are fast.") },
-      createBlock("code", "struct Node {\n  int data;\n  Node *left, *right;\n};"),
-      { ...createBlock("todo", "Practice: implement level-order traversal"), checked: false },
-      { ...createBlock("todo", "Re-derive height formula"), checked: true },
-    ],
-  },
-  {
-    ...createNote("sub-2"),
-    id: "note-2",
-    title: "Gradient Descent",
-    blocks: [
-      createBlock("p", "Optimization algorithm used to minimize loss."),
-      createBlock("quote", "Follow the negative gradient — the direction of steepest descent."),
-    ],
-  },
-];
-
 // ── helpers ──────────────────────────────────────────────────
 function relativeTime(iso) {
+  if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
@@ -151,7 +94,7 @@ function relativeTime(iso) {
 }
 
 function plainText(blocks) {
-  return blocks
+  return (blocks || [])
     .filter((b) => !["divider", "image"].includes(b.type))
     .map((b) => b.text || "")
     .join(" ")
@@ -163,7 +106,6 @@ function wordCount(blocks) {
   return t ? t.split(/\s+/).length : 0;
 }
 
-// number for a numbered-list item = position within its contiguous run
 function numberedIndex(blocks, index) {
   let n = 1;
   for (let i = index - 1; i >= 0; i--) {
@@ -174,9 +116,7 @@ function numberedIndex(blocks, index) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Slash menu — fixed-position, anchored to the block that opened
-// it, clamped to the viewport (flips above when near the bottom),
-// closes on scroll / outside click / Escape.
+// SlashMenu — unchanged from the mock version, purely UI
 // ─────────────────────────────────────────────────────────────
 function SlashMenu({ anchorRect, query, onSelect, onClose }) {
   const menuRef = useRef(null);
@@ -192,7 +132,6 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
 
   useEffect(() => setActive(0), [query]);
 
-  // keyboard nav
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
@@ -205,7 +144,6 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [items, active, onSelect, onClose]);
 
-  // outside click
   useEffect(() => {
     const onDown = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) onClose();
@@ -216,7 +154,6 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
 
   if (!anchorRect) return null;
 
-  // viewport-clamped placement
   const MENU_W = 288;
   const MENU_H = Math.min(items.length * 44 + 44, 340);
   const spaceBelow = window.innerHeight - anchorRect.bottom;
@@ -229,7 +166,7 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
   return (
     <div
       ref={menuRef}
-      className="notes-menu-in fixed z-1000 w-72 max-h-85 overflow-y-auto rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
+      className="notes-menu-in fixed z-[1000] w-72 max-h-[340px] overflow-y-auto rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
       style={{ top, left }}
     >
       <p className="px-2.5 pt-2 pb-1.5 text-[10px] font-semibold tracking-[0.12em] uppercase text-white/40">
@@ -247,7 +184,7 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
             i === active ? "bg-purple-500/15 text-white" : "text-white/75"
           }`}
         >
-          <span className={`w-7 h-7 rounded-md border flex items-center justify-center shrink-0 ${
+          <span className={`w-7 h-7 rounded-md border flex items-center justify-center flex-shrink-0 ${
             i === active ? "border-purple-400/40 bg-purple-500/10 text-purple-300" : "border-white/10 bg-white/5 text-white/50"
           }`}>
             <Icon className="w-3.5 h-3.5" />
@@ -261,8 +198,7 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Block context menu (opens from the grip): turn into / duplicate
-// / delete. Same fixed+clamped positioning strategy.
+// BlockMenu — unchanged from the mock version, purely UI
 // ─────────────────────────────────────────────────────────────
 function BlockMenu({ anchorRect, onTurnInto, onDuplicate, onDelete, onClose }) {
   const menuRef = useRef(null);
@@ -290,7 +226,7 @@ function BlockMenu({ anchorRect, onTurnInto, onDuplicate, onDelete, onClose }) {
   return (
     <div
       ref={menuRef}
-      className="notes-menu-in fixed z-1000 w-60 rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
+      className="notes-menu-in fixed z-[1000] w-60 rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/60 p-1.5"
       style={{ top, left }}
     >
       <button
@@ -338,8 +274,7 @@ function BlockMenu({ anchorRect, onTurnInto, onDuplicate, onDelete, onClose }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// One editable block row. Controls (grip + add) appear on hover
-// to the LEFT, Notion-style — nothing permanently on the right.
+// BlockRow — unchanged from the mock version, purely UI
 // ─────────────────────────────────────────────────────────────
 function BlockRow({
   block,
@@ -358,7 +293,6 @@ function BlockRow({
   const inputRef = useRef(null);
   const gripRef = useRef(null);
 
-  // focus when requested (id + ts so repeated requests re-fire)
   useEffect(() => {
     if (focusRequest?.id === block.id && inputRef.current) {
       inputRef.current.focus();
@@ -376,7 +310,6 @@ function BlockRow({
     const value = e.target.value;
     resize(e.target);
 
-    // markdown shortcuts — convert "## " etc. into the block type
     if (block.type === "p" && value.endsWith(" ")) {
       const token = value.slice(0, -1);
       const md = MD_SHORTCUTS.find((s) => s.match === token);
@@ -396,8 +329,6 @@ function BlockRow({
 
     onChange({ ...block, text: value });
 
-    // slash menu — anchored to THIS textarea's live rect, so it
-    // always opens exactly under the block regardless of scroll
     if (value.startsWith("/")) {
       const rect = e.target.getBoundingClientRect();
       onOpenSlash(block.id, rect, value.slice(1));
@@ -408,10 +339,8 @@ function BlockRow({
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && block.type !== "code" && !e.shiftKey) {
-      // slash menu open? let it consume Enter (it listens in capture phase)
       if (block.text.startsWith("/")) return;
       e.preventDefault();
-      // empty list item → exit list back to paragraph
       if (["bullet", "numbered", "todo"].includes(block.type) && !block.text) {
         onChange({ ...block, type: "p" });
         return;
@@ -432,7 +361,6 @@ function BlockRow({
     if (e.key === "Escape") onCloseSlash();
   };
 
-  // ── left-side hover controls (shared by every block type) ──
   const controls = (
     <div className="absolute -left-14 top-1 flex items-center gap-0.5 opacity-0 group-hover/block:opacity-100 transition-opacity duration-150">
       <button
@@ -458,7 +386,6 @@ function BlockRow({
     </div>
   );
 
-  // ── special renders ──
   if (block.type === "divider") {
     return (
       <div className="group/block relative py-3">
@@ -473,8 +400,8 @@ function BlockRow({
       <div className="group/block relative py-1">
         {controls}
         {block.src ? (
-          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/2">
-            <img src={block.src} alt="" className="block w-full max-h-105 object-cover" />
+          <div className="rounded-xl overflow-hidden border border-white/10 bg-white/[0.02]">
+            <img src={block.src} alt="" className="block w-full max-h-[420px] object-cover" />
             <div className="px-3 py-2 border-t border-white/10">
               <button
                 onClick={() => onChange({ ...block, src: "" })}
@@ -485,7 +412,7 @@ function BlockRow({
             </div>
           </div>
         ) : (
-          <label className="flex flex-col items-center justify-center gap-2 min-h-40 rounded-xl border border-dashed border-white/15 bg-white/2 text-white/50 cursor-pointer hover:border-purple-400/40 hover:text-white/70 transition-colors">
+          <label className="flex flex-col items-center justify-center gap-2 min-h-[160px] rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-white/50 cursor-pointer hover:border-purple-400/40 hover:text-white/70 transition-colors">
             <ImagePlus className="w-6 h-6" />
             <span className="text-sm">Upload an image</span>
             <input
@@ -503,7 +430,6 @@ function BlockRow({
     );
   }
 
-  // ── text-based blocks ──
   const typeStyles = {
     h1: "text-[2rem] font-bold leading-tight tracking-tight",
     h2: "text-2xl font-bold leading-snug tracking-tight",
@@ -545,14 +471,13 @@ function BlockRow({
     />
   );
 
-  // wrappers per type
   let body;
   if (block.type === "quote") {
     body = <div className="border-l-2 border-purple-400/70 pl-4">{textarea}</div>;
   } else if (block.type === "callout") {
     body = (
-      <div className="flex gap-3 rounded-xl bg-purple-500/8 border border-purple-400/20 px-4 py-3">
-        <Lightbulb className="w-4 h-4 text-purple-300 shrink-0 mt-1" />
+      <div className="flex gap-3 rounded-xl bg-purple-500/[0.08] border border-purple-400/20 px-4 py-3">
+        <Lightbulb className="w-4 h-4 text-purple-300 flex-shrink-0 mt-1" />
         {textarea}
       </div>
     );
@@ -565,14 +490,14 @@ function BlockRow({
   } else if (block.type === "bullet") {
     body = (
       <div className="flex gap-2">
-        <span className="text-white/50 pt-0.75 select-none">•</span>
+        <span className="text-white/50 pt-[3px] select-none">•</span>
         {textarea}
       </div>
     );
   } else if (block.type === "numbered") {
     body = (
       <div className="flex gap-2">
-        <span className="text-white/50 pt-0.5 text-sm w-5 text-right select-none">
+        <span className="text-white/50 pt-[2px] text-sm w-5 text-right select-none">
           {numberedIndex(blocks, index)}.
         </span>
         {textarea}
@@ -584,7 +509,7 @@ function BlockRow({
         <button
           type="button"
           onClick={() => onChange({ ...block, checked: !block.checked })}
-          className={`mt-1.25w-4 h-4 rounded shrink-0 border flex items-center justify-center transition-colors ${
+          className={`mt-[5px] w-4 h-4 rounded flex-shrink-0 border flex items-center justify-center transition-colors ${
             block.checked
               ? "bg-purple-500 border-purple-500"
               : "border-white/25 hover:border-purple-400"
@@ -604,7 +529,7 @@ function BlockRow({
   }
 
   return (
-    <div className="group/block relative rounded-md px-1 -mx-1 hover:bg-white/2 transition-colors">
+    <div className="group/block relative rounded-md px-1 -mx-1 hover:bg-white/[0.02] transition-colors">
       {controls}
       {body}
     </div>
@@ -612,9 +537,10 @@ function BlockRow({
 }
 
 // ─────────────────────────────────────────────────────────────
-// Editor pane
+// Editor pane — same UI as before; onChange now flows up to a
+// debounced save instead of updating local mock state directly
 // ─────────────────────────────────────────────────────────────
-function Editor({ note, subject, onChange }) {
+function Editor({ note, subject, onChange, saveStatus }) {
   const scrollRef = useRef(null);
   const [slash, setSlash] = useState({ blockId: null, anchorRect: null, query: "" });
   const [blockMenu, setBlockMenu] = useState({ blockId: null, anchorRect: null });
@@ -622,7 +548,7 @@ function Editor({ note, subject, onChange }) {
 
   const requestFocus = (id) => setFocusRequest({ id, ts: Date.now() });
 
-  const update = (next) => onChange({ ...next, updatedAt: new Date().toISOString() });
+  const update = (next) => onChange(next);
 
   const updateBlock = (id, patch) =>
     update({ ...note, blocks: note.blocks.map((b) => (b.id === id ? patch : b)) });
@@ -659,13 +585,12 @@ function Editor({ note, subject, onChange }) {
 
   const duplicateBlock = (blockId) => {
     const i = note.blocks.findIndex((b) => b.id === blockId);
-    const copy = { ...note.blocks[i], id: makeId() };
+    const copy = { ...note.blocks[i], id: makeBlockId() };
     const blocks = [...note.blocks];
     blocks.splice(i + 1, 0, copy);
     update({ ...note, blocks });
   };
 
-  // slash select: set type + strip the "/query" text
   const selectSlashType = useCallback(
     (type) => {
       const current = note.blocks.find((b) => b.id === slash.blockId);
@@ -683,7 +608,6 @@ function Editor({ note, subject, onChange }) {
     [note.blocks, slash.blockId]
   );
 
-  // close menus on editor scroll so they never drift from their block
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -701,24 +625,33 @@ function Editor({ note, subject, onChange }) {
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto">
-      {/* cover */}
       {note.cover && (
         <div className="h-40 w-full" style={{ background: note.cover }} />
       )}
 
       <div className={`max-w-3xl mx-auto px-14 pb-32 ${note.cover ? "pt-8" : "pt-14"}`}>
-        {/* title */}
-        <input
-          value={note.title}
-          onChange={(e) => update({ ...note, title: e.target.value })}
-          placeholder="Untitled"
-          className="w-full bg-transparent outline-none text-[2.6rem] font-bold tracking-tight leading-tight text-white placeholder-white/20 mb-1"
-        />
+        <div className="flex items-center justify-between mb-1">
+          <input
+            value={note.title}
+            onChange={(e) => update({ ...note, title: e.target.value })}
+            placeholder="Untitled"
+            className="flex-1 bg-transparent outline-none text-[2.6rem] font-bold tracking-tight leading-tight text-white placeholder-white/20"
+          />
+          {saveStatus && (
+            <span className="flex-shrink-0 text-xs text-white/30 ml-4 mb-2 flex items-center gap-1.5">
+              {saveStatus === "saving" && (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Saving…
+                </>
+              )}
+              {saveStatus === "saved" && "Saved"}
+            </span>
+          )}
+        </div>
         <p className="text-xs text-white/35 mb-8">
           {subject?.emoji} {subject?.name} · {wordCount(note.blocks)} words · edited {relativeTime(note.updatedAt)}
         </p>
 
-        {/* blocks */}
         <div className="flex flex-col gap-1">
           {note.blocks.map((block, index) => (
             <BlockRow
@@ -745,7 +678,6 @@ function Editor({ note, subject, onChange }) {
           ))}
         </div>
 
-        {/* add block */}
         <button
           onClick={() => {
             const nb = createBlock("p", "");
@@ -792,20 +724,45 @@ function Editor({ note, subject, onChange }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Page
+// Page — this is where real API integration lives
 // ─────────────────────────────────────────────────────────────
-export default function NotesPage() {
-  const [subjects, setSubjects] = useState(initialSubjects);
-  const [notes, setNotes] = useState(initialNotes);
-  const [activeSubjectId, setActiveSubjectId] = useState(initialSubjects[0].id);
-  const [activeNoteId, setActiveNoteId] = useState(initialNotes[0].id);
+export default function Notes() {
+  const [subjects, setSubjects] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [activeSubjectId, setActiveSubjectId] = useState(null);
+  const [activeNoteId, setActiveNoteId] = useState(null);
   const [search, setSearch] = useState("");
   const [addingSubject, setAddingSubject] = useState(false);
   const [newSubject, setNewSubject] = useState("");
   const [coverMenuOpen, setCoverMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState(null); // null | "saving" | "saved"
   const coverMenuRef = useRef(null);
+  const saveTimers = useRef({});
 
-  const activeSubject = subjects.find((s) => s.id === activeSubjectId);
+  // ── initial load: subjects + all notes ──
+  useEffect(() => {
+    async function load() {
+      try {
+        const [subjectsRes, notesRes] = await Promise.all([
+          api.get("/subjects"),
+          api.get("/notes"),
+        ]);
+        setSubjects(subjectsRes.data.subjects);
+        setNotes(notesRes.data.notes);
+        if (subjectsRes.data.subjects.length) {
+          setActiveSubjectId(subjectsRes.data.subjects[0]._id);
+        }
+      } catch (err) {
+        console.error("Failed to load notes/subjects:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const activeSubject = subjects.find((s) => s._id === activeSubjectId);
 
   const filteredNotes = useMemo(() => {
     return notes
@@ -819,13 +776,12 @@ export default function NotesPage() {
       });
   }, [notes, activeSubjectId, search]);
 
-  const activeNote = notes.find((n) => n.id === activeNoteId) || filteredNotes[0] || null;
+  const activeNote = notes.find((n) => n._id === activeNoteId) || filteredNotes[0] || null;
 
   useEffect(() => {
-    if (activeNote && activeNote.id !== activeNoteId) setActiveNoteId(activeNote.id);
+    if (activeNote && activeNote._id !== activeNoteId) setActiveNoteId(activeNote._id);
   }, [activeNote, activeNoteId]);
 
-  // close cover menu on outside click
   useEffect(() => {
     const onDown = (e) => {
       if (coverMenuRef.current && !coverMenuRef.current.contains(e.target))
@@ -835,56 +791,117 @@ export default function NotesPage() {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  const updateNote = (next) =>
-    setNotes((prev) => prev.map((n) => (n.id === next.id ? next : n)));
+  // clear any pending debounced saves on unmount, so a save doesn't fire
+  // for a component that's no longer there
+  useEffect(() => {
+    return () => Object.values(saveTimers.current).forEach(clearTimeout);
+  }, []);
 
-  const addNote = () => {
-    const n = createNote(activeSubjectId);
-    setNotes((prev) => [n, ...prev]);
-    setActiveNoteId(n.id);
-  };
-
-  const deleteNote = (id) => {
-    const remaining = notes.filter((n) => n.id !== id);
-    setNotes(remaining);
-    if (activeNoteId === id) {
-      setActiveNoteId(remaining.find((n) => n.subjectId === activeSubjectId)?.id || null);
-    }
-  };
-
-  const toggleStar = (id) =>
+  // Editor calls this on every keystroke. Local state updates instantly
+  // (so typing feels normal), but the actual PATCH to the backend is
+  // debounced — otherwise every single character would fire a network
+  // request.
+  const updateNote = useCallback((next) => {
     setNotes((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, starred: !n.starred } : n))
+      prev.map((n) => (n._id === next._id ? { ...next, updatedAt: new Date().toISOString() } : n))
     );
+    setSaveStatus("saving");
 
-  const addSubject = () => {
-    if (!newSubject.trim()) return;
-    const s = {
-      id: makeId(),
-      name: newSubject.trim(),
-      emoji: "📘",
-      color: SUBJECT_COLORS[subjects.length % SUBJECT_COLORS.length],
-    };
-    setSubjects((prev) => [...prev, s]);
-    setNewSubject("");
-    setAddingSubject(false);
-    setActiveSubjectId(s.id);
-    const n = createNote(s.id);
-    setNotes((prev) => [n, ...prev]);
-    setActiveNoteId(n.id);
-  };
+    clearTimeout(saveTimers.current[next._id]);
+    saveTimers.current[next._id] = setTimeout(async () => {
+      try {
+        await api.patch(`/notes/${next._id}`, {
+          title: next.title,
+          starred: next.starred,
+          cover: next.cover,
+          blocks: next.blocks,
+        });
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus(null), 1500);
+      } catch (err) {
+        console.error("Failed to save note:", err);
+        setSaveStatus(null);
+      }
+    }, 700);
+  }, []);
 
-  const deleteSubject = (id) => {
-    const remainingSubjects = subjects.filter((s) => s.id !== id);
-    const remainingNotes = notes.filter((n) => n.subjectId !== id);
-    setSubjects(remainingSubjects);
-    setNotes(remainingNotes);
-    if (activeSubjectId === id) {
-      const newActive = remainingSubjects[0]?.id || null;
-      setActiveSubjectId(newActive);
-      setActiveNoteId(remainingNotes.find((n) => n.subjectId === newActive)?.id || null);
+  const addNote = async () => {
+    if (!activeSubjectId) return;
+    try {
+      const { data } = await api.post("/notes", { subjectId: activeSubjectId, title: "" });
+      setNotes((prev) => [data.note, ...prev]);
+      setActiveNoteId(data.note._id);
+    } catch (err) {
+      console.error("Failed to create note:", err);
     }
   };
+
+  const deleteNote = async (id) => {
+    try {
+      await api.delete(`/notes/${id}`);
+      const remaining = notes.filter((n) => n._id !== id);
+      setNotes(remaining);
+      if (activeNoteId === id) {
+        setActiveNoteId(remaining.find((n) => n.subjectId === activeSubjectId)?._id || null);
+      }
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+    }
+  };
+
+  const toggleStar = async (id) => {
+    const note = notes.find((n) => n._id === id);
+    if (!note) return;
+    const nextStarred = !note.starred;
+    // optimistic update — flip it locally immediately, revert on failure
+    setNotes((prev) => prev.map((n) => (n._id === id ? { ...n, starred: nextStarred } : n)));
+    try {
+      await api.patch(`/notes/${id}`, { starred: nextStarred });
+    } catch (err) {
+      console.error("Failed to toggle star:", err);
+      setNotes((prev) => prev.map((n) => (n._id === id ? { ...n, starred: !nextStarred } : n)));
+    }
+  };
+
+  const addSubject = async () => {
+    if (!newSubject.trim()) return;
+    try {
+      const { data } = await api.post("/subjects", {
+        name: newSubject.trim(),
+        emoji: "📘",
+        color: "#a855f7",
+      });
+      setSubjects((prev) => [...prev, data.subject]);
+      setNewSubject("");
+      setAddingSubject(false);
+      setActiveSubjectId(data.subject._id);
+
+      const noteRes = await api.post("/notes", { subjectId: data.subject._id, title: "" });
+      setNotes((prev) => [noteRes.data.note, ...prev]);
+      setActiveNoteId(noteRes.data.note._id);
+    } catch (err) {
+      console.error("Failed to create subject:", err);
+    }
+  };
+
+  const updateCover = async (cover) => {
+    if (!activeNote) return;
+    setNotes((prev) => prev.map((n) => (n._id === activeNote._id ? { ...n, cover } : n)));
+    setCoverMenuOpen(false);
+    try {
+      await api.patch(`/notes/${activeNote._id}`, { cover });
+    } catch (err) {
+      console.error("Failed to update cover:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#09050e]">
+        <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex h-screen w-full bg-[#09050e] text-white overflow-hidden">
@@ -901,7 +918,6 @@ export default function NotesPage() {
         .notes-fade-up { animation: notesFadeUp 0.25s ease-out both; }
       `}</style>
 
-      {/* ambient wash, consistent with AI Tutor page */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div
           className="absolute inset-0"
@@ -913,9 +929,9 @@ export default function NotesPage() {
       </div>
 
       {/* ── Sidebar: subjects ─────────────────────────────── */}
-      <aside className="w-60 shrink-0 border-r border-white/10 bg-white/2 backdrop-blur-sm flex flex-col">
+      <aside className="w-60 flex-shrink-0 border-r border-white/10 bg-white/[0.02] backdrop-blur-sm flex flex-col">
         <div className="flex items-center gap-2.5 px-4 pt-5 pb-4">
-          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-md shadow-purple-900/30">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-md shadow-purple-900/30">
             <BookOpen className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -932,14 +948,14 @@ export default function NotesPage() {
 
         <div className="flex-1 overflow-y-auto px-2 pb-3">
           {subjects.map((s) => {
-            const active = s.id === activeSubjectId;
-            const count = notes.filter((n) => n.subjectId === s.id).length;
+            const active = s._id === activeSubjectId;
+            const count = notes.filter((n) => n.subjectId === s._id).length;
             return (
               <button
-                key={s.id}
+                key={s._id}
                 onClick={() => {
-                  setActiveSubjectId(s.id);
-                  setActiveNoteId(notes.find((n) => n.subjectId === s.id)?.id || null);
+                  setActiveSubjectId(s._id);
+                  setActiveNoteId(notes.find((n) => n.subjectId === s._id)?._id || null);
                 }}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
                   active
@@ -950,16 +966,6 @@ export default function NotesPage() {
                 <span className="text-sm">{s.emoji}</span>
                 <span className="flex-1 text-sm truncate">{s.name}</span>
                 <span className="text-[11px] text-white/35">{count}</span>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  title="Delete subject"
-                  onClick={(e) => { e.stopPropagation(); deleteSubject(s.id); }}
-                  onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), deleteSubject(s.id))}
-                  className="w-6 h-6 ml-1 rounded-md flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </span>
               </button>
             );
           })}
@@ -1005,7 +1011,7 @@ export default function NotesPage() {
       </aside>
 
       {/* ── Notes list ─────────────────────────────────────── */}
-      <section className="w-72 shrink-0 border-r border-white/10 flex flex-col">
+      <section className="w-72 flex-shrink-0 border-r border-white/10 flex flex-col">
         <div className="px-4 pt-5 pb-3 border-b border-white/10">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -1017,8 +1023,9 @@ export default function NotesPage() {
             </div>
             <button
               onClick={addNote}
-              title="New note"
-              className="w-7 h-7 rounded-lg bg-purple-600 hover:bg-purple-500 flex items-center justify-center shadow-md shadow-purple-900/30 transition-colors"
+              disabled={!activeSubjectId}
+              title={activeSubjectId ? "New note" : "Create a subject first"}
+              className="w-7 h-7 rounded-lg bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:hover:bg-purple-600 flex items-center justify-center shadow-md shadow-purple-900/30 transition-colors"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -1036,7 +1043,18 @@ export default function NotesPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">
-          {filteredNotes.length === 0 ? (
+          {!activeSubjectId ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-14 text-center px-4">
+              <BookOpen className="w-6 h-6 text-white/20" />
+              <p className="text-sm text-white/40">No subjects yet</p>
+              <button
+                onClick={() => setAddingSubject(true)}
+                className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                Create your first subject
+              </button>
+            </div>
+          ) : filteredNotes.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-14 text-center">
               <FileText className="w-6 h-6 text-white/20" />
               <p className="text-sm text-white/40">No notes here yet</p>
@@ -1049,24 +1067,24 @@ export default function NotesPage() {
             </div>
           ) : (
             filteredNotes.map((n, i) => {
-              const selected = n.id === activeNote?.id;
+              const selected = n._id === activeNote?._id;
               const snippet = plainText(n.blocks).slice(0, 80);
               return (
                 <button
-                  key={n.id}
-                  onClick={() => setActiveNoteId(n.id)}
+                  key={n._id}
+                  onClick={() => setActiveNoteId(n._id)}
                   style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
                   className={`notes-fade-up group/card w-full text-left rounded-xl px-3 py-2.5 mb-1 border transition-colors ${
                     selected
                       ? "bg-purple-500/10 border-purple-400/30"
-                      : "border-transparent hover:bg-white/4"
+                      : "border-transparent hover:bg-white/[0.04]"
                   }`}
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         {n.starred && (
-                          <Star className="w-3 h-3 shrink-0 fill-purple-400 text-purple-400" />
+                          <Star className="w-3 h-3 flex-shrink-0 fill-purple-400 text-purple-400" />
                         )}
                         <p className="text-sm font-medium truncate">
                           {n.title || "Untitled"}
@@ -1084,8 +1102,8 @@ export default function NotesPage() {
                         role="button"
                         tabIndex={0}
                         title={n.starred ? "Unstar" : "Star"}
-                        onClick={(e) => { e.stopPropagation(); toggleStar(n.id); }}
-                        onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), toggleStar(n.id))}
+                        onClick={(e) => { e.stopPropagation(); toggleStar(n._id); }}
+                        onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), toggleStar(n._id))}
                         className="w-6 h-6 rounded-md flex items-center justify-center text-white/40 hover:text-purple-300 hover:bg-white/10 transition-colors"
                       >
                         <Star className={`w-3.5 h-3.5 ${n.starred ? "fill-purple-400 text-purple-400" : ""}`} />
@@ -1094,8 +1112,8 @@ export default function NotesPage() {
                         role="button"
                         tabIndex={0}
                         title="Delete note"
-                        onClick={(e) => { e.stopPropagation(); deleteNote(n.id); }}
-                        onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), deleteNote(n.id))}
+                        onClick={(e) => { e.stopPropagation(); deleteNote(n._id); }}
+                        onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), deleteNote(n._id))}
                         className="w-6 h-6 rounded-md flex items-center justify-center text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -1113,25 +1131,24 @@ export default function NotesPage() {
       <main className="flex-1 flex flex-col min-w-0">
         {activeNote ? (
           <>
-            {/* toolbar */}
-            <div className="h-13 flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/1.5kdrop-blur-sm">
+            <div className="h-13 flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/[0.015] backdrop-blur-sm">
               <div className="flex items-center gap-1.5 text-[13px] text-white/50 min-w-0">
-                <span className="shrink-0">
+                <span className="flex-shrink-0">
                   {activeSubject?.emoji} {activeSubject?.name}
                 </span>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-white/30" />
+                <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 text-white/30" />
                 <span className="text-white/90 font-medium truncate">
                   {activeNote.title || "Untitled"}
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="text-[11px] text-white/30 hidden sm:block">
                   Saved {relativeTime(activeNote.updatedAt)}
                 </span>
 
                 <button
-                  onClick={() => toggleStar(activeNote.id)}
+                  onClick={() => toggleStar(activeNote._id)}
                   title={activeNote.starred ? "Unstar" : "Star"}
                   className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-purple-300 hover:bg-white/10 transition-colors"
                 >
@@ -1151,10 +1168,7 @@ export default function NotesPage() {
                       {COVERS.map((c, i) => (
                         <button
                           key={i}
-                          onClick={() => {
-                            updateNote({ ...activeNote, cover: c, updatedAt: new Date().toISOString() });
-                            setCoverMenuOpen(false);
-                          }}
+                          onClick={() => updateCover(c)}
                           className={`w-11 h-11 rounded-lg border transition-transform hover:scale-105 ${
                             activeNote.cover === c ? "border-purple-400" : "border-white/10"
                           }`}
@@ -1169,22 +1183,35 @@ export default function NotesPage() {
               </div>
             </div>
 
-            <Editor note={activeNote} subject={activeSubject} onChange={updateNote} />
+            <Editor
+              note={activeNote}
+              subject={activeSubject}
+              onChange={updateNote}
+              saveStatus={saveStatus}
+            />
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
             <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
               <FileText className="w-6 h-6 text-purple-400" />
             </div>
-            <p className="text-white/70 font-medium">No note selected</p>
-            <p className="text-sm text-white/40">Pick a note from the list, or create a new one.</p>
-            <button
-              onClick={addNote}
-              className="mt-1 flex items-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 px-4 py-2 text-sm transition-colors shadow-lg shadow-purple-900/30"
-            >
-              <Plus className="w-4 h-4" />
-              New note
-            </button>
+            <p className="text-white/70 font-medium">
+              {activeSubjectId ? "No note selected" : "No subject selected"}
+            </p>
+            <p className="text-sm text-white/40">
+              {activeSubjectId
+                ? "Pick a note from the list, or create a new one."
+                : "Create a subject to start writing notes."}
+            </p>
+            {activeSubjectId && (
+              <button
+                onClick={addNote}
+                className="mt-1 flex items-center gap-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 px-4 py-2 text-sm transition-colors shadow-lg shadow-purple-900/30"
+              >
+                <Plus className="w-4 h-4" />
+                New note
+              </button>
+            )}
           </div>
         )}
       </main>

@@ -22,8 +22,8 @@ import focusRoutes from "./routes/focusRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import badgeRoutes from "./routes/badgeRoutes.js";
 import aiTutorRoutes from "./routes/aiTutorRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 import dns from "node:dns";
-
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 const app = express();
@@ -62,6 +62,7 @@ app.use("/api/focus-sessions", focusRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/badges", badgeRoutes);
 app.use("/api/ai-tutor", aiTutorRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
