@@ -12,7 +12,7 @@ import {
   MapPin,
   Flame,
   Clock,
-  TrendingUp,
+  Zap,
   BookMarked,
   Shield,
   Bell,
@@ -39,14 +39,18 @@ function formatDate(dateStr) {
 }
 
 // Reusable field: shows plain text normally, an input when editing.
-function Field({ label, value, editing, onChange, icon: Icon, type = "text" }) {
+// `locked` overrides editing entirely — used for email, since changing
+// a login email is a real feature (needs re-verification) that doesn't
+// exist yet, rather than something that would silently no-op on save.
+function Field({ label, value, editing, onChange, icon: Icon, type = "text", locked = false, lockedNote }) {
+  const showInput = editing && !locked;
   return (
     <div>
       <label className="flex items-center gap-2 text-xs text-white/40 mb-1.5">
         {Icon && <Icon className="w-3.5 h-3.5" />}
         {label}
       </label>
-      {editing ? (
+      {showInput ? (
         <input
           type={type}
           value={value || ""}
@@ -54,7 +58,12 @@ function Field({ label, value, editing, onChange, icon: Icon, type = "text" }) {
           className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30"
         />
       ) : (
-        <p className="text-sm text-white/90">{value || "—"}</p>
+        <>
+          <p className="text-sm text-white/90">{value || "—"}</p>
+          {editing && locked && lockedNote && (
+            <p className="text-[11px] text-white/30 mt-1">{lockedNote}</p>
+          )}
+        </>
       )}
     </div>
   );
@@ -144,7 +153,7 @@ export default function Profile() {
           {isEditing && (
             <button
               className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-purple-600 border-2 border-[#0b0a0e] flex items-center justify-center hover:bg-purple-500 transition-colors"
-              title="Change photo (backend not connected yet)"
+              title="Avatar upload isn't built yet"
             >
               <Camera className="w-3.5 h-3.5 text-white" />
             </button>
@@ -204,7 +213,7 @@ export default function Profile() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatPill icon={Flame} value={`${draft.stats?.streak}d`} label="Streak" />
         <StatPill icon={Clock} value={`${draft.stats?.studyHours}h`} label="Study Hours" />
-        <StatPill icon={TrendingUp} value={`${draft.stats?.productivity}%`} label="Productivity" />
+        <StatPill icon={Zap} value={draft.stats?.weeklyXP} label="Weekly XP" />
         <StatPill icon={BookMarked} value={draft.stats?.subjectsTracked} label="Subjects Tracked" />
       </div>
 
@@ -260,8 +269,8 @@ export default function Profile() {
             icon={Mail}
             value={draft.email}
             editing={isEditing}
-            type="email"
-            onChange={(v) => updateField("email", v)}
+            locked
+            lockedNote="Changing your login email isn't supported yet."
           />
           <Field
             label="Phone"
@@ -297,17 +306,19 @@ export default function Profile() {
               className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white resize-none focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30"
             />
           ) : (
-            <p className="text-sm text-white/70 leading-relaxed">{draft.bio}</p>
+            <p className="text-sm text-white/70 leading-relaxed">{draft.bio || "—"}</p>
           )}
         </div>
       </SectionCard>
 
-      {/* Account & Security — placeholders until backend/auth exists */}
+      {/* Account & Security — auth itself is connected, but these
+          specific features (password change, notification prefs, 2FA)
+          aren't built as endpoints yet, so they stay honestly disabled */}
       <SectionCard title="Account & Security">
         <div className="space-y-1">
           <button
             disabled
-            title="Available once backend is connected"
+            title="Not built yet"
             className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <span className="flex items-center gap-3 text-sm text-white/80">
@@ -318,7 +329,7 @@ export default function Profile() {
           </button>
           <button
             disabled
-            title="Available once backend is connected"
+            title="Not built yet"
             className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <span className="flex items-center gap-3 text-sm text-white/80">
@@ -329,7 +340,7 @@ export default function Profile() {
           </button>
           <button
             disabled
-            title="Available once backend is connected"
+            title="Not built yet"
             className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <span className="flex items-center gap-3 text-sm text-white/80">

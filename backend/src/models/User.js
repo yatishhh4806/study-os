@@ -64,6 +64,9 @@ const academicProfileSchema = new mongoose.Schema(
     schoolClass: { type: String, default: "" },
     stream: { type: String, default: "" },
     board: { type: String, default: "" },
+    // extra academic fields the Profile page collects
+    enrollmentNo: { type: String, default: "", maxlength: 40 },
+    expectedGraduation: { type: String, default: "", maxlength: 40 },
   },
   { _id: false }
 );
@@ -85,6 +88,12 @@ const userSchema = new mongoose.Schema(
     avatarUrl: { type: String, default: null },
     institution: { type: String, default: null }, // legacy simple field, kept for backward compatibility
     academicProfile: { type: academicProfileSchema, default: () => ({}) },
+
+    // general personal info — Profile page fields, not academic
+    phone: { type: String, default: null, maxlength: 20 },
+    dob: { type: Date, default: null },
+    location: { type: String, default: null, maxlength: 120 },
+    bio: { type: String, default: "", maxlength: 500 },
 
     emailVerified: { type: Boolean, default: false },
     // TODO SWAP POINT: wire to a real email provider (Resend/SendGrid) to send

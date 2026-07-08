@@ -136,6 +136,7 @@ export async function me(req, res) {
 }
 
 const profileSchema = z.object({
+  // academic
   institutionType: z.enum(["College / University", "School"]).optional(),
   institutionName: z.string().max(120).optional(),
   course: z.string().max(40).optional(),
@@ -145,10 +146,28 @@ const profileSchema = z.object({
   schoolClass: z.string().max(40).optional(),
   stream: z.string().max(40).optional(),
   board: z.string().max(40).optional(),
+  enrollmentNo: z.string().max(40).optional(),
+  expectedGraduation: z.string().max(40).optional(),
+  // personal — name is safe to allow editing here too, same validation
+  // as at registration
+  name: z.string().trim().min(2).max(80).optional(),
+  phone: z.string().max(20).nullable().optional(),
+  dob: z.string().nullable().optional(), // ISO date string, e.g. "1998-04-12"
+  location: z.string().max(120).nullable().optional(),
+  bio: z.string().max(500).optional(),
 });
 
-// PATCH /api/auth/profile — saves the academic details collected in
-// signup step 2 (or editable later from a real Profile/Settings page)
+const ACADEMIC_KEYS = [
+  "institutionType", "institutionName", "course", "branch", "year",
+  "semester", "schoolClass", "stream", "board", "enrollmentNo", "expectedGraduation",
+];
+
+// PATCH /api/auth/profile — saves both academic details (signup step 2,
+// or later edits from the Profile page) and general personal info
+// (name, phone, dob, location, bio) in a single call. Email is
+// deliberately NOT accepted here — changing a login email is a real
+// feature (usually needs re-verification) that doesn't exist yet, so
+// it's kept read-only on the frontend rather than silently no-op'd here.
 export async function updateProfile(req, res, next) {
   try {
     const parsed = profileSchema.safeParse(req.body);
@@ -156,12 +175,25 @@ export async function updateProfile(req, res, next) {
       throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { academicProfile: { ...req.user.academicProfile.toObject(), ...parsed.data } },
-      { new: true, runValidators: true }
-    );
+    const user = await User.findById(req.user._id);
+    if (!user) throw new AppError("User not found", 404, "NOT_FOUND");
 
+    const academicUpdates = {};
+    const topLevelUpdates = {};
+    for (const [key, value] of Object.entries(parsed.data)) {
+      if (ACADEMIC_KEYS.includes(key)) academicUpdates[key] = value;
+      else if (key !== "dob") topLevelUpdates[key] = value;
+    }
+
+    if (Object.keys(academicUpdates).length) {
+      user.academicProfile = { ...user.academicProfile.toObject(), ...academicUpdates };
+    }
+    Object.assign(user, topLevelUpdates);
+    if (parsed.data.dob !== undefined) {
+      user.dob = parsed.data.dob ? new Date(parsed.data.dob) : null;
+    }
+
+    await user.save();
     res.json({ user: user.toSafeJSON() });
   } catch (err) {
     next(err);
