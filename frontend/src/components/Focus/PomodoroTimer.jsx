@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, RotateCcw, Brain, Coffee, Pencil, Check } from "lucide-react";
+import { api } from "../../lib/api";
 
 const MODES = {
   focus: { label: "Focus", sub: "Deep Work", color: "#a855f7", glow: "rgba(168,85,247,0.55)", defaultMin: 25 },
@@ -13,9 +14,11 @@ function format(s) {
   return `${m}:${sec}`;
 }
 
-export default function PomodoroTimer() {
+// Only "focus" mode sessions are ever sent to the backend — short/long
+// breaks are real UI features but aren't study time, so they never
+// touch the FocusSession API at all (no half-tracked, half-fake data).
+export default function PomodoroTimer({ onSessionLogged }) {
   const [mode, setMode] = useState("focus");
-  // customMins stores per-mode durations, initialized from defaults
   const [customMins, setCustomMins] = useState({
     focus: MODES.focus.defaultMin,
     short: MODES.short.defaultMin,
@@ -30,10 +33,52 @@ export default function PomodoroTimer() {
   const [sessions, setSessions] = useState(0);
   const intervalRef = useRef(null);
 
+  // backend session bookkeeping — only ever populated while mode==="focus"
+  const sessionIdRef = useRef(null);
+  const distractionsRef = useRef(0);
+
   const total = currentDuration;
   const progress = 1 - secondsLeft / total;
   const accent = MODES[mode].color;
   const glow = MODES[mode].glow;
+
+  // ── tab-visibility distraction tracking — only while an actual
+  // backend-tracked focus session is running ──
+  useEffect(() => {
+    if (!running || mode !== "focus" || !sessionIdRef.current) return;
+    const onVisibilityChange = () => {
+      if (document.hidden) distractionsRef.current += 1;
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [running, mode]);
+
+  const completeBackendSession = useCallback(async () => {
+    const id = sessionIdRef.current;
+    if (!id) return;
+    sessionIdRef.current = null;
+    try {
+      await api.patch(`/focus-sessions/${id}/complete`, {
+        distractions: distractionsRef.current,
+      });
+      distractionsRef.current = 0;
+      onSessionLogged?.();
+    } catch (err) {
+      console.error("Failed to log completed focus session:", err);
+    }
+  }, [onSessionLogged]);
+
+  const abandonBackendSession = useCallback(async () => {
+    const id = sessionIdRef.current;
+    if (!id) return;
+    sessionIdRef.current = null;
+    distractionsRef.current = 0;
+    try {
+      await api.delete(`/focus-sessions/${id}`);
+    } catch (err) {
+      console.error("Failed to abandon focus session:", err);
+    }
+  }, []);
 
   useEffect(() => {
     if (running) {
@@ -42,7 +87,10 @@ export default function PomodoroTimer() {
           if (s <= 1) {
             clearInterval(intervalRef.current);
             setRunning(false);
-            if (mode === "focus") setSessions((c) => c + 1);
+            if (mode === "focus") {
+              setSessions((c) => c + 1);
+              completeBackendSession();
+            }
             return 0;
           }
           return s - 1;
@@ -50,21 +98,56 @@ export default function PomodoroTimer() {
       }, 1000);
     }
     return () => clearInterval(intervalRef.current);
-  }, [running, mode]);
+  }, [running, mode, completeBackendSession]);
 
-  const switchMode = useCallback((m) => {
+  const switchMode = useCallback(async (m) => {
+    if (m === mode) return;
     clearInterval(intervalRef.current);
     setRunning(false);
     setEditingDuration(false);
+    // leaving an in-progress focus session to switch modes — treat it
+    // as abandoned rather than letting it linger open in the backend
+    if (mode === "focus" && sessionIdRef.current) {
+      await abandonBackendSession();
+    }
     setMode(m);
     setSecondsLeft(customMins[m] * 60);
-  }, [customMins]);
+  }, [mode, customMins, abandonBackendSession]);
 
-  const reset = () => {
+  const handlePlayPause = useCallback(async () => {
+    if (running) {
+      // pausing doesn't touch the backend at all — the session stays
+      // open, and its final duration will include this paused time
+      // when it's completed (server-authoritative wall-clock timing)
+      setRunning(false);
+      return;
+    }
+
+    if (mode === "focus" && !sessionIdRef.current) {
+      try {
+        const { data } = await api.post("/focus-sessions", {
+          mode: "pomodoro",
+          plannedMinutes: customMins.focus,
+        });
+        sessionIdRef.current = data.session._id;
+        distractionsRef.current = 0;
+      } catch (err) {
+        console.error("Failed to start focus session:", err);
+        return; // don't start the local timer if we couldn't record it
+      }
+    }
+
+    setRunning(true);
+  }, [running, mode, customMins]);
+
+  const reset = useCallback(async () => {
     clearInterval(intervalRef.current);
     setRunning(false);
+    if (mode === "focus" && sessionIdRef.current) {
+      await abandonBackendSession();
+    }
     setSecondsLeft(customMins[mode] * 60);
-  };
+  }, [mode, customMins, abandonBackendSession]);
 
   const startEditing = () => {
     if (running) return;
@@ -116,7 +199,6 @@ export default function PomodoroTimer() {
         .bar { transition: height 0.6s cubic-bezier(.4,0,.2,1); }
       `}</style>
 
-      {/* ===== Timer Card ===== */}
       <div
         className="pt-card"
         style={{
@@ -132,7 +214,6 @@ export default function PomodoroTimer() {
           zIndex: 1,
         }}
       >
-        {/* Mode tabs */}
         <div
           style={{
             display: "flex",
@@ -173,7 +254,6 @@ export default function PomodoroTimer() {
           })}
         </div>
 
-        {/* Ring */}
         <div
           style={{
             position: "relative",
@@ -199,14 +279,7 @@ export default function PomodoroTimer() {
             }}
           />
           <svg width="300" height="300" style={{ position: "relative", zIndex: 1, transform: "rotate(-90deg)" }}>
-            <circle
-              cx="150"
-              cy="150"
-              r={radius}
-              fill="none"
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth="10"
-            />
+            <circle cx="150" cy="150" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
             <circle
               cx="150"
               cy="150"
@@ -251,7 +324,6 @@ export default function PomodoroTimer() {
             <div style={{ fontSize: 14, fontWeight: 600, color: accent, letterSpacing: 0.5 }}>
               {MODES[mode].sub}
             </div>
-            {/* Editable duration */}
             {!running && (
               editingDuration ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
@@ -317,11 +389,10 @@ export default function PomodoroTimer() {
           </div>
         </div>
 
-        {/* Controls */}
         <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 32 }}>
           <button
             className="pt-btn"
-            onClick={() => setRunning((r) => !r)}
+            onClick={handlePlayPause}
             style={{
               display: "flex",
               alignItems: "center",
@@ -362,7 +433,6 @@ export default function PomodoroTimer() {
           </button>
         </div>
 
-        {/* Mini stats */}
         <div style={{ display: "flex", gap: 14, marginTop: 28 }}>
           <div
             style={{

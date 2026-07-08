@@ -9,6 +9,11 @@ import { computeStreakUpdate } from "../utils/streak.js";
 const startSchema = z.object({
   subjectId: z.string().nullable().optional(),
   mode: z.enum(["pomodoro", "custom"]).default("pomodoro"),
+  plannedMinutes: z.number().int().min(1).max(480).default(25),
+});
+
+const completeSchema = z.object({
+  distractions: z.number().int().min(0).max(500).default(0),
 });
 
 function assertValidId(id) {
@@ -30,6 +35,7 @@ export async function startSession(req, res, next) {
       userId: req.user._id,
       subjectId: parsed.data.subjectId || null,
       mode: parsed.data.mode,
+      plannedMinutes: parsed.data.plannedMinutes,
       startedAt: new Date(),
     });
 
@@ -45,6 +51,10 @@ export async function startSession(req, res, next) {
 export async function completeSession(req, res, next) {
   try {
     assertValidId(req.params.id);
+    const parsed = completeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+    }
 
     const session = await FocusSession.findOne({ _id: req.params.id, userId: req.user._id });
     if (!session) throw new AppError("Session not found", 404, "NOT_FOUND");
@@ -58,6 +68,7 @@ export async function completeSession(req, res, next) {
 
     session.endedAt = endedAt;
     session.durationMinutes = durationMinutes;
+    session.distractions = parsed.data.distractions;
     session.completed = true;
     await session.save();
 
@@ -97,6 +108,44 @@ export async function abandonSession(req, res, next) {
     });
     if (!session) throw new AppError("Session not found or already completed", 404, "NOT_FOUND");
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/focus-sessions?days=30 — raw session list, mapped into the
+// exact shape FocusAnalytics.jsx already expects as its `sessions` prop
+// (id, type, date, startTime, durationMin, plannedMin, distractions,
+// completed). Deliberately separate from /heatmap, which only returns
+// day-level aggregates — the "Peak Focus Period" and per-day breakdown
+// need per-session detail that aggregate can't provide.
+export async function listSessions(req, res, next) {
+  try {
+    const days = Math.min(Number(req.query.days) || 30, 365);
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const sessions = await FocusSession.find({
+      userId: req.user._id,
+      startedAt: { $gte: since },
+    }).sort({ startedAt: -1 });
+
+    const mapped = sessions.map((s) => {
+      const d = new Date(s.startedAt);
+      const pad = (n) => String(n).padStart(2, "0");
+      return {
+        id: s._id,
+        type: "focus", // breaks are never sent to this API at all — see PomodoroTimer.jsx
+        date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+        startTime: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+        durationMin: s.durationMinutes,
+        plannedMin: s.plannedMinutes,
+        distractions: s.distractions,
+        completed: s.completed,
+      };
+    });
+
+    res.json({ sessions: mapped });
   } catch (err) {
     next(err);
   }

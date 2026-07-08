@@ -1,9 +1,29 @@
+import { useState, useEffect, useCallback } from "react";
 import FocusAnalytics from "../components/Focus/FocusAnalytics";
 import PomodoroTimer from "../components/Focus/PomodoroTimer";
 import AmbientPanel from "../components/Focus/AmbientControls";
 import MotivationStrip from "../components/Focus/Motivational";
+import { api } from "../lib/api";
 
 function Focus() {
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadSessions = useCallback(async () => {
+    try {
+      const { data } = await api.get("/focus-sessions", { params: { days: 30 } });
+      setSessions(data.sessions);
+    } catch (err) {
+      console.error("Failed to load focus sessions:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
+
   return (
     <div
       style={{
@@ -15,9 +35,12 @@ function Focus() {
     >
       <div className="mx-auto max-w-7xl px-8 py-12">
         <div className="grid items-start gap-8 xl:grid-cols-[340px_1fr_320px]">
-          <FocusAnalytics />
+          {/* FocusAnalytics is unchanged from its original mock version —
+              it's already a pure component driven entirely by `sessions`,
+              so passing real data in is the only thing that changed here. */}
+          {!loading && <FocusAnalytics sessions={sessions} />}
           <div className="flex flex-col gap-8">
-            <PomodoroTimer />
+            <PomodoroTimer onSessionLogged={loadSessions} />
             <MotivationStrip />
           </div>
           <AmbientPanel />

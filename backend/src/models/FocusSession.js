@@ -18,6 +18,8 @@ const focusSessionSchema = new mongoose.Schema(
     startedAt: { type: Date, required: true, default: Date.now },
     endedAt: { type: Date, default: null },
     durationMinutes: { type: Number, default: 0 }, // set when completed
+    plannedMinutes: { type: Number, default: 25 }, // the target duration chosen at start
+    distractions: { type: Number, default: 0 }, // tab-blur count during an active session
 
     mode: {
       type: String,
