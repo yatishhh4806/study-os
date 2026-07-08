@@ -14,15 +14,7 @@ import {
   Sparkles,
   Info,
 } from "lucide-react";
-
-// ─────────────────────────────────────────────────────────────
-// TEMPORARY: mock league + leaderboard data, plus a fake "live"
-// tick that nudges a few users' XP every few seconds so ranks
-// visibly move. SWAP POINT — once the backend/websocket exists,
-// replace LEAGUE_TIERS/initialRows with a fetch, and replace the
-// setInterval tick with a socket subscription that calls
-// setRows(next) the same way. The rendering layer doesn't change.
-// ─────────────────────────────────────────────────────────────
+import { api } from "../lib/api";
 
 const LEAGUE_TIERS = [
   { name: "Bronze",   color: "#b45309", glow: "rgba(180,83,9,0.35)" },
@@ -32,35 +24,15 @@ const LEAGUE_TIERS = [
   { name: "Diamond",  color: "#a855f7", glow: "rgba(168,85,247,0.4)" },
   { name: "Obsidian", color: "#f472b6", glow: "rgba(244,114,182,0.4)" },
 ];
-const CURRENT_LEAGUE_INDEX = 4; // Diamond
 
-const AVATAR_IDS = [12, 5, 8, 15, 22, 33, 44, 51, 60, 3, 9, 18, 27, 36, 45];
-const NAMES = [
-  "Yatish", "Aarav Mehta", "Priya Nair", "Rohan Gupta", "Sanya Kapoor",
-  "Devansh Rao", "Isha Verma", "Kabir Singh", "Meera Iyer", "Vivaan Joshi",
-  "Ananya Reddy", "Arjun Malhotra", "Tara Bhatt", "Yash Kulkarni", "Neha Pillai",
-];
-
-function makeInitialRows() {
-  return NAMES.map((name, i) => ({
-    id: `u${i}`,
-    name,
-    isYou: name === "Yatish",
-    avatar: `https://i.pravatar.cc/100?img=${AVATAR_IDS[i]}`,
-    streak: Math.floor(Math.random() * 40) + 3,
-    weeklyXP: Math.floor(Math.random() * 900) + 300,
-    prevRank: null,
-  }));
-}
-
-function withRanks(rows) {
-  const sorted = [...rows].sort((a, b) => b.weeklyXP - a.weeklyXP);
-  return sorted.map((r, i) => ({ ...r, rank: i + 1 }));
-}
+// mirrors PROMOTE_COUNT/DEMOTE_COUNT in the backend's utils/leagues.js —
+// keep these two in sync if that ever changes
+const PROMOTE_COUNT = 3;
+const DEMOTE_COUNT = 3;
 
 function nextMonday() {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun..6=Sat
+  const day = now.getDay();
   const daysUntil = (8 - day) % 7 || 7;
   const target = new Date(now);
   target.setDate(now.getDate() + daysUntil);
@@ -81,55 +53,70 @@ function useCountdown(target) {
   return { days, hours, mins };
 }
 
+function initialsAvatar(name) {
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return initials;
+}
+
 export default function Leaderboard() {
-  const [rows, setRows] = useState(() => withRanks(makeInitialRows()));
-  const [scope, setScope] = useState("league"); // league | friends | global
+  const [rows, setRows] = useState([]);
+  const [leagueName, setLeagueName] = useState("bronze");
+  const [scope, setScope] = useState("league"); // league | global ("friends" disabled — see tabs below)
   const [search, setSearch] = useState("");
   const [flashIds, setFlashIds] = useState({});
+  const [loading, setLoading] = useState(true);
   const target = useMemo(() => nextMonday(), []);
   const { days, hours, mins } = useCountdown(target);
   const prevRanksRef = useRef({});
 
-  // seed prevRanks once
-  useEffect(() => {
-    const map = {};
-    rows.forEach((r) => (map[r.id] = r.rank));
-    prevRanksRef.current = map;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const loadLeaderboard = useCallback(async () => {
+    try {
+      const { data } = await api.get("/leaderboard", { params: { scope } });
+      setLeagueName(data.league);
 
-  // fake "live" tick — nudges a couple of random users' XP, re-sorts,
-  // and flashes the rows whose rank changed
-  const tick = useCallback(() => {
-    setRows((prev) => {
-      const next = prev.map((r) => ({ ...r }));
-      const nudgeCount = 1 + Math.floor(Math.random() * 2);
-      for (let i = 0; i < nudgeCount; i++) {
-        const idx = Math.floor(Math.random() * next.length);
-        next[idx].weeklyXP += Math.floor(Math.random() * 40) + 10;
-      }
-      const ranked = withRanks(next);
+      const withDeltas = data.leaderboard.map((r) => {
+        const prevRank = prevRanksRef.current[r.userId] ?? r.rank;
+        return { ...r, prevRank };
+      });
 
       const changed = {};
-      ranked.forEach((r) => {
-        const prevRank = prevRanksRef.current[r.id] ?? r.rank;
-        if (prevRank !== r.rank) changed[r.id] = true;
-        r.prevRank = prevRank;
+      withDeltas.forEach((r) => {
+        if (r.prevRank !== r.rank) changed[r.userId] = true;
       });
-      prevRanksRef.current = Object.fromEntries(ranked.map((r) => [r.id, r.rank]));
+      prevRanksRef.current = Object.fromEntries(withDeltas.map((r) => [r.userId, r.rank]));
 
       if (Object.keys(changed).length) {
         setFlashIds(changed);
         setTimeout(() => setFlashIds({}), 1200);
       }
-      return ranked;
-    });
-  }, []);
 
+      setRows(withDeltas);
+    } catch (err) {
+      console.error("Failed to load leaderboard:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [scope]);
+
+  // initial load + reload whenever scope changes
   useEffect(() => {
-    const id = setInterval(tick, 4000);
+    prevRanksRef.current = {}; // reset delta tracking on scope switch
+    setLoading(true);
+    loadLeaderboard();
+  }, [loadLeaderboard]);
+
+  // real periodic refresh — no more fake simulated XP ticks; this just
+  // catches genuine changes (your own reviews/sessions, or other real
+  // users' activity) since the last poll
+  useEffect(() => {
+    const id = setInterval(loadLeaderboard, 30000);
     return () => clearInterval(id);
-  }, [tick]);
+  }, [loadLeaderboard]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -138,9 +125,8 @@ export default function Leaderboard() {
   }, [rows, search]);
 
   const you = rows.find((r) => r.isYou);
-  const league = LEAGUE_TIERS[CURRENT_LEAGUE_INDEX];
-  const promoteCount = 3;
-  const demoteCount = 3;
+  const leagueIndex = LEAGUE_TIERS.findIndex((t) => t.name.toLowerCase() === leagueName);
+  const league = LEAGUE_TIERS[leagueIndex] ?? LEAGUE_TIERS[0];
 
   return (
     <div className="relative min-h-screen bg-[#09050e] text-white overflow-x-hidden">
@@ -154,12 +140,11 @@ export default function Leaderboard() {
       `}</style>
 
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-24 right-0 w-md h-112 rounded-full blur-[140px]" style={{ background: league.glow }} />
+        <div className="absolute -top-24 right-0 w-[28rem] h-[28rem] rounded-full blur-[140px]" style={{ background: league.glow }} />
         <div className="absolute bottom-0 -left-24 w-96 h-96 rounded-full bg-purple-500/10 blur-[140px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
-        {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-black flex items-center gap-2">
@@ -169,7 +154,7 @@ export default function Leaderboard() {
             <p className="text-white/40 mt-1">Climb the league, hold your rank, don't get relegated.</p>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/3 px-4 py-2.5">
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5">
             <Clock className="w-4 h-4 text-purple-300" />
             <span className="text-sm text-white/60">League resets in</span>
             <span className="text-sm font-semibold text-white tabular-nums">
@@ -178,18 +163,13 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* League ladder */}
-        <div className="rounded-2xl border border-white/10 bg-white/3 backdrop-blur-xl p-5 mb-6 overflow-x-auto">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-5 mb-6 overflow-x-auto">
           <div className="flex items-center gap-2 min-w-max">
             {LEAGUE_TIERS.map((tier, i) => {
-              const active = i === CURRENT_LEAGUE_INDEX;
+              const active = i === leagueIndex;
               return (
                 <div key={tier.name} className="flex items-center gap-2">
-                  <div
-                    className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all ${
-                      active ? "scale-110" : "opacity-50"
-                    }`}
-                  >
+                  <div className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all ${active ? "scale-110" : "opacity-50"}`}>
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center ${active ? "lb-float" : ""}`}
                       style={{
@@ -204,23 +184,29 @@ export default function Leaderboard() {
                       {tier.name}
                     </span>
                   </div>
-                  {i < LEAGUE_TIERS.length - 1 && (
-                    <div className="w-8 h-px bg-white/10 shrink-0" />
-                  )}
+                  {i < LEAGUE_TIERS.length - 1 && <div className="w-8 h-px bg-white/10 flex-shrink-0" />}
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Your standing */}
         {you && (
           <div
             className="rounded-2xl border p-5 mb-6 flex items-center gap-4 flex-wrap"
             style={{ borderColor: `${league.color}40`, background: `${league.color}0d` }}
           >
-            <img src={you.avatar} alt="" className="w-14 h-14 rounded-full border-2" style={{ borderColor: league.color }} />
-            <div className="flex-1 min-w-40">
+            <div
+              className="w-14 h-14 rounded-full border-2 flex items-center justify-center text-lg font-bold flex-shrink-0"
+              style={{ borderColor: league.color, background: `${league.color}22` }}
+            >
+              {you.avatarUrl ? (
+                <img src={you.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                initialsAvatar(you.name)
+              )}
+            </div>
+            <div className="flex-1 min-w-[160px]">
               <p className="text-sm text-white/50">You're currently ranked</p>
               <p className="text-2xl font-black">#{you.rank} <span className="text-base font-medium text-white/50">in {league.name}</span></p>
             </div>
@@ -234,8 +220,8 @@ export default function Leaderboard() {
                 <p className="text-[11px] text-white/40">weekly XP</p>
               </div>
               <div className="text-center">
-                <p className={`text-lg font-bold ${you.rank <= promoteCount ? "text-emerald-400" : you.rank > rows.length - demoteCount ? "text-red-400" : "text-white/70"}`}>
-                  {you.rank <= promoteCount ? "Promotion" : you.rank > rows.length - demoteCount ? "Danger" : "Safe"}
+                <p className={`text-lg font-bold ${you.rank <= PROMOTE_COUNT ? "text-emerald-400" : you.rank > rows.length - DEMOTE_COUNT ? "text-red-400" : "text-white/70"}`}>
+                  {you.rank <= PROMOTE_COUNT ? "Promotion" : you.rank > rows.length - DEMOTE_COUNT ? "Danger" : "Safe"}
                 </p>
                 <p className="text-[11px] text-white/40">zone</p>
               </div>
@@ -243,19 +229,24 @@ export default function Leaderboard() {
           </div>
         )}
 
-        {/* Scope tabs + search */}
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div className="inline-flex rounded-xl bg-white/5 border border-white/10 p-1 gap-1">
             {[
-              { id: "league", label: "This League", icon: Crown },
-              { id: "friends", label: "Friends", icon: Users },
-              { id: "global", label: "Global", icon: Sparkles },
-            ].map(({ id, label, icon: Icon }) => (
+              { id: "league", label: "This League", icon: Crown, disabled: false },
+              { id: "friends", label: "Friends", icon: Users, disabled: true },
+              { id: "global", label: "Global", icon: Sparkles, disabled: false },
+            ].map(({ id, label, icon: Icon, disabled }) => (
               <button
                 key={id}
-                onClick={() => setScope(id)}
+                onClick={() => !disabled && setScope(id)}
+                disabled={disabled}
+                title={disabled ? "Friend lists aren't built yet" : undefined}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  scope === id ? "bg-purple-500 text-white" : "text-white/55 hover:text-white hover:bg-white/5"
+                  disabled
+                    ? "text-white/25 cursor-not-allowed"
+                    : scope === id
+                    ? "bg-purple-500 text-white"
+                    : "text-white/55 hover:text-white hover:bg-white/5"
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -275,34 +266,31 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Zone legend */}
         <div className="flex items-center gap-4 text-[11px] text-white/40 mb-3 px-1">
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Promotion zone — top {promoteCount}</span>
-          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400" /> Demotion zone — bottom {demoteCount}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Promotion zone — top {PROMOTE_COUNT}</span>
+          <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400" /> Demotion zone — bottom {DEMOTE_COUNT}</span>
         </div>
 
-        {/* Rows */}
-        <div className="rounded-2xl border border-white/10 bg-white/3 backdrop-blur-xl overflow-hidden">
-          {filtered.map((r, i) => {
-            const inPromo = r.rank <= promoteCount;
-            const inDemo = r.rank > rows.length - demoteCount;
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl overflow-hidden">
+          {loading && <p className="text-center text-sm text-white/35 py-10">Loading…</p>}
+
+          {!loading && filtered.map((r, i) => {
+            const inPromo = r.rank <= PROMOTE_COUNT;
+            const inDemo = r.rank > rows.length - DEMOTE_COUNT;
             const delta = r.prevRank != null ? r.prevRank - r.rank : 0;
 
             return (
               <div
-                key={r.id}
+                key={r.userId}
                 style={{ animationDelay: `${Math.min(i, 10) * 25}ms` }}
                 className={`lb-fade-up flex items-center gap-4 px-5 py-3.5 border-b border-white/5 last:border-0 transition-colors ${
-                  r.isYou ? "bg-purple-500/6" : ""
-                } ${flashIds[r.id] ? "lb-flash" : ""}`}
+                  r.isYou ? "bg-purple-500/[0.06]" : ""
+                } ${flashIds[r.userId] ? "lb-flash" : ""}`}
               >
-                {/* rank + delta */}
-                <div className="w-10 flex flex-col items-center shrink-0">
-                  <span
-                    className={`text-sm font-bold ${
-                      r.rank === 1 ? "text-yellow-400" : r.rank === 2 ? "text-slate-300" : r.rank === 3 ? "text-amber-600" : "text-white/70"
-                    }`}
-                  >
+                <div className="w-10 flex flex-col items-center flex-shrink-0">
+                  <span className={`text-sm font-bold ${
+                    r.rank === 1 ? "text-yellow-400" : r.rank === 2 ? "text-slate-300" : r.rank === 3 ? "text-amber-600" : "text-white/70"
+                  }`}>
                     {r.rank}
                   </span>
                   {delta !== 0 ? (
@@ -315,7 +303,13 @@ export default function Leaderboard() {
                   )}
                 </div>
 
-                <img src={r.avatar} alt="" className="w-9 h-9 rounded-full shrink-0" />
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-white/10">
+                  {r.avatarUrl ? (
+                    <img src={r.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    initialsAvatar(r.name)
+                  )}
+                </div>
 
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate flex items-center gap-1.5">
@@ -327,25 +321,27 @@ export default function Leaderboard() {
                   </p>
                 </div>
 
-                <div className="text-right shrink-0">
+                <div className="text-right flex-shrink-0">
                   <p className="text-sm font-bold tabular-nums">{r.weeklyXP.toLocaleString()}</p>
                   <p className="text-[11px] text-white/35">XP</p>
                 </div>
 
                 {(inPromo || inDemo) && (
-                  <span className={`w-1.5 h-8 rounded-full shrink-0 ${inPromo ? "bg-emerald-400/70" : "bg-red-400/70"}`} />
+                  <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${inPromo ? "bg-emerald-400/70" : "bg-red-400/70"}`} />
                 )}
               </div>
             );
           })}
 
-          {filtered.length === 0 && (
-            <p className="text-center text-sm text-white/35 py-10">No players match "{search}"</p>
+          {!loading && filtered.length === 0 && (
+            <p className="text-center text-sm text-white/35 py-10">
+              {search ? `No players match "${search}"` : "No one's ranked here yet — invite some classmates!"}
+            </p>
           )}
         </div>
 
         <p className="flex items-center gap-1.5 text-[11px] text-white/30 mt-3">
-          <Info className="w-3 h-3" /> Ranks update live as XP comes in from focus sessions, quizzes, and flashcard reviews.
+          <Info className="w-3 h-3" /> Ranks update from real activity — focus sessions and flashcard reviews. Refreshes every 30s.
         </p>
       </div>
     </div>
