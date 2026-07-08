@@ -1,4 +1,4 @@
-// src/routes/focusRoutes.js
+// src/routes/focusRoutes.JS
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth.js";
 import {
