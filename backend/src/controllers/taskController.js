@@ -12,6 +12,11 @@ const createSchema = z.object({
   startTime: z.string().nullable().optional(),
   endTime: z.string().nullable().optional(),
   urgency: z.enum(["low", "medium", "high"]).nullable().optional(),
+  category: z.enum(["study", "assignment", "exam", "personal", "reminder", "meeting", "other"]).nullable().optional(),
+  color: z.string().nullable().optional(),
+  allDay: z.boolean().optional(),
+  reminder: z.string().nullable().optional(),
+  repeat: z.string().nullable().optional(),
 });
 
 const updateSchema = createSchema.partial();

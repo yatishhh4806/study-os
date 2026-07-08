@@ -1,9 +1,10 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import {
   ChevronLeft, ChevronRight, Plus, X, Clock, Bell,
-  Tag, AlignLeft, Repeat, Calendar, List, LayoutGrid,
-  Trash2, Edit3, Check, ChevronDown, CalendarDays,
+  Tag, Repeat, Calendar, List, LayoutGrid,
+  Trash2, CalendarDays, Loader2,
 } from "lucide-react";
+import { api } from "../lib/api";
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
@@ -17,7 +18,6 @@ const VIEWS = [
 ];
 
 const DAYS_SHORT  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const DAYS_FULL   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const MONTHS      = ["January","February","March","April","May","June",
                      "July","August","September","October","November","December"];
 
@@ -56,19 +56,44 @@ const EVENT_COLORS = [
   "#facc15","#34d399","#22d3ee","#60a5fa","#94a3b8",
 ];
 
-const makeId = () => crypto.randomUUID();
+const fmt = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
 
-const fmt = (d) => d.toISOString().slice(0,10);
+// ── backend Task <-> frontend event shape mapping ──
+function toFrontendEvent(task) {
+  return {
+    id: task._id,
+    title: task.title,
+    date: fmt(new Date(task.date)),
+    startTime: task.startTime || "09:00",
+    endTime: task.endTime || "10:00",
+    color: task.color || ACCENT,
+    category: task.category || "other",
+    description: task.notes || "",
+    reminder: task.reminder || "30",
+    repeat: task.repeat || "none",
+    allDay: !!task.allDay,
+  };
+}
 
-const SAMPLE_EVENTS = [
-  { id:makeId(), title:"SEPM Assignment Due",  date:fmt(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+1)), startTime:"23:59", endTime:"23:59", color:"#f87171",  category:"assignment", description:"Submit on Moodle", reminder:"1440", repeat:"none", allDay:true  },
-  { id:makeId(), title:"ML Study Block",        date:fmt(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate())),   startTime:"15:00", endTime:"17:00", color:"#22d3ee",  category:"study",      description:"Chapter 4 – Neural Networks", reminder:"30", repeat:"none", allDay:false },
-  { id:makeId(), title:"DSA Practice",          date:fmt(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate())),   startTime:"10:00", endTime:"11:30", color:"#a855f7",  category:"study",      description:"Graphs and BFS/DFS", reminder:"10",   repeat:"daily", allDay:false },
-  { id:makeId(), title:"React Project Sprint",  date:fmt(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+3)),  startTime:"13:00", endTime:"16:00", color:"#fb923c",  category:"assignment", description:"Build dashboard", reminder:"60",   repeat:"none", allDay:false },
-  { id:makeId(), title:"ML Mid-Sem Exam",       date:fmt(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+7)),  startTime:"09:00", endTime:"12:00", color:"#f87171",  category:"exam",       description:"Room 204, Block C", reminder:"1440", repeat:"none", allDay:false },
-  { id:makeId(), title:"Study Group Meeting",   date:fmt(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+2)),  startTime:"18:00", endTime:"19:30", color:"#34d399",  category:"meeting",    description:"Library Room 3", reminder:"30",   repeat:"weekly",allDay:false },
-  { id:makeId(), title:"DBMS Revision",         date:fmt(new Date(TODAY.getFullYear(),TODAY.getMonth(),TODAY.getDate()+5)),  startTime:"20:00", endTime:"22:00", color:"#f472b6",  category:"study",      description:"Normalization + SQL", reminder:"30",   repeat:"none", allDay:false },
-];
+function toBackendPayload(ev) {
+  return {
+    title: ev.title,
+    notes: ev.description || "",
+    date: new Date(`${ev.date}T00:00:00`).toISOString(),
+    startTime: ev.allDay ? null : ev.startTime,
+    endTime: ev.allDay ? null : ev.endTime,
+    category: ev.category,
+    color: ev.color,
+    allDay: ev.allDay,
+    reminder: ev.reminder,
+    repeat: ev.repeat,
+  };
+}
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -113,9 +138,22 @@ function EventModal({ event, onSave, onDelete, onClose }) {
     repeat:"none", allDay:false,
     ...(event || {}),
   });
+  const [saving, setSaving] = useState(false);
 
   const set = (k,v) => setForm(p=>({...p,[k]:v}));
-  const cat = CATEGORIES.find(c=>c.id===form.category);
+
+  const handleSave = async () => {
+    if (!form.title.trim()) return;
+    setSaving(true);
+    try {
+      // don't auto-generate an id here — its presence (or absence) is
+      // exactly how the parent decides create vs. update
+      await onSave({ ...form, id: form.id });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div onClick={e=>{if(e.target===e.currentTarget)onClose();}}
@@ -127,14 +165,13 @@ function EventModal({ event, onSave, onDelete, onClose }) {
         border:`1px solid ${form.color}44`,borderRadius:24,padding:28,
         boxShadow:`0 40px 80px -20px rgba(0,0,0,.8),0 0 60px -20px rgba(168,85,247,.3)` }}>
 
-        {/* Header */}
         <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:22 }}>
           <h2 style={{ fontSize:18,fontWeight:800,margin:0 }}>
             {isEdit?"Edit Event":"New Event"}
           </h2>
           <div style={{ display:"flex",gap:8 }}>
             {isEdit && (
-              <button onClick={()=>{onDelete(event.id);onClose();}}
+              <button onClick={async ()=>{ await onDelete(event.id); onClose(); }}
                 style={{ padding:"6px 8px",borderRadius:8,border:"1px solid rgba(248,113,113,.3)",
                   background:"rgba(248,113,113,.1)",color:"#f87171",cursor:"pointer",display:"flex" }}>
                 <Trash2 size={15}/>
@@ -148,7 +185,6 @@ function EventModal({ event, onSave, onDelete, onClose }) {
           </div>
         </div>
 
-        {/* Title */}
         <input value={form.title} onChange={e=>set("title",e.target.value)}
           placeholder="Event title"
           style={{ width:"100%",background:"rgba(255,255,255,.04)",border:`1px solid ${form.color}44`,
@@ -156,7 +192,6 @@ function EventModal({ event, onSave, onDelete, onClose }) {
             outline:"none",marginBottom:16,boxSizing:"border-box",
             fontFamily:"'Inter',-apple-system,sans-serif" }}/>
 
-        {/* Color picker */}
         <div style={{ display:"flex",gap:8,marginBottom:18,alignItems:"center" }}>
           <Tag size={14} color="rgba(255,255,255,.4)"/>
           <span style={{ fontSize:12,color:"rgba(255,255,255,.4)",marginRight:4 }}>Color</span>
@@ -168,7 +203,6 @@ function EventModal({ event, onSave, onDelete, onClose }) {
           ))}
         </div>
 
-        {/* Category */}
         <div style={{ marginBottom:16 }}>
           <label style={{ fontSize:11.5,fontWeight:600,color:"rgba(255,255,255,.4)",
             display:"block",marginBottom:7,letterSpacing:.8 }}>CATEGORY</label>
@@ -185,7 +219,6 @@ function EventModal({ event, onSave, onDelete, onClose }) {
           </div>
         </div>
 
-        {/* All day toggle */}
         <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",
           marginBottom:14,padding:"10px 14px",borderRadius:12,
           border:"1px solid rgba(255,255,255,.07)",background:"rgba(255,255,255,.02)" }}>
@@ -200,7 +233,6 @@ function EventModal({ event, onSave, onDelete, onClose }) {
           </div>
         </div>
 
-        {/* Date */}
         <div style={{ marginBottom:12 }}>
           <label style={{ fontSize:11.5,fontWeight:600,color:"rgba(255,255,255,.4)",
             display:"block",marginBottom:6,letterSpacing:.8 }}>DATE</label>
@@ -211,7 +243,6 @@ function EventModal({ event, onSave, onDelete, onClose }) {
               boxSizing:"border-box",colorScheme:"dark" }}/>
         </div>
 
-        {/* Time */}
         {!form.allDay && (
           <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12 }}>
             {[["startTime","Start"],["endTime","End"]].map(([k,l])=>(
@@ -228,7 +259,6 @@ function EventModal({ event, onSave, onDelete, onClose }) {
           </div>
         )}
 
-        {/* Reminder */}
         <div style={{ marginBottom:12 }}>
           <label style={{ fontSize:11.5,fontWeight:600,color:"rgba(255,255,255,.4)",
             display:"block",marginBottom:6,letterSpacing:.8 }}>
@@ -240,9 +270,11 @@ function EventModal({ event, onSave, onDelete, onClose }) {
               padding:"10px 12px",color:"#fff",fontSize:14,outline:"none",cursor:"pointer" }}>
             {REMINDERS.map(r=><option key={r.value} value={r.value} style={{background:"#09070f"}}>{r.label}</option>)}
           </select>
+          <p style={{ fontSize:11, color:"rgba(255,255,255,.3)", marginTop:5 }}>
+            Saved with the event — actual notifications aren't wired up yet.
+          </p>
         </div>
 
-        {/* Repeat */}
         <div style={{ marginBottom:16 }}>
           <label style={{ fontSize:11.5,fontWeight:600,color:"rgba(255,255,255,.4)",
             display:"block",marginBottom:6,letterSpacing:.8 }}>
@@ -254,9 +286,11 @@ function EventModal({ event, onSave, onDelete, onClose }) {
               padding:"10px 12px",color:"#fff",fontSize:14,outline:"none",cursor:"pointer" }}>
             {REPEATS.map(r=><option key={r.value} value={r.value} style={{background:"#09070f"}}>{r.label}</option>)}
           </select>
+          <p style={{ fontSize:11, color:"rgba(255,255,255,.3)", marginTop:5 }}>
+            Saved with the event — this creates one event, not repeating occurrences, yet.
+          </p>
         </div>
 
-        {/* Description */}
         <div style={{ marginBottom:22 }}>
           <label style={{ fontSize:11.5,fontWeight:600,color:"rgba(255,255,255,.4)",
             display:"block",marginBottom:6,letterSpacing:.8 }}>DESCRIPTION</label>
@@ -269,14 +303,14 @@ function EventModal({ event, onSave, onDelete, onClose }) {
               boxSizing:"border-box" }}/>
         </div>
 
-        <button onClick={()=>{ if(!form.title.trim()) return; onSave({...form,id:form.id||makeId()}); onClose(); }}
-          disabled={!form.title.trim()}
+        <button onClick={handleSave}
+          disabled={!form.title.trim() || saving}
           style={{ width:"100%",padding:"13px",borderRadius:12,border:"none",
-            cursor:form.title.trim()?"pointer":"not-allowed",fontSize:14.5,fontWeight:700,color:"#fff",
+            cursor:(form.title.trim() && !saving)?"pointer":"not-allowed",fontSize:14.5,fontWeight:700,color:"#fff",
             background:form.title.trim()?`linear-gradient(135deg,${form.color},${form.color}bb)`:"rgba(255,255,255,.08)",
             boxShadow:form.title.trim()?`0 10px 28px -8px ${form.color}66`:"none",
             transition:"all .2s" }}>
-          {isEdit ? "Save Changes" : "Create Event"}
+          {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Event"}
         </button>
       </div>
     </div>
@@ -316,7 +350,6 @@ function MonthView({ year, month, events, onDayClick, onEventClick }) {
 
   return (
     <div style={{ flex:1,display:"flex",flexDirection:"column" }}>
-      {/* Day headers */}
       <div style={{ display:"grid",gridTemplateColumns:"repeat(7,1fr)",
         borderBottom:"1px solid rgba(255,255,255,.1)",background:"rgba(0,0,0,.3)" }}>
         {DAYS_SHORT.map((d,i)=>(
@@ -328,7 +361,6 @@ function MonthView({ year, month, events, onDayClick, onEventClick }) {
         ))}
       </div>
 
-      {/* Grid */}
       <div style={{ flex:1,display:"grid",gridTemplateColumns:"repeat(7,1fr)",
         gridTemplateRows:"repeat(6,1fr)" }}>
         {days.map((cell,i)=>{
@@ -356,7 +388,6 @@ function MonthView({ year, month, events, onDayClick, onEventClick }) {
               onMouseLeave={e=>e.currentTarget.style.background=today
                 ?"rgba(168,85,247,.07)":!cell.cur?"rgba(0,0,0,.25)":isWeekend?"rgba(255,255,255,.012)":"rgba(255,255,255,.018)"}>
 
-              {/* Date number */}
               <div style={{ display:"flex",justifyContent:"flex-start",marginBottom:6 }}>
                 <span style={{
                   fontSize:14, fontWeight: today ? 900 : cell.cur ? 600 : 400,
@@ -368,7 +399,6 @@ function MonthView({ year, month, events, onDayClick, onEventClick }) {
                 }}>{cell.date.getDate()}</span>
               </div>
 
-              {/* Events (max 3) */}
               {dayEvs.slice(0,3).map(ev=>(
                 <div key={ev.id} onClick={e=>{e.stopPropagation();onEventClick(ev);}}
                   style={{
@@ -427,7 +457,6 @@ function WeekView({ date, events, onEventClick, onSlotClick }) {
 
   return (
     <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}>
-      {/* Day header row */}
       <div style={{ display:"grid",gridTemplateColumns:"56px repeat(7,1fr)",
         borderBottom:"1px solid rgba(255,255,255,.06)",flexShrink:0 }}>
         <div/>
@@ -449,7 +478,6 @@ function WeekView({ date, events, onEventClick, onSlotClick }) {
         })}
       </div>
 
-      {/* All-day strip */}
       <div style={{ display:"grid",gridTemplateColumns:"56px repeat(7,1fr)",
         borderBottom:"1px solid rgba(255,255,255,.06)",flexShrink:0,minHeight:28 }}>
         <div style={{ padding:"4px 6px",fontSize:10,color:"rgba(255,255,255,.3)",
@@ -463,11 +491,9 @@ function WeekView({ date, events, onEventClick, onSlotClick }) {
         ))}
       </div>
 
-      {/* Time grid */}
       <div ref={scrollRef} style={{ flex:1,overflowY:"auto",position:"relative" }}>
         <div style={{ display:"grid",gridTemplateColumns:"56px repeat(7,1fr)",
           minHeight:`${24*48}px` }}>
-          {/* Hour labels */}
           <div>
             {HOURS.map((h,i)=>(
               <div key={i} style={{ height:48,display:"flex",alignItems:"flex-start",
@@ -477,7 +503,6 @@ function WeekView({ date, events, onEventClick, onSlotClick }) {
             ))}
           </div>
 
-          {/* Day columns */}
           {weekDays.map((d,di)=>{
             const dayEvs = eventsOn(d);
             const today  = isToday(d);
@@ -485,7 +510,6 @@ function WeekView({ date, events, onEventClick, onSlotClick }) {
               <div key={di} style={{ position:"relative",
                 borderLeft:"1px solid rgba(255,255,255,.04)",
                 background:today?"rgba(168,85,247,.02)":"transparent" }}>
-                {/* Hour lines */}
                 {HOURS.map((_,hi)=>(
                   <div key={hi}
                     onClick={()=>onSlotClick(d,hi)}
@@ -494,7 +518,6 @@ function WeekView({ date, events, onEventClick, onSlotClick }) {
                     onMouseLeave={e=>e.currentTarget.style.background="transparent"}/>
                 ))}
 
-                {/* Events */}
                 {dayEvs.map(ev=>{
                   const top  = (timeToMins(ev.startTime)/60)*48;
                   const ht   = Math.max(((timeToMins(ev.endTime)-timeToMins(ev.startTime))/60)*48,24);
@@ -516,7 +539,6 @@ function WeekView({ date, events, onEventClick, onSlotClick }) {
                   );
                 })}
 
-                {/* Current time indicator */}
                 {today && (()=>{
                   const now = new Date();
                   const mins = now.getHours()*60+now.getMinutes();
@@ -690,7 +712,8 @@ function MiniCalendar({ year, month, selected, events, onSelect, onNav }) {
 export default function Planner() {
   const [view,         setView]         = useState("month");
   const [current,      setCurrent]      = useState(new Date(TODAY.getFullYear(),TODAY.getMonth(),1));
-  const [events,       setEvents]       = useState(SAMPLE_EVENTS);
+  const [events,       setEvents]       = useState([]);
+  const [loading,       setLoading]      = useState(true);
   const [modal,        setModal]        = useState(null); // null | { event? }
   const [selected,     setSelected]     = useState(TODAY);
   const [filterCat,    setFilterCat]    = useState(null);
@@ -699,6 +722,29 @@ export default function Planner() {
 
   const year  = current.getFullYear();
   const month = current.getMonth();
+
+  // load a generous window of events once on mount — 90 days back,
+  // a year forward — rather than refetching on every calendar navigation
+  useEffect(() => {
+    async function load() {
+      try {
+        const from = new Date(); from.setDate(from.getDate() - 90);
+        const to = new Date(); to.setDate(to.getDate() + 365);
+        const { data } = await api.get("/tasks", {
+          params: { from: from.toISOString(), to: to.toISOString() },
+        });
+        // only tasks that actually have a date belong on the calendar —
+        // plain checklist items (date: null) live on the Dashboard's
+        // Study Plan instead
+        setEvents(data.tasks.filter(t => t.date).map(toFrontendEvent));
+      } catch (err) {
+        console.error("Failed to load planner events:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
 
   const filteredEvents = filterCat ? events.filter(e=>e.category===filterCat) : events;
 
@@ -712,8 +758,25 @@ export default function Planner() {
     });
   };
 
-  const saveEvent  = (ev) => setEvents(prev=>prev.some(e=>e.id===ev.id)?prev.map(e=>e.id===ev.id?ev:e):[...prev,ev]);
-  const deleteEvent= (id)  => setEvents(prev=>prev.filter(e=>e.id!==id));
+  async function saveEvent(ev) {
+    const payload = toBackendPayload(ev);
+    if (ev.id) {
+      const { data } = await api.patch(`/tasks/${ev.id}`, payload);
+      setEvents(prev => prev.map(e => e.id === ev.id ? toFrontendEvent(data.task) : e));
+    } else {
+      const { data } = await api.post("/tasks", payload);
+      setEvents(prev => [...prev, toFrontendEvent(data.task)]);
+    }
+  }
+
+  async function deleteEvent(id) {
+    try {
+      await api.delete(`/tasks/${id}`);
+      setEvents(prev => prev.filter(e => e.id !== id));
+    } catch (err) {
+      console.error("Failed to delete event:", err);
+    }
+  }
 
   const openCreate = (date, hour) => {
     const d = date || selected;
@@ -728,11 +791,19 @@ export default function Planner() {
     ? `${MONTHS[month]} ${year} – Week of ${getWeekDays(current)[0].getDate()}`
     : "Upcoming Events";
 
-  // upcoming in sidebar
   const upcoming = [...events]
     .filter(e=>e.date>=fmt(TODAY))
     .sort((a,b)=>a.date.localeCompare(b.date))
     .slice(0,5);
+
+  if (loading) {
+    return (
+      <div style={{ height:"100vh", width:"100%", display:"flex", alignItems:"center", justifyContent:"center", background:"#050308" }}>
+        <Loader2 size={28} color={ACCENT} style={{ animation:"spin 1s linear infinite" }} />
+        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -753,7 +824,6 @@ export default function Planner() {
       <div style={{ width:240,borderRight:"1px solid rgba(255,255,255,.06)",
         display:"flex",flexDirection:"column",flexShrink:0,overflowY:"auto",padding:"20px 12px" }}>
 
-        {/* Mini calendar */}
         <div style={{ borderRadius:16,border:"1px solid rgba(255,255,255,.07)",
           background:"rgba(255,255,255,.02)",padding:"14px 10px",marginBottom:16 }}>
           <MiniCalendar
@@ -768,7 +838,6 @@ export default function Planner() {
           />
         </div>
 
-        {/* Category filter */}
         <div style={{ marginBottom:16 }}>
           <p style={{ fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
             letterSpacing:1.2,marginBottom:8,padding:"0 4px" }}>CATEGORIES</p>
@@ -798,7 +867,6 @@ export default function Planner() {
           ))}
         </div>
 
-        {/* Upcoming events */}
         <div>
           <p style={{ fontSize:10,fontWeight:700,color:"rgba(255,255,255,.3)",
             letterSpacing:1.2,marginBottom:8,padding:"0 4px" }}>UPCOMING</p>
@@ -827,12 +895,10 @@ export default function Planner() {
       {/* ── MAIN AREA ───────────────────────────────────────── */}
       <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}>
 
-        {/* Top bar */}
         <div style={{ display:"flex",alignItems:"center",gap:12,
           padding:"14px 20px",borderBottom:"1px solid rgba(255,255,255,.06)",
           flexShrink:0,background:"rgba(0,0,0,.2)" }}>
 
-          {/* Today button */}
           <button onClick={()=>{setCurrent(new Date(TODAY.getFullYear(),TODAY.getMonth(),1));setSelected(TODAY);}}
             style={{ padding:"8px 16px",borderRadius:10,border:"1px solid rgba(255,255,255,.1)",
               background:"rgba(255,255,255,.04)",color:"rgba(255,255,255,.7)",
@@ -840,7 +906,6 @@ export default function Planner() {
             Today
           </button>
 
-          {/* Nav */}
           <div style={{ display:"flex",gap:2 }}>
             {[-1,1].map(d=>(
               <button key={d} onClick={()=>navigate(d)}
@@ -854,7 +919,6 @@ export default function Planner() {
 
           <h2 style={{ fontSize:18,fontWeight:800,margin:0,letterSpacing:-.3 }}>{headerLabel}</h2>
 
-          {/* View switcher */}
           <div style={{ marginLeft:"auto",display:"flex",gap:4,
             background:"rgba(255,255,255,.04)",borderRadius:12,padding:4,
             border:"1px solid rgba(255,255,255,.07)" }}>
@@ -880,7 +944,6 @@ export default function Planner() {
           </button>
         </div>
 
-        {/* Calendar views */}
         {view==="month" && (
           <MonthView year={year} month={month} events={filteredEvents}
             onDayClick={d=>openCreate(d)}
@@ -897,7 +960,6 @@ export default function Planner() {
         )}
       </div>
 
-      {/* ── EVENT MODAL ─────────────────────────────────────── */}
       {modal && (
         <EventModal
           event={modal.event}

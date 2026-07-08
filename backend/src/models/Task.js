@@ -31,6 +31,23 @@ const taskSchema = new mongoose.Schema(
       default: null,
     },
 
+    // ── Planner-specific fields ──
+    category: {
+      type: String,
+      enum: ["study", "assignment", "exam", "personal", "reminder", "meeting", "other", null],
+      default: null,
+    },
+    color: { type: String, default: null }, // hex string, independent of category
+    allDay: { type: Boolean, default: false },
+    // NOTE: reminder/repeat are stored as selected so nothing is silently
+    // dropped when saving from the Planner UI, but neither is functional
+    // yet — reminder does not schedule a real notification, and repeat
+    // does not generate future occurrences. Both need real features
+    // (a notification delivery system; a recurrence-expansion engine)
+    // before they do anything beyond remembering the user's choice.
+    reminder: { type: String, default: null },
+    repeat: { type: String, default: null },
+
     completed: { type: Boolean, default: false },
     completedAt: { type: Date, default: null },
   },
