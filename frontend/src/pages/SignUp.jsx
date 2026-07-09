@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
+import { useGoogleLogin } from "@react-oauth/google";
 import AuthHero from "../components/AuthHero/AuthHero";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
@@ -34,10 +35,11 @@ function FieldError({ msg }) {
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -46,12 +48,10 @@ export default function Signup() {
     confirmPassword: "",
     institutionType: "College / University",
     institutionName: "",
-    // College fields
     course: "B.Tech",
     branch: "",
     year: "1st Year",
     semester: "Semester 1",
-    // School fields
     schoolClass: "Class 11",
     stream: "PCM",
     board: "CBSE",
@@ -63,7 +63,6 @@ export default function Signup() {
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  // ── Step 1 validation ───────────────────────────────────────
   const validateStep1 = () => {
     const e = {};
     if (!formData.fullName.trim()) e.fullName = "Full name is required.";
@@ -86,7 +85,6 @@ export default function Signup() {
     return Object.keys(e).length === 0;
   };
 
-  // ── Step 2 validation ───────────────────────────────────────
   const validateStep2 = () => {
     const e = {};
     if (!formData.institutionName.trim())
@@ -102,9 +100,6 @@ export default function Signup() {
     if (validateStep1()) setStep(2);
   };
 
-  // account creation + academic profile are two separate backend calls —
-  // the account must exist (with a session) before we can attach profile
-  // data to it via the authenticated /auth/profile endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep2()) return;
@@ -132,10 +127,6 @@ export default function Signup() {
             }),
       };
 
-      // if this second call fails, the account still exists and is
-      // logged in — just without the academic profile saved yet. Not
-      // ideal, but far better than losing the whole signup over a
-      // secondary, non-critical write.
       try {
         await api.patch("/auth/profile", profilePayload);
       } catch (profileErr) {
@@ -144,7 +135,7 @@ export default function Signup() {
 
       navigate("/dashboard");
     } catch (err) {
-      setStep(1); // send them back to fix whatever the backend rejected
+      setStep(1);
       setErrors((prev) => ({
         ...prev,
         form: err.response?.data?.error || "Couldn't create your account. Please try again.",
@@ -154,14 +145,35 @@ export default function Signup() {
     }
   };
 
-  // NOTE: Google/GitHub sign-up used Firebase Auth, but our backend has
-  // its own JWT-based session system that's never heard of Firebase.
-  // Logging in via Firebase alone would navigate to /dashboard only to
-  // have ProtectedRoute immediately bounce the person back here, since
-  // our AuthContext would still show no user. Fixing this properly needs
-  // a backend endpoint that verifies a Firebase ID token and issues our
-  // own tokens for it — a real feature to build, not a quick patch — so
-  // it's disabled with an honest message for now instead of a broken loop.
+  const googleSignup = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setErrors((prev) => ({ ...prev, form: "" }));
+      setGoogleLoading(true);
+      try {
+        await loginWithGoogle(tokenResponse.access_token);
+        // Google users skip the academic-profile step for now — they can
+        // fill it in later from the Profile page. Sending them straight
+        // to /dashboard avoids forcing step 2 on a flow that didn't
+        // collect a password.
+        navigate("/dashboard");
+      } catch (err) {
+        setErrors((prev) => ({
+          ...prev,
+          form: err.response?.data?.error || "Google sign-up failed. Please try again.",
+        }));
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    onError: () =>
+      setErrors((prev) => ({
+        ...prev,
+        form: "Google sign-up was cancelled or failed. Please try again.",
+      })),
+  });
+
+  // GitHub isn't wired yet — needs its own backend route before it can
+  // issue a real session here.
   function handleSocialSignup(provider) {
     setErrors((prev) => ({
       ...prev,
@@ -299,11 +311,12 @@ export default function Signup() {
                 <div className="flex gap-4">
                   <button
                     type="button"
-                    onClick={() => handleSocialSignup("Google")}
-                    title="Not connected yet"
-                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white opacity-60 transition hover:border-purple-500/40 hover:bg-white/5"
+                    onClick={() => googleSignup()}
+                    disabled={googleLoading}
+                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FcGoogle size={24} /> Google
+                    <FcGoogle size={24} />
+                    {googleLoading ? "Signing in..." : "Google"}
                   </button>
                   <button
                     type="button"
@@ -328,7 +341,6 @@ export default function Signup() {
             {/* ── STEP 2 ── */}
             {step === 2 && (
               <>
-                {/* Institution Type */}
                 <div className="mt-10">
                   <label className={labelClass}>Institution Type</label>
                   <select
@@ -344,7 +356,6 @@ export default function Signup() {
                   </select>
                 </div>
 
-                {/* Institution Name */}
                 <div className="mt-6">
                   <label className={labelClass}>Institution Name</label>
                   <input
@@ -357,7 +368,6 @@ export default function Signup() {
                   <FieldError msg={errors.institutionName} />
                 </div>
 
-                {/* ── COLLEGE FIELDS ── */}
                 {!isSchool(formData.institutionType) && (
                   <>
                     <div className="mt-6">
@@ -424,7 +434,6 @@ export default function Signup() {
                   </>
                 )}
 
-                {/* ── SCHOOL FIELDS ── */}
                 {isSchool(formData.institutionType) && (
                   <>
                     <div className="mt-6">

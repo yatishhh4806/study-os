@@ -54,12 +54,10 @@ export async function register(req, res, next) {
       name,
       email,
       passwordHash: password, // hashed by the pre-save hook on User
-      emailVerificationToken: hashToken(rawVerificationToken), // store hashed, like refresh tokens — the raw one only ever goes out in the email
+      emailVerificationToken: hashToken(rawVerificationToken),
     });
     await user.save();
 
-    // best-effort — a failed email shouldn't block account creation. The
-    // person can request a fresh verification link later if this fails.
     try {
       await sendVerificationEmail(user, rawVerificationToken);
     } catch (emailErr) {
@@ -95,14 +93,81 @@ export async function login(req, res, next) {
       : await bcrypt.compare(password, DUMMY_BCRYPT_HASH);
 
     if (!user || !isValid) {
-      // deliberately vague — don't reveal which field was wrong, and the
-      // dummy compare above means this path takes the same time whether
-      // the email exists or not
       throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
     }
 
     const accessToken = await issueSession(res, user);
     res.json({ accessToken, user: user.toSafeJSON() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+const googleAuthSchema = z.object({
+  // access_token from @react-oauth/google's useGoogleLogin (implicit flow)
+  accessToken: z.string().min(1),
+});
+
+// POST /api/auth/google  { accessToken }
+// Verifies the Google access token by calling Google's userinfo endpoint
+// directly, then finds-or-creates a User and issues a session using the
+// exact same issueSession() flow as email/password login — so downstream,
+// a Google-authenticated session is indistinguishable from a normal one.
+export async function googleAuth(req, res, next) {
+  try {
+    const parsed = googleAuthSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new AppError("A Google access token is required", 422, "VALIDATION_ERROR");
+    }
+    const { accessToken: googleAccessToken } = parsed.data;
+
+    const googleRes = await fetch(
+      "https://www.googleapis.com/oauth2/v3/userinfo",
+      { headers: { Authorization: `Bearer ${googleAccessToken}` } }
+    );
+
+    if (!googleRes.ok) {
+      throw new AppError("Google sign-in failed — the token was invalid or expired", 401, "GOOGLE_TOKEN_INVALID");
+    }
+
+    const profile = await googleRes.json();
+    // profile: { sub, email, email_verified, name, picture, ... }
+    if (!profile.email) {
+      throw new AppError("Google account has no email associated with it", 400, "NO_GOOGLE_EMAIL");
+    }
+
+    const email = profile.email.toLowerCase();
+
+    // 1. Existing Google account — straightforward login
+    let user = await User.findOne({ googleId: profile.sub }).select("+passwordHash");
+
+    // 2. No Google-linked account yet, but an email/password account with
+    //    this email already exists — link Google to it instead of creating
+    //    a duplicate account with the same email
+    if (!user) {
+      user = await User.findOne({ email }).select("+passwordHash");
+      if (user) {
+        user.googleId = profile.sub;
+        if (profile.picture) user.avatarFromGoogle = profile.picture;
+        if (profile.email_verified) user.emailVerified = true;
+        await user.save();
+      }
+    }
+
+    // 3. Brand new user — create an account with no password
+    if (!user) {
+      user = new User({
+        name: profile.name || email.split("@")[0],
+        email,
+        googleId: profile.sub,
+        avatarFromGoogle: profile.picture || null,
+        emailVerified: !!profile.email_verified,
+      });
+      await user.save();
+    }
+
+    const accessToken = await issueSession(res, user);
+    res.status(200).json({ accessToken, user: user.toSafeJSON() });
   } catch (err) {
     next(err);
   }
@@ -124,11 +189,10 @@ export async function refresh(req, res, next) {
 
     const user = await User.findById(payload.sub).select("+refreshTokenHash");
     if (!user || user.refreshTokenHash !== hashToken(token)) {
-      // token reuse or revoked session — force re-login
       throw new AppError("Session no longer valid", 401, "SESSION_INVALID");
     }
 
-    const accessToken = await issueSession(res, user); // rotates refresh token too
+    const accessToken = await issueSession(res, user);
     res.json({ accessToken, user: user.toSafeJSON() });
   } catch (err) {
     next(err);
@@ -158,7 +222,6 @@ export async function me(req, res) {
 }
 
 const profileSchema = z.object({
-  // academic
   institutionType: z.enum(["College / University", "School"]).optional(),
   institutionName: z.string().max(120).optional(),
   course: z.string().max(40).optional(),
@@ -170,11 +233,9 @@ const profileSchema = z.object({
   board: z.string().max(40).optional(),
   enrollmentNo: z.string().max(40).optional(),
   expectedGraduation: z.string().max(40).optional(),
-  // personal — name is safe to allow editing here too, same validation
-  // as at registration
   name: z.string().trim().min(2).max(80).optional(),
   phone: z.string().max(20).nullable().optional(),
-  dob: z.string().nullable().optional(), // ISO date string, e.g. "1998-04-12"
+  dob: z.string().nullable().optional(),
   location: z.string().max(120).nullable().optional(),
   bio: z.string().max(500).optional(),
 });
@@ -184,12 +245,6 @@ const ACADEMIC_KEYS = [
   "semester", "schoolClass", "stream", "board", "enrollmentNo", "expectedGraduation",
 ];
 
-// PATCH /api/auth/profile — saves both academic details (signup step 2,
-// or later edits from the Profile page) and general personal info
-// (name, phone, dob, location, bio) in a single call. Email is
-// deliberately NOT accepted here — changing a login email is a real
-// feature (usually needs re-verification) that doesn't exist yet, so
-// it's kept read-only on the frontend rather than silently no-op'd here.
 export async function updateProfile(req, res, next) {
   try {
     const parsed = profileSchema.safeParse(req.body);
@@ -235,7 +290,6 @@ const verifyEmailSchema = z.object({
   token: z.string().min(1),
 });
 
-// GET /api/auth/verify-email?token=...
 export async function verifyEmail(req, res, next) {
   try {
     const parsed = verifyEmailSchema.safeParse(req.query);
@@ -262,8 +316,6 @@ export async function verifyEmail(req, res, next) {
   }
 }
 
-// POST /api/auth/resend-verification — requires an active session, since
-// it's for a logged-in user whose email just hasn't been verified yet
 export async function resendVerification(req, res, next) {
   try {
     if (req.user.emailVerified) {
@@ -281,10 +333,6 @@ export async function resendVerification(req, res, next) {
   }
 }
 
-// POST /api/auth/forgot-password  { email }
-// Always responds with the same generic message regardless of whether the
-// email exists — revealing which emails are registered is a real
-// enumeration risk, so success/failure looks identical from the outside.
 export async function forgotPassword(req, res, next) {
   try {
     const parsed = forgotPasswordSchema.safeParse(req.body);
@@ -297,7 +345,7 @@ export async function forgotPassword(req, res, next) {
     if (user) {
       const rawToken = generateRandomToken();
       user.passwordResetToken = hashToken(rawToken);
-      user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
       await user.save();
 
       try {
@@ -315,7 +363,6 @@ export async function forgotPassword(req, res, next) {
   }
 }
 
-// POST /api/auth/reset-password  { token, newPassword }
 export async function resetPassword(req, res, next) {
   try {
     const parsed = resetPasswordSchema.safeParse(req.body);
@@ -333,11 +380,9 @@ export async function resetPassword(req, res, next) {
       throw new AppError("This reset link is invalid or has expired", 400, "INVALID_OR_EXPIRED_TOKEN");
     }
 
-    user.passwordHash = parsed.data.newPassword; // re-hashed by the pre-save hook
+    user.passwordHash = parsed.data.newPassword;
     user.passwordResetToken = null;
     user.passwordResetExpires = null;
-    // resetting the password invalidates any existing session — a stolen
-    // refresh token shouldn't survive a password reset
     user.refreshTokenHash = null;
     await user.save();
 

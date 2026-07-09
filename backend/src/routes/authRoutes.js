@@ -11,6 +11,7 @@ import {
   resendVerification,
   forgotPassword,
   resetPassword,
+  googleAuth,
 } from "../controllers/authController.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -28,5 +29,6 @@ router.get("/verify-email", verifyEmail);
 router.post("/resend-verification", requireAuth, resendVerification);
 router.post("/forgot-password", authLimiter, forgotPassword);
 router.post("/reset-password", authLimiter, resetPassword);
+router.post("/google", authLimiter, googleAuth);
 
 export default router;

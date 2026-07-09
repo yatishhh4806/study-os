@@ -15,5 +15,8 @@ export default defineConfig({
       usePolling: true,
     },
     hmr: true,
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+    },
   },
 });

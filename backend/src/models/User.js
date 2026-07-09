@@ -41,9 +41,6 @@ const statsSchema = new mongoose.Schema(
       enum: ["bronze", "silver", "gold", "platinum", "diamond", "obsidian"],
       default: "bronze",
     },
-    // ── badge-relevant history — these persist across weekly XP resets,
-    // since a badge earned once shouldn't be un-earned when the counter
-    // that triggered it (weeklyXP, league) resets or drops later ──
     highestLeagueReached: {
       type: String,
       enum: ["bronze", "silver", "gold", "platinum", "diamond", "obsidian"],
@@ -59,16 +56,13 @@ const academicProfileSchema = new mongoose.Schema(
   {
     institutionType: { type: String, enum: ["College / University", "School", null], default: null },
     institutionName: { type: String, default: "", maxlength: 120 },
-    // college fields
     course: { type: String, default: "" },
     branch: { type: String, default: "", maxlength: 80 },
     year: { type: String, default: "" },
     semester: { type: String, default: "" },
-    // school fields
     schoolClass: { type: String, default: "" },
     stream: { type: String, default: "" },
     board: { type: String, default: "" },
-    // extra academic fields the Profile page collects
     enrollmentNo: { type: String, default: "", maxlength: 40 },
     expectedGraduation: { type: String, default: "", maxlength: 40 },
   },
@@ -86,22 +80,36 @@ const userSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
-    passwordHash: { type: String, required: true, select: false },
+    // Not required for Google-authenticated accounts — those users never
+    // set a password, so this is conditionally required based on whether
+    // a googleId is present. Google users can still add a password later
+    // via a "set password" flow (not built yet) if they want email/password
+    // login as a backup.
+    passwordHash: {
+      type: String,
+      required: function requirePasswordUnlessGoogle() {
+        return !this.googleId;
+      },
+      select: false,
+    },
+
+    // Present only for accounts created or linked via Google Sign-In.
+    // Sparse+unique so multiple docs can have googleId: null/undefined
+    // without violating the unique index.
+    googleId: { type: String, default: null, unique: true, sparse: true, select: false },
+    avatarFromGoogle: { type: String, default: null },
 
     role: { type: String, enum: ["student", "admin"], default: "student" },
     avatarUrl: { type: String, default: null },
     institution: { type: String, default: null }, // legacy simple field, kept for backward compatibility
     academicProfile: { type: academicProfileSchema, default: () => ({}) },
 
-    // general personal info — Profile page fields, not academic
     phone: { type: String, default: null, maxlength: 20 },
     dob: { type: Date, default: null },
     location: { type: String, default: null, maxlength: 120 },
     bio: { type: String, default: "", maxlength: 500 },
 
     emailVerified: { type: Boolean, default: false },
-    // TODO SWAP POINT: wire to a real email provider (Resend/SendGrid) to send
-    // this token; for now it's generated and stored but never emailed.
     emailVerificationToken: { type: String, select: false, default: null },
     passwordResetToken: { type: String, select: false, default: null },
     passwordResetExpires: { type: Date, select: false, default: null },
@@ -138,11 +146,13 @@ const userSchema = new mongoose.Schema(
 
 userSchema.pre("save", async function hashPassword(next) {
   if (!this.isModified("passwordHash")) return next();
+  if (!this.passwordHash) return next(); // Google-only accounts have none
   this.passwordHash = await bcrypt.hash(this.passwordHash, 12);
   next();
 });
 
 userSchema.methods.comparePassword = function comparePassword(candidate) {
+  if (!this.passwordHash) return Promise.resolve(false); // Google-only account, no password to compare
   return bcrypt.compare(candidate, this.passwordHash);
 };
 
@@ -154,6 +164,7 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
   delete obj.emailVerificationToken;
   delete obj.passwordResetToken;
   delete obj.passwordResetExpires;
+  delete obj.googleId;
   return obj;
 };
 

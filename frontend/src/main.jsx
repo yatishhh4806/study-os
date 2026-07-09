@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import * as Sentry from "@sentry/react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import App from "./App";
 import "./index.css";
@@ -16,6 +17,8 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     environment: import.meta.env.MODE,
   });
 }
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function ErrorFallback() {
   return (
@@ -39,11 +42,13 @@ function ErrorFallback() {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <Sentry.ErrorBoundary fallback={<ErrorFallback />} showDialog={false}>
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <BrowserRouter>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
     </Sentry.ErrorBoundary>
   </React.StrictMode>
 );

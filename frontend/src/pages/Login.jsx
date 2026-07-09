@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
+import { useGoogleLogin } from "@react-oauth/google";
 
 import AuthHero from "../components/AuthHero/AuthHero";
 import { useAuth } from "../context/AuthContext";
@@ -9,22 +10,33 @@ import { useAuth } from "../context/AuthContext";
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  // NOTE: Google/GitHub sign-in isn't wired yet — those buttons used
-  // Firebase Auth, but our backend has its own JWT-based session system
-  // that doesn't know about Firebase. Logging in via Firebase alone would
-  // navigate to /dashboard only to have ProtectedRoute immediately bounce
-  // the person back here, since AuthContext would still show no user.
-  // Fixing this properly needs a backend endpoint that verifies a
-  // Firebase ID token and issues our own access/refresh tokens for it —
-  // a real feature to build, not a quick patch, so it's disabled with an
-  // honest message for now instead of shipping a broken loop.
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError("");
+      setGoogleLoading(true);
+      try {
+        await loginWithGoogle(tokenResponse.access_token);
+        navigate(location.state?.from?.pathname || "/dashboard");
+      } catch (err) {
+        setError(err.response?.data?.error || "Google sign-in failed. Please try again.");
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    onError: () => setError("Google sign-in was cancelled or failed. Please try again."),
+  });
+
+  // GitHub isn't wired yet — same reasoning as before: our backend has its
+  // own JWT session system, and a GitHub flow needs its own backend route
+  // (like /auth/github) before it can issue a real session here.
   function handleSocialLogin(provider) {
     setError(`${provider} sign-in isn't connected yet — please use email and password for now.`);
   }
@@ -35,8 +47,6 @@ function Login() {
     setLoading(true);
     try {
       await login(email, password);
-      // send them back to wherever ProtectedRoute intercepted them from,
-      // or /dashboard by default if they came straight to /login
       navigate(location.state?.from?.pathname || "/dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed. Please check your email and password.");
@@ -219,12 +229,13 @@ function Login() {
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          {/* Social Buttons — see note above handleSocialLogin */}
+          {/* Social Buttons */}
           <div className="flex gap-4">
-            {/* Google */}
+            {/* Google — now live */}
             <button
-              onClick={() => handleSocialLogin("Google")}
-              title="Not connected yet"
+              onClick={() => googleLogin()}
+              disabled={googleLoading}
+              type="button"
               className="
                 flex
                 flex-1
@@ -237,20 +248,22 @@ function Login() {
                 bg-black/20
                 py-4
                 text-white
-                opacity-60
                 transition
                 hover:border-purple-500/40
                 hover:bg-white/5
+                disabled:opacity-50
+                disabled:cursor-not-allowed
               "
             >
               <FcGoogle size={24} />
-              Google
+              {googleLoading ? "Signing in..." : "Google"}
             </button>
 
-            {/* GitHub */}
+            {/* GitHub — still a placeholder */}
             <button
               onClick={() => handleSocialLogin("GitHub")}
               title="Not connected yet"
+              type="button"
               className="
                 flex
                 flex-1
