@@ -18,7 +18,8 @@ export function getAccessToken() {
 
 export const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true, // required so the refresh-token cookie is sent/received
+  withCredentials: true,
+  timeout: 15000, // fail fast rather than hanging indefinitely on a stalled request (e.g. cold start, flaky network)
 });
 
 api.interceptors.request.use((config) => {
@@ -69,7 +70,7 @@ api.interceptors.response.use(
         const { data } = await axios.post(
           `${BASE_URL}/auth/refresh`,
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
         setAccessToken(data.accessToken);
         processQueue(null, data.accessToken);
@@ -87,5 +88,5 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
