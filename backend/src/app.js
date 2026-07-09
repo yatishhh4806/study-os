@@ -23,13 +23,21 @@ import aiTutorRoutes from "./routes/aiTutorRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
+import resourceRoutes from "./routes/resourceRoutes.js";
 
 const app = express();
 
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      // allow requests with no origin (Postman, curl, server-to-server calls)
+      if (!origin || env.CLIENT_URL.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -60,6 +68,7 @@ app.use("/api/ai-tutor", aiTutorRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/account", accountRoutes);
+app.use("/api/resources", resourceRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

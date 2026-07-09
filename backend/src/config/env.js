@@ -7,7 +7,19 @@ dotenv.config();
 const envSchema = z.object({
   PORT: z.string().default("5000"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  CLIENT_URL: z.string().url(),
+
+  // Comma-separated list of allowed frontend origins, e.g.:
+  // "http://localhost:5173,https://study0s.vercel.app"
+  // This lets local dev and the deployed frontend both work without ever
+  // swapping this value back and forth between environments.
+  CLIENT_URL: z
+    .string()
+    .min(1, "CLIENT_URL is required")
+    .transform((val) => val.split(",").map((url) => url.trim()))
+    .refine(
+      (urls) => urls.every((url) => z.string().url().safeParse(url).success),
+      { message: "CLIENT_URL must be a comma-separated list of valid URLs" }
+    ),
 
   MONGO_URI: z.string().min(1, "MONGO_URI is required"),
 
@@ -42,3 +54,4 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+// env.CLIENT_URL is now an array, e.g. ["http://localhost:5173", "https://study0s.vercel.app"]

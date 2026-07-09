@@ -25,23 +25,26 @@ import aiTutorRoutes from "./routes/aiTutorRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
+import resourceRoutes from "./routes/resourceRoutes.js";
 
 const app = express();
 
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CLIENT_URL,
-    credentials: true, // required so the refresh-token cookie is sent/received
+    origin: (origin, callback) => {
+      if (!origin || env.CLIENT_URL.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   })
 );
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(cookieParser());
 
-// IMPORTANT: the Razorpay webhook route needs the RAW request body to verify
-// the signature, so it's mounted here — before express.json() below —
-// and the route itself does NOT re-parse it (see routes/billingRoutes.js).
-// Every other route after this point gets normal parsed JSON.
 app.use("/api/billing/webhook", express.raw({ type: "application/json" }));
 
 app.use(express.json({ limit: "2mb" }));
@@ -65,6 +68,7 @@ app.use("/api/ai-tutor", aiTutorRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/account", accountRoutes);
+app.use("/api/resources", resourceRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -77,7 +81,6 @@ async function start() {
     console.log(`🚀 StudyOS API running on port ${env.PORT} [${env.NODE_ENV}]`);
   });
 
-  // graceful shutdown — lets in-flight requests finish before exiting
   const shutdown = (signal) => {
     console.log(`\n${signal} received, shutting down gracefully...`);
     server.close(() => {
