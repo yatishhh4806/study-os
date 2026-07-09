@@ -9,13 +9,17 @@ const subscriptionSchema = new mongoose.Schema(
       enum: ["free", "pro"],
       default: "free",
     },
+    // Razorpay subscription statuses: created (checkout opened, not yet
+    // paid), authenticated/active (paid, live), pending (payment retrying),
+    // halted (payment failed repeatedly), cancelled, completed (ran its
+    // full cycle count), none (never subscribed)
     status: {
       type: String,
-      enum: ["active", "trialing", "past_due", "canceled", "incomplete", "none"],
+      enum: ["created", "authenticated", "active", "pending", "halted", "cancelled", "completed", "none"],
       default: "none",
     },
-    stripeCustomerId: { type: String, default: null },
-    stripeSubscriptionId: { type: String, default: null },
+    razorpaySubscriptionId: { type: String, default: null },
+    razorpayPlanId: { type: String, default: null },
     currentPeriodEnd: { type: Date, default: null },
     cancelAtPeriodEnd: { type: Boolean, default: false },
   },
@@ -156,7 +160,7 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
 userSchema.methods.isPro = function isPro() {
   return (
     this.subscription.plan === "pro" &&
-    ["active", "trialing"].includes(this.subscription.status)
+    ["active", "authenticated"].includes(this.subscription.status)
   );
 };
 

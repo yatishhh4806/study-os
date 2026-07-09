@@ -212,30 +212,55 @@ export default function Settings() {
     load();
   }, []);
 
-  // handles landing back here after Stripe Checkout redirects to
-  // /dashboard/settings?billing=success (or canceled) — refetches the
-  // real user object so subscription.plan reflects what actually happened,
-  // rather than trusting the URL param itself
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const billingResult = params.get("billing");
-    if (!billingResult) return;
-
-    if (billingResult === "success") {
-      refreshUser().then(() => flashSaved("Welcome to Pro! 🎉"));
-    } else if (billingResult === "canceled") {
-      flashSaved("Checkout canceled — no changes made");
-    }
-    // strip the query param so a refresh doesn't re-trigger this
-    window.history.replaceState({}, "", window.location.pathname);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Razorpay's checkout is a JS modal that opens on our own page — no
+  // redirect away and back, unlike Stripe. This loads checkout.js once,
+  // the first time it's actually needed, rather than on every page load.
+  function loadRazorpayScript() {
+    return new Promise((resolve, reject) => {
+      if (window.Razorpay) return resolve();
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Failed to load Razorpay checkout script"));
+      document.body.appendChild(script);
+    });
+  }
 
   async function handleUpgrade() {
     setCheckoutLoading(true);
     try {
-      const { data } = await api.post("/billing/checkout", { interval: billingInterval });
-      window.location.href = data.url; // hands off to Stripe's hosted checkout page
+      await loadRazorpayScript();
+      const { data } = await api.post("/billing/subscribe", { interval: billingInterval });
+
+      const rzp = new window.Razorpay({
+        key: data.keyId,
+        subscription_id: data.subscriptionId,
+        name: data.name,
+        description: data.description,
+        prefill: data.prefill,
+        theme: { color: "#a855f7" },
+        handler: function () {
+          // Payment succeeded client-side. The webhook is the real source
+          // of truth for activation (it can arrive a moment after this
+          // callback fires), so we optimistically inform the user and
+          // then refetch shortly after to pick up the confirmed state.
+          flashSaved("Payment received! Activating your Pro plan...");
+          setTimeout(() => refreshUser(), 3000);
+        },
+        modal: {
+          ondismiss: function () {
+            setCheckoutLoading(false);
+          },
+        },
+      });
+
+      rzp.on("payment.failed", function (response) {
+        console.error("Razorpay payment failed:", response.error);
+        flashSaved("Payment failed — please try again");
+        setCheckoutLoading(false);
+      });
+
+      rzp.open();
     } catch (err) {
       console.error("Failed to start checkout:", err);
       flashSaved("Couldn't start checkout — try again");
@@ -243,14 +268,23 @@ export default function Settings() {
     }
   }
 
-  async function handleManageBilling() {
+  // Razorpay doesn't have a hosted billing portal the way Stripe does —
+  // cancellation is a real endpoint we built ourselves (see
+  // billingController.js), so this needs its own confirmation step
+  // rather than handing off to a third-party page.
+  async function handleCancelSubscription() {
+    if (!window.confirm("Cancel your Pro subscription? You'll keep access until the end of your current billing period.")) {
+      return;
+    }
     setPortalLoading(true);
     try {
-      const { data } = await api.post("/billing/portal");
-      window.location.href = data.url; // Stripe's hosted portal handles cancel/upgrade/payment method changes
+      await api.post("/billing/cancel");
+      await refreshUser();
+      flashSaved("Subscription set to cancel at period end.");
     } catch (err) {
-      console.error("Failed to open billing portal:", err);
-      flashSaved("Couldn't open billing portal — try again");
+      console.error("Failed to cancel subscription:", err);
+      flashSaved("Couldn't cancel — try again");
+    } finally {
       setPortalLoading(false);
     }
   }
@@ -489,14 +523,20 @@ export default function Settings() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={handleManageBilling}
-                    disabled={portalLoading}
-                    className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50 px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2"
-                  >
-                    {portalLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    Manage Billing
-                  </button>
+                  {user.subscription.cancelAtPeriodEnd ? (
+                    <span className="text-xs font-medium text-amber-300/80 px-3">
+                      Ending soon
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleCancelSubscription}
+                      disabled={portalLoading}
+                      className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 disabled:opacity-50 px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2"
+                    >
+                      {portalLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      Cancel Subscription
+                    </button>
+                  )}
                 </div>
               ) : (
                 <>

@@ -21,8 +21,8 @@
     "mongoose": "^8.4.0",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
-    "resend": "^3.5.0",
-    "stripe": "^15.7.0",
+    "razorpay": "^2.9.6",
+    "resend": "^3.4.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

@@ -16,10 +16,13 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES: z.string().default("15m"),
   JWT_REFRESH_EXPIRES: z.string().default("7d"),
 
-  STRIPE_SECRET_KEY: z.string().min(1, "STRIPE_SECRET_KEY is required"),
-  STRIPE_WEBHOOK_SECRET: z.string().min(1, "STRIPE_WEBHOOK_SECRET is required"),
-  STRIPE_PRICE_ID_PRO_MONTHLY: z.string().min(1),
-  STRIPE_PRICE_ID_PRO_YEARLY: z.string().min(1),
+  // Razorpay — swapped from Stripe since Stripe is invite-only in India
+  // and doesn't support UPI, the dominant payment method for Indian users.
+  RAZORPAY_KEY_ID: z.string().min(1, "RAZORPAY_KEY_ID is required"),
+  RAZORPAY_KEY_SECRET: z.string().min(1, "RAZORPAY_KEY_SECRET is required"),
+  RAZORPAY_WEBHOOK_SECRET: z.string().min(1, "RAZORPAY_WEBHOOK_SECRET is required"),
+  RAZORPAY_PLAN_ID_MONTHLY: z.string().min(1),
+  RAZORPAY_PLAN_ID_YEARLY: z.string().min(1),
 
   GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
 

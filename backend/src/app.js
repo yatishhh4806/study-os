@@ -36,7 +36,7 @@ app.use(
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(cookieParser());
 
-// Stripe webhook needs the raw body before express.json() runs
+// Razorpay webhook needs the raw body before express.json() runs
 app.use("/api/billing/webhook", express.raw({ type: "application/json" }));
 
 app.use(express.json({ limit: "2mb" }));
