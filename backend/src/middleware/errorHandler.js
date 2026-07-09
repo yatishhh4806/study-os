@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/node";
+
 export class AppError extends Error {
   constructor(message, statusCode = 400, code = "BAD_REQUEST") {
     super(message);
@@ -21,6 +23,7 @@ export function errorHandler(err, req, res, next) {
 
   if (statusCode === 500) {
     console.error("Unhandled error:", err);
+    Sentry.captureException(err); // sends the real error to Sentry regardless of what the client sees
   }
 
   res.status(statusCode).json({

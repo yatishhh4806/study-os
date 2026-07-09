@@ -1,14 +1,10 @@
 // src/server.js
-import "./instrument.js";
-
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
-import * as Sentry from "@sentry/node";
 
-import { env } from "./config/env.js";
 import { connectDB } from "./config/db.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler.js";
@@ -29,6 +25,16 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
+
+import * as Sentry from "@sentry/node";
+import { env } from "./config/env.js";
+
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+  });
+}
 
 const app = express();
 
@@ -75,7 +81,9 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/resources", resourceRoutes);
 
-Sentry.setupExpressErrorHandler(app);
+app.get("/api/debug-sentry", () => {
+  throw new Error("Testing Sentry error reporting");
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);
