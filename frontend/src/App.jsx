@@ -10,7 +10,7 @@ import Flashcards from "./pages/Flashcards";
 import Planner from "./pages/Planner";
 import AiTutor from "./pages/AiTutor";
 import Profile from "./pages/Profile";
-import Resources from "./pages/Resources";
+import Resources from "./components/resources/Resources";
 import Settings from "./pages/Settings";
 import CommandPalette from "./components/CommandPalette";
 import Leaderboard from "./pages/LeaderBoard";

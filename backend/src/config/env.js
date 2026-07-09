@@ -40,6 +40,9 @@ const envSchema = z.object({
 
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
   EMAIL_FROM: z.string().email().default("onboarding@resend.dev"),
+  YOUTUBE_API_KEY: z.string().min(1, "YOUTUBE_API_KEY is required"),
+  GOOGLE_SEARCH_API_KEY: z.string().min(1, "GOOGLE_SEARCH_API_KEY is required"),
+  GOOGLE_SEARCH_ENGINE_ID: z.string().min(1, "GOOGLE_SEARCH_ENGINE_ID is required"),
 
   // secures /api/cron/weekly-reset — Vercel sends this automatically as a
   // Bearer token when it invokes a scheduled cron job. Optional locally.

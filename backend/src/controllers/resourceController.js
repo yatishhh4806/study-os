@@ -2,6 +2,9 @@ import { z } from "zod";
 import { StudyRoadmap } from "../models/StudyRoadmap.js";
 import { AppError } from "../middleware/errorHandler.js";
 import { getTutorReply } from "../utils/llmClient.js";
+import { searchYouTube } from "../utils/youtubeClient.js";
+import { searchWeb } from "../utils/searchClient.js";
+import { CURATED_NOTES } from "../data/curatedNotes.js";
 
 const generateSchema = z.object({
   grade: z.string().min(1),
@@ -89,6 +92,40 @@ export async function getRoadmap(req, res, next) {
   try {
     const roadmap = await StudyRoadmap.findOne({ userId: req.user._id });
     res.json({ roadmap: roadmap || null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+const searchQuerySchema = z.object({
+  query: z.string().min(1).max(200),
+  subject: z.string().optional(),
+});
+
+// GET /api/resources/search?query=...&subject=...
+// Real, live results — YouTube Data API + Google Custom Search, with
+// curated notes surfaced first for subjects we have a verified list for.
+// Called on-demand (user clicks a suggestion or types a search), not
+// automatically per-topic during generation, to stay within free-tier quotas.
+export async function searchResources(req, res, next) {
+  try {
+    const parsed = searchQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+    }
+    const { query, subject } = parsed.data;
+
+    const [videos, webResults] = await Promise.all([
+      searchYouTube(query, 4),
+      searchWeb(query, 5),
+    ]);
+
+    const curated = subject ? CURATED_NOTES[subject] || [] : [];
+
+    res.json({
+      videos,
+      notes: [...curated, ...webResults],
+    });
   } catch (err) {
     next(err);
   }

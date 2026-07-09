@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { RefreshCw, BookOpen, Calendar, Link2 } from "lucide-react";
+import SearchResultsModal from "./SearchResultsModal";
 
-function RoadmapView({ roadmap, onRegenerate, isGenerating }) {
+function RoadmapView({ roadmap, onRegenerate, onChangeGrade, isGenerating }) {
+  const [activeSearch, setActiveSearch] = useState(null); // { query, subject }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between rounded-3xl border border-purple-500/20 bg-black/40 p-6 backdrop-blur-xl">
@@ -10,14 +14,25 @@ function RoadmapView({ roadmap, onRegenerate, isGenerating }) {
             {roadmap.selectedSubjects?.join(" • ")}
           </p>
         </div>
-        <button
-          onClick={onRegenerate}
-          disabled={isGenerating}
-          className="flex items-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-2 text-sm font-medium text-purple-200 transition hover:bg-purple-500/20 disabled:opacity-40"
-        >
-          <RefreshCw size={16} className={isGenerating ? "animate-spin" : ""} />
-          {isGenerating ? "Regenerating..." : "Regenerate"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onChangeGrade}
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:border-purple-500/40 hover:text-purple-200"
+          >
+            Change Grade/Subjects
+          </button>
+          <button
+            onClick={onRegenerate}
+            disabled={isGenerating}
+            className="flex items-center gap-2 rounded-xl border border-purple-500/30 bg-purple-500/10 px-4 py-2 text-sm font-medium text-purple-200 transition hover:bg-purple-500/20 disabled:opacity-40"
+          >
+            <RefreshCw
+              size={16}
+              className={isGenerating ? "animate-spin" : ""}
+            />
+            {isGenerating ? "Regenerating..." : "Regenerate"}
+          </button>
+        </div>
       </div>
 
       {roadmap.timetable?.length > 0 && (
@@ -63,20 +78,26 @@ function RoadmapView({ roadmap, onRegenerate, isGenerating }) {
             </div>
 
             {subject.notes && (
-              <p className="mb-4 text-sm italic text-gray-400">{subject.notes}</p>
+              <p className="mb-4 text-sm italic text-gray-400">
+                {subject.notes}
+              </p>
             )}
 
             <div className="space-y-3">
               {subject.topics?.map((topic, i) => (
                 <div key={i} className="rounded-xl bg-white/5 p-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-gray-100">{topic.title}</span>
+                    <span className="font-medium text-gray-100">
+                      {topic.title}
+                    </span>
                     <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs text-purple-300">
                       Week {topic.week}
                     </span>
                   </div>
                   {topic.description && (
-                    <p className="mt-1 text-xs text-gray-400">{topic.description}</p>
+                    <p className="mt-1 text-xs text-gray-400">
+                      {topic.description}
+                    </p>
                   )}
                 </div>
               ))}
@@ -86,20 +107,34 @@ function RoadmapView({ roadmap, onRegenerate, isGenerating }) {
               <div className="mt-4 border-t border-purple-500/10 pt-4">
                 <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                   <Link2 size={14} />
-                  Search for
+                  Find resources
                 </div>
-                <ul className="space-y-1">
+                <div className="flex flex-wrap gap-2">
                   {subject.resourceSuggestions.map((s, i) => (
-                    <li key={i} className="text-sm text-gray-300">
-                      • {s}
-                    </li>
+                    <button
+                      key={i}
+                      onClick={() =>
+                        setActiveSearch({ query: s, subject: subject.name })
+                      }
+                      className="rounded-lg border border-purple-500/20 bg-white/5 px-3 py-1.5 text-xs text-gray-300 transition hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-200"
+                    >
+                      {s}
+                    </button>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </div>
         ))}
       </div>
+
+      {activeSearch && (
+        <SearchResultsModal
+          query={activeSearch.query}
+          subject={activeSearch.subject}
+          onClose={() => setActiveSearch(null)}
+        />
+      )}
     </div>
   );
 }

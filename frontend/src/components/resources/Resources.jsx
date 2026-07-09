@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 
-import GradeSelector from "../components/resources/GradeSelector";
-import SubjectPicker from "../components/resources/SubjectPicker";
-import RoadmapView from "../components/resources/RoadmapView";
-import { fetchRoadmap, generateRoadmap } from "../services/resourceService";
+import GradeSelector from "./GradeSelector";
+import SubjectPicker from "./SubjectPicker";
+import RoadmapView from "./RoadmapView";
+import QuickSearch from "./QuickSearch";
+import { fetchRoadmap, generateRoadmap } from "../../services/resourceService";
 
 function Resources() {
   const [loading, setLoading] = useState(true);
@@ -34,11 +35,17 @@ function Resources() {
       setRoadmap(result);
     } catch (err) {
       setError(
-        err.response?.data?.error || "Couldn't generate your roadmap. Please try again."
+        err.response?.data?.error ||
+          "Couldn't generate your roadmap. Please try again.",
       );
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleChangeGrade = () => {
+    setRoadmap(null);
+    setSelectedGrade(null);
   };
 
   const handleRegenerate = async () => {
@@ -46,11 +53,15 @@ function Resources() {
     setIsGenerating(true);
     setError(null);
     try {
-      const result = await generateRoadmap(roadmap.grade, roadmap.selectedSubjects);
+      const result = await generateRoadmap(
+        roadmap.grade,
+        roadmap.selectedSubjects,
+      );
       setRoadmap(result);
     } catch (err) {
       setError(
-        err.response?.data?.error || "Couldn't regenerate your roadmap. Please try again."
+        err.response?.data?.error ||
+          "Couldn't regenerate your roadmap. Please try again.",
       );
     } finally {
       setIsGenerating(false);
@@ -73,9 +84,11 @@ function Resources() {
             Study<span className="text-purple-400">Resources</span>
           </h1>
           <p className="mt-2 text-gray-400">
-            Your personalized roadmap, timetable, and study links.
+            Real videos, notes, and a personalized roadmap — all in one place.
           </p>
         </div>
+
+        <QuickSearch />
 
         {error && (
           <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
@@ -87,6 +100,7 @@ function Resources() {
           <RoadmapView
             roadmap={roadmap}
             onRegenerate={handleRegenerate}
+            onChangeGrade={handleChangeGrade}
             isGenerating={isGenerating}
           />
         ) : selectedGrade ? (
