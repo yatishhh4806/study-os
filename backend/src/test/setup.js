@@ -2,11 +2,9 @@ import { beforeAll, afterAll, afterEach, vi } from "vitest";
 import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
-// Tests need real env values before any app code (which validates env on
-// import) runs. Setting these here, before other imports resolve, avoids
-// needing a separate .env.test file just for CI/local test runs.
 process.env.NODE_ENV = "test";
 process.env.CLIENT_URL = "http://localhost:5173";
+process.env.MONGO_URI = "mongodb://127.0.0.1:27017/studyos-test-placeholder"; // ← real value set below in beforeAll; this just satisfies env.js's validation at import time
 process.env.JWT_ACCESS_SECRET = "test_access_secret_at_least_20_chars";
 process.env.JWT_REFRESH_SECRET = "test_refresh_secret_at_least_20_chars";
 process.env.RAZORPAY_KEY_ID = "rzp_test_dummy";
@@ -25,13 +23,11 @@ let mongod;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
-  process.env.MONGO_URI = uri;
+  process.env.MONGO_URI = uri; // overwrites the placeholder with the real in-memory DB URI
   await mongoose.connect(uri);
 });
 
 afterEach(async () => {
-  // wipe all collections between tests so each test starts from a clean
-  // slate, without needing to re-spin up MongoDB every time (slow)
   const collections = mongoose.connection.collections;
   for (const key in collections) {
     await collections[key].deleteMany({});
