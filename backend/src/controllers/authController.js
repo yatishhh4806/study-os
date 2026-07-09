@@ -1,5 +1,6 @@
 // src/controllers/authController.js
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
 import { AppError } from "../middleware/errorHandler.js";
 import {
@@ -72,6 +73,13 @@ export async function register(req, res, next) {
   }
 }
 
+// A fixed, valid bcrypt hash with no corresponding real password. Used only
+// to give the "user not found" path the same bcrypt compute cost as the
+// "user found, wrong password" path — so response timing can't be used to
+// discover which emails are registered (the messages already look
+// identical; this closes the timing side-channel too).
+const DUMMY_BCRYPT_HASH = "$2b$10$CwTycUXWue0Thq9StjUM0uJ8i7d8u4jZ4Yh3g6q3n0z7bT6l5.q9G";
+
 export async function login(req, res, next) {
   try {
     const parsed = loginSchema.safeParse(req.body);
@@ -81,8 +89,15 @@ export async function login(req, res, next) {
     const { email, password } = parsed.data;
 
     const user = await User.findOne({ email }).select("+passwordHash");
-    if (!user || !(await user.comparePassword(password))) {
-      // deliberately vague — don't reveal which field was wrong
+
+    const isValid = user
+      ? await user.comparePassword(password)
+      : await bcrypt.compare(password, DUMMY_BCRYPT_HASH);
+
+    if (!user || !isValid) {
+      // deliberately vague — don't reveal which field was wrong, and the
+      // dummy compare above means this path takes the same time whether
+      // the email exists or not
       throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
     }
 

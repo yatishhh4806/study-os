@@ -1,9 +1,12 @@
 // src/app.js
+import "./instrument.js";
+
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
+import * as Sentry from "@sentry/node";
 
 import { env } from "./config/env.js";
 import { apiLimiter } from "./middleware/rateLimiter.js";
@@ -27,11 +30,12 @@ import resourceRoutes from "./routes/resourceRoutes.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow requests with no origin (Postman, curl, server-to-server calls)
       if (!origin || env.CLIENT_URL.includes(origin)) {
         callback(null, true);
       } else {
@@ -44,7 +48,6 @@ app.use(
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(cookieParser());
 
-// Razorpay webhook needs the raw body before express.json() runs
 app.use("/api/billing/webhook", express.raw({ type: "application/json" }));
 
 app.use(express.json({ limit: "2mb" }));
@@ -69,6 +72,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/resources", resourceRoutes);
+
+Sentry.setupExpressErrorHandler(app);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

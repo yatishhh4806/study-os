@@ -7,6 +7,7 @@ dotenv.config();
 const envSchema = z.object({
   PORT: z.string().default("5000"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  SENTRY_DSN: z.string().url().optional(),
 
   // Comma-separated list of allowed frontend origins, e.g.:
   // "http://localhost:5173,https://study0s.vercel.app"

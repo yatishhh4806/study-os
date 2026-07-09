@@ -1,9 +1,12 @@
 // src/server.js
+import "./instrument.js";
+
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
+import * as Sentry from "@sentry/node";
 
 import { env } from "./config/env.js";
 import { connectDB } from "./config/db.js";
@@ -28,6 +31,8 @@ import accountRoutes from "./routes/accountRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
 
 const app = express();
+
+app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(
@@ -69,6 +74,8 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/resources", resourceRoutes);
+
+Sentry.setupExpressErrorHandler(app);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
