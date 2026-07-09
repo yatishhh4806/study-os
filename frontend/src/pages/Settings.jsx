@@ -55,7 +55,7 @@ function Toggle({ checked, onChange }) {
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative w-11 h-6 rounded-full flex-shrink-0 transition-colors duration-200 ${
+      className={`relative w-11 h-6 rounded-full shrink-0 transition-colors duration-200 ${
         checked ? "bg-purple-500" : "bg-white/10"
       }`}
     >
