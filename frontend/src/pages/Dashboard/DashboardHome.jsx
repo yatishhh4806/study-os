@@ -371,10 +371,6 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* TEMPORARY — mounting this throws during render, which IS caught
-          by the Sentry Error Boundary in main.jsx. Remove once verified. */}
-      {forceTestCrash && <BrokenTestComponent />}
-
       {/* ── ROW 2: PLAN + SCHEDULE + DEADLINES ──────────────── */}
       <div
         style={{

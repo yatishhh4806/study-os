@@ -24,22 +24,100 @@ import {
 // /dashboard/...). Update here if routes ever move.
 // ─────────────────────────────────────────────────────────────
 const NAV_COMMANDS = [
-  { id: "nav-dashboard",  label: "Dashboard",  hint: "Overview & streak",  icon: LayoutGrid,   to: "/dashboard" },
-  { id: "nav-notes",      label: "Notes",      hint: "Notion-style notes", icon: BookOpen,      to: "/dashboard/notes" },
-  { id: "nav-planner",    label: "Planner",    hint: "Calendar & tasks",   icon: Calendar,      to: "/dashboard/planner" },
-  { id: "nav-flashcards", label: "Flashcards", hint: "Spaced repetition",  icon: Brain,         to: "/dashboard/flashcards" },
-  { id: "nav-focus",      label: "Focus",      hint: "Pomodoro timer",     icon: Timer,         to: "/dashboard/focus" },
-  { id: "nav-ai-tutor",   label: "AI Tutor",   hint: "Ask a question",     icon: Sparkles,      to: "/dashboard/ai-tutor" },
-  { id: "nav-resources",  label: "Resources",  hint: "Saved materials",    icon: Library,       to: "/dashboard/resources" },
-  { id: "nav-profile",    label: "Profile",    hint: "Your account",       icon: User,          to: "/dashboard/profile" },
-  { id: "nav-settings",   label: "Settings",   hint: "Preferences",        icon: SettingsIcon,  to: "/dashboard/settings" },
+  {
+    id: "nav-dashboard",
+    label: "Dashboard",
+    hint: "Overview & streak",
+    icon: LayoutGrid,
+    to: "/dashboard",
+  },
+  {
+    id: "nav-notes",
+    label: "Notes",
+    hint: "Notion-style notes",
+    icon: BookOpen,
+    to: "/dashboard/notes",
+  },
+  {
+    id: "nav-planner",
+    label: "Planner",
+    hint: "Calendar & tasks",
+    icon: Calendar,
+    to: "/dashboard/planner",
+  },
+  {
+    id: "nav-flashcards",
+    label: "Flashcards",
+    hint: "Spaced repetition",
+    icon: Brain,
+    to: "/dashboard/flashcards",
+  },
+  {
+    id: "nav-focus",
+    label: "Focus",
+    hint: "Pomodoro timer",
+    icon: Timer,
+    to: "/dashboard/focus",
+  },
+  {
+    id: "nav-ai-tutor",
+    label: "AI Tutor",
+    hint: "Ask a question",
+    icon: Sparkles,
+    to: "/dashboard/ai-tutor",
+  },
+  {
+    id: "nav-resources",
+    label: "Resources",
+    hint: "Saved materials",
+    icon: Library,
+    to: "/dashboard/resources",
+  },
+  {
+    id: "nav-profile",
+    label: "Profile",
+    hint: "Your account",
+    icon: User,
+    to: "/dashboard/profile",
+  },
+  {
+    id: "nav-settings",
+    label: "Settings",
+    hint: "Preferences",
+    icon: SettingsIcon,
+    to: "/dashboard/settings",
+  },
 ];
 
 const ACTION_COMMANDS = [
-  { id: "action-new-note",  label: "New Note",            hint: "Create in Notes",      icon: FilePlus, to: "/dashboard/notes" },
-  { id: "action-new-deck",  label: "New Flashcard Deck",  hint: "Create in Flashcards", icon: Layers,   to: "/dashboard/flashcards" },
-  { id: "action-focus",     label: "Start Focus Session", hint: "Pomodoro timer",       icon: Timer,    to: "/dashboard/focus" },
-  { id: "action-ask-tutor", label: "Ask AI Tutor",        hint: "Open chat",            icon: Sparkles, to: "/dashboard/ai-tutor" },
+  {
+    id: "action-new-note",
+    label: "New Note",
+    hint: "Create in Notes",
+    icon: FilePlus,
+    to: "/dashboard/notes",
+  },
+  {
+    id: "action-new-deck",
+    label: "New Flashcard Deck",
+    hint: "Create in Flashcards",
+    icon: Layers,
+    to: "/dashboard/flashcards",
+  },
+  {
+    id: "action-focus",
+    label: "Start Focus Session",
+    hint: "Pomodoro timer",
+    icon: Timer,
+    to: "/dashboard/focus",
+  },
+  {
+    id: "action-ask-tutor",
+    label: "Ask AI Tutor",
+    hint: "Open chat",
+    icon: Sparkles,
+    to: "/dashboard/ai-tutor",
+  },
 ];
 
 const ALL_COMMANDS = [
@@ -58,6 +136,7 @@ export default function CommandPalette() {
   // global Cmd/Ctrl+K toggle, from anywhere in the app
   useEffect(() => {
     function onKeyDown(e) {
+      if (!e.key) return; // some autofill/IME-related synthetic events fire without a key
       const isK = e.key.toLowerCase() === "k";
       if ((e.metaKey || e.ctrlKey) && isK) {
         e.preventDefault();
@@ -79,7 +158,9 @@ export default function CommandPalette() {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
   const results = useMemo(() => {
@@ -89,7 +170,7 @@ export default function CommandPalette() {
       (c) =>
         c.label.toLowerCase().includes(q) ||
         c.hint.toLowerCase().includes(q) ||
-        c.group.toLowerCase().includes(q)
+        c.group.toLowerCase().includes(q),
     );
   }, [query]);
 
@@ -111,7 +192,7 @@ export default function CommandPalette() {
       setOpen(false);
       navigate(cmd.to);
     },
-    [navigate]
+    [navigate],
   );
 
   const handleKeyDown = (e) => {
@@ -208,9 +289,13 @@ export default function CommandPalette() {
                     <Icon className="w-4 h-4" />
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-medium truncate">{label}</span>
+                    <span className="block text-sm font-medium truncate">
+                      {label}
+                    </span>
                   </span>
-                  <span className="text-xs text-white/30 flex-shrink-0">{hint}</span>
+                  <span className="text-xs text-white/30 flex-shrink-0">
+                    {hint}
+                  </span>
                 </button>
               ))}
             </div>
@@ -220,14 +305,19 @@ export default function CommandPalette() {
         {/* footer hints */}
         <div className="flex items-center gap-4 px-4 py-2.5 border-t border-white/10 text-[11px] text-white/35">
           <span className="flex items-center gap-1">
-            <ArrowUp className="w-3 h-3" /><ArrowDown className="w-3 h-3" /> Navigate
+            <ArrowUp className="w-3 h-3" />
+            <ArrowDown className="w-3 h-3" /> Navigate
           </span>
           <span className="flex items-center gap-1">
             <CornerDownLeft className="w-3 h-3" /> Select
           </span>
           <span className="ml-auto hidden sm:flex items-center gap-1">
-            <kbd className="border border-white/10 rounded px-1.5 py-0.5 font-semibold">⌘</kbd>
-            <kbd className="border border-white/10 rounded px-1.5 py-0.5 font-semibold">K</kbd>
+            <kbd className="border border-white/10 rounded px-1.5 py-0.5 font-semibold">
+              ⌘
+            </kbd>
+            <kbd className="border border-white/10 rounded px-1.5 py-0.5 font-semibold">
+              K
+            </kbd>
             to toggle
           </span>
         </div>
