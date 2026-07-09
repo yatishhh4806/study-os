@@ -142,7 +142,7 @@ function SectionCard({ id, icon: Icon, title, description, children, sectionRef,
     <section
       id={id}
       ref={sectionRef}
-      className={`scroll-mt-6 rounded-2xl border ${toneClasses} bg-white/[0.03] backdrop-blur-xl p-6 sm:p-7 transition-colors`}
+      className={`scroll-mt-6 rounded-2xl border ${toneClasses} bg-white/3 backdrop-blur-xl p-6 sm:p-7 transition-colors`}
     >
       <div className="flex items-start gap-3 mb-6">
         <div className={`w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 ${iconTone}`}>
