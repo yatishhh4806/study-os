@@ -29,15 +29,15 @@ function Home() {
       {/* FEATURES */}
       <section
         id="features"
-        className="relative z-20 min-h-screen bg-[#09070f] px-8 py-8"
+        className="relative z-20 bg-[#09070f] px-4 py-12 sm:px-8 sm:py-16 md:py-20"
       >
         <div className="mx-auto max-w-7xl">
-          <h1 className="text-center text-7xl font-bold text-white">
+          <h1 className="text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white">
             Features
           </h1>
 
-          <div className="mt-20">
-            <div className="relative z-20 min-h-screen bg-[#09070f]">
+          <div className="mt-10 sm:mt-16 md:mt-20">
+            <div className="relative z-20 bg-[#09070f]">
               <Features />
             </div>
           </div>
@@ -47,7 +47,7 @@ function Home() {
       {/* PREVIEW */}
       <section
         id="preview"
-        className="relative z-20 min-h-screen bg-[#09070f] px-8 py-8"
+        className="relative z-20 bg-[#09070f] px-4 py-12 sm:px-8 sm:py-16"
       >
         <Preview />
       </section>
@@ -55,7 +55,7 @@ function Home() {
       {/* ABOUT */}
       <section
         id="about"
-        className="relative overflow-hidden bg-linear-to-b from-[#09070f] via-[#120B1D] to-[#09070f] px-8 py-40"
+        className="relative overflow-hidden bg-linear-to-b from-[#09070f] via-[#120B1D] to-[#09070f] px-4 py-16 sm:px-8 sm:py-24 md:py-40"
       >
         {/* Glow */}
         <div className="absolute left-1/2 top-20 h-125 w-125 -translate-x-1/2 rounded-full bg-purple-500/10 blur-[180px]" />
@@ -67,7 +67,7 @@ function Home() {
 
       {/* TESTIMONIALS */}
       <TestimonialsSection />
-      
+
       {/* FOOTER */}
       <footer className="relative overflow-hidden bg-linear-to-b from-[#0E0A17] to-[#09070f]">
         {/* Glow */}
