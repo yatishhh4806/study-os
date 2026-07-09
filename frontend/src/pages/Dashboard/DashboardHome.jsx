@@ -63,8 +63,10 @@ function isActiveNow(task) {
   const now = new Date();
   const [sh, sm] = task.startTime.split(":").map(Number);
   const [eh, em] = task.endTime.split(":").map(Number);
-  const start = new Date(now); start.setHours(sh, sm, 0, 0);
-  const end = new Date(now); end.setHours(eh, em, 0, 0);
+  const start = new Date(now);
+  start.setHours(sh, sm, 0, 0);
+  const end = new Date(now);
+  end.setHours(eh, em, 0, 0);
   return now >= start && now <= end;
 }
 
@@ -89,7 +91,10 @@ export default function DashboardHome() {
 
   const greeting = useMemo(() => {
     if (!user || !summary) return { title: "", subtitle: "" };
-    return getDashboardGreeting({ name: user.name, studyStreak: summary.streak });
+    return getDashboardGreeting({
+      name: user.name,
+      studyStreak: summary.streak,
+    });
   }, [user, summary]);
 
   // optimistic toggle for Study Plan checklist items, calls the real
@@ -98,7 +103,7 @@ export default function DashboardHome() {
     setSummary((prev) => ({
       ...prev,
       studyPlan: prev.studyPlan.map((t) =>
-        t._id === taskId ? { ...t, completed: !t.completed } : t
+        t._id === taskId ? { ...t, completed: !t.completed } : t,
       ),
     }));
     try {
@@ -108,7 +113,7 @@ export default function DashboardHome() {
       setSummary((prev) => ({
         ...prev,
         studyPlan: prev.studyPlan.map((t) =>
-          t._id === taskId ? { ...t, completed: !t.completed } : t
+          t._id === taskId ? { ...t, completed: !t.completed } : t,
         ),
       }));
     }
@@ -366,6 +371,10 @@ export default function DashboardHome() {
         </div>
       </div>
 
+      {/* TEMPORARY — mounting this throws during render, which IS caught
+          by the Sentry Error Boundary in main.jsx. Remove once verified. */}
+      {forceTestCrash && <BrokenTestComponent />}
+
       {/* ── ROW 2: PLAN + SCHEDULE + DEADLINES ──────────────── */}
       <div
         style={{
@@ -416,7 +425,13 @@ export default function DashboardHome() {
             />
           </div>
           {summary.studyPlan.length === 0 && (
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,.35)", padding: "8px 4px" }}>
+            <p
+              style={{
+                fontSize: 13,
+                color: "rgba(255,255,255,.35)",
+                padding: "8px 4px",
+              }}
+            >
               No checklist items yet — add some from the Planner.
             </p>
           )}
@@ -546,7 +561,9 @@ export default function DashboardHome() {
                               : active
                                 ? "#fff"
                                 : "rgba(255,255,255,.75)",
-                            textDecoration: s.completed ? "line-through" : "none",
+                            textDecoration: s.completed
+                              ? "line-through"
+                              : "none",
                           }}
                         >
                           {s.title}
@@ -567,7 +584,10 @@ export default function DashboardHome() {
                         )}
                       </div>
                       <span
-                        style={{ fontSize: 11.5, color: "rgba(255,255,255,.3)" }}
+                        style={{
+                          fontSize: 11.5,
+                          color: "rgba(255,255,255,.3)",
+                        }}
                       >
                         {s.startTime || ""}
                       </span>
@@ -911,8 +931,16 @@ export default function DashboardHome() {
                 value: `${summary.streak}d`,
                 color: "#fb923c",
               },
-              { label: "Best Streak", value: `${summary.bestStreak}d`, color: "#a855f7" },
-              { label: "Weekly XP", value: `${summary.weeklyXP}`, color: "#34d399" },
+              {
+                label: "Best Streak",
+                value: `${summary.bestStreak}d`,
+                color: "#a855f7",
+              },
+              {
+                label: "Weekly XP",
+                value: `${summary.weeklyXP}`,
+                color: "#34d399",
+              },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: s.color }}>
