@@ -40,8 +40,11 @@ function Topbar() {
   // first load — once `user` is populated these are never used.
   const displayName = user?.name || "Student";
   const displaySubtitle =
-    user?.academicProfile?.course || user?.academicProfile?.institutionType || "StudyOS Member";
-  const avatarUrl = user?.avatarUrl || user?.avatarFromGoogle || user?.avatarFromGithub || null;
+    [user?.academicProfile?.course, user?.academicProfile?.branch]
+      .filter(Boolean)
+      .join(" • ") || "Student";
+  const avatarUrl =
+    user?.avatarUrl || user?.avatarFromGoogle || user?.avatarFromGithub || null;
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -177,7 +180,9 @@ function Topbar() {
           {isProfileOpen && (
             <div className="absolute right-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-2xl border border-purple-500/20 bg-[#12091c]/95 shadow-xl shadow-black/50 backdrop-blur-xl">
               <div className="border-b border-white/10 px-4 py-3">
-                <p className="text-sm font-semibold text-white">{displayName}</p>
+                <p className="text-sm font-semibold text-white">
+                  {displayName}
+                </p>
                 <p className="text-xs text-gray-400">{displaySubtitle}</p>
               </div>
 
