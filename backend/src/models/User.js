@@ -96,11 +96,11 @@ const userSchema = new mongoose.Schema(
     // Present only for accounts created or linked via Google Sign-In.
     // Sparse+unique so multiple docs can have googleId: null/undefined
     // without violating the unique index.
-    googleId: { type: String, default: null, unique: true, sparse: true, select: false },
+    googleId: { type: String, unique: true, sparse: true, select: false },
     avatarFromGoogle: { type: String, default: null },
 
     // Same pattern as googleId, for GitHub Sign-In.
-    githubId: { type: String, default: null, unique: true, sparse: true, select: false },
+    githubId: { type: String, unique: true, sparse: true, select: false },
     avatarFromGithub: { type: String, default: null },
     githubUsername: { type: String, default: null },
 
