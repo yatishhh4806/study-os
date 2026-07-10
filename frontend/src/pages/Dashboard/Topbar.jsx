@@ -9,7 +9,7 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 // detect Mac vs Windows/Linux once, so the badge shows the shortcut
 // that's actually correct for the person's keyboard
