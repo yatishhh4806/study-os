@@ -9,12 +9,22 @@ import {
   LogOut,
   ChevronDown,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 // detect Mac vs Windows/Linux once, so the badge shows the shortcut
 // that's actually correct for the person's keyboard
 const isMac =
   typeof navigator !== "undefined" &&
   /Mac|iPod|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "");
+
+function getInitials(name = "") {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
 
 function Topbar() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -24,6 +34,14 @@ function Topbar() {
   const profileRef = useRef(null);
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  // Fallbacks only cover the brief window before /auth/me resolves on
+  // first load — once `user` is populated these are never used.
+  const displayName = user?.name || "Student";
+  const displaySubtitle =
+    user?.academicProfile?.course || user?.academicProfile?.institutionType || "StudyOS Member";
+  const avatarUrl = user?.avatarUrl || user?.avatarFromGoogle || user?.avatarFromGithub || null;
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -36,10 +54,10 @@ function Topbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function handleLogout() {
-    // TODO: wire to real auth sign-out once backend/Firebase auth exists
-    console.log("Logout clicked — wire to auth.signOut()");
+  async function handleLogout() {
     setIsProfileOpen(false);
+    await logout();
+    navigate("/login");
   }
 
   function openCommandPalette() {
@@ -130,15 +148,21 @@ function Topbar() {
             onClick={() => setIsProfileOpen((v) => !v)}
             className="flex cursor-pointer items-center gap-4 rounded-2xl border border-transparent px-3 py-2 transition-all hover:border-purple-500/20 hover:bg-purple-500/10"
           >
-            <img
-              src="https://i.pravatar.cc/150?img=12"
-              alt="profile"
-              className="h-12 w-12 rounded-full border border-purple-500/30 object-cover"
-            />
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                className="h-12 w-12 rounded-full border border-purple-500/30 object-cover"
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-purple-500/30 bg-gradient-to-br from-purple-500 to-purple-700 text-sm font-semibold text-white">
+                {getInitials(displayName)}
+              </div>
+            )}
 
             <div>
-              <h3 className="font-semibold text-white">Yatish</h3>
-              <p className="text-sm text-gray-400">AIML Student</p>
+              <h3 className="font-semibold text-white">{displayName}</h3>
+              <p className="text-sm text-gray-400">{displaySubtitle}</p>
             </div>
 
             <ChevronDown
@@ -153,8 +177,8 @@ function Topbar() {
           {isProfileOpen && (
             <div className="absolute right-0 top-[calc(100%+8px)] w-56 overflow-hidden rounded-2xl border border-purple-500/20 bg-[#12091c]/95 shadow-xl shadow-black/50 backdrop-blur-xl">
               <div className="border-b border-white/10 px-4 py-3">
-                <p className="text-sm font-semibold text-white">Yatish</p>
-                <p className="text-xs text-gray-400">AIML Student</p>
+                <p className="text-sm font-semibold text-white">{displayName}</p>
+                <p className="text-xs text-gray-400">{displaySubtitle}</p>
               </div>
 
               <div className="py-1">
