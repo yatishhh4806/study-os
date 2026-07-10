@@ -77,7 +77,7 @@ function Login() {
           hidden
           w-[40%]
           overflow-hidden
-          bg-gradient-to-br
+          bg-linear-to-br
           from-purple-500
           via-[#261238]
           to-[#02030a]
