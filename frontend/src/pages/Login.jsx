@@ -88,7 +88,7 @@ function Login() {
         "
       >
         {/* Glow */}
-        <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[160px]" />
+        <div className="absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[160px]" />
 
         <div className="relative z-10">
           <AuthHero />
@@ -110,7 +110,7 @@ function Login() {
       {/* RIGHT */}
       <div className="relative flex flex-1 items-center justify-center px-10">
         {/* Glow */}
-        <div className="absolute h-[400px] w-[400px] rounded-full bg-purple-500/5 blur-[140px]" />
+        <div className="absolute h-100 w-100 rounded-full bg-purple-500/5 blur-[140px]" />
 
         <div className="relative z-10 w-full max-w-md">
           {/* Logo */}
