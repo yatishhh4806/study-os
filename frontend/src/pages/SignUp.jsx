@@ -199,8 +199,8 @@ export default function Signup() {
   return (
     <div className="flex min-h-screen bg-[#09070f]">
       {/* LEFT */}
-      <div className="relative hidden w-[40%] overflow-hidden bg-gradient-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:flex-col lg:justify-between lg:p-16">
-        <div className="absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[160px]" />
+      <div className="relative hidden w-[40%] overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:flex-col lg:justify-between lg:p-16">
+        <div className="absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[160px]" />
         <div className="relative z-10">
           <AuthHero />
         </div>
@@ -219,7 +219,7 @@ export default function Signup() {
 
       {/* RIGHT */}
       <div className="relative flex flex-1 items-center justify-center px-10 py-20">
-        <div className="absolute h-[400px] w-[400px] rounded-full bg-purple-500/5 blur-[140px]" />
+        <div className="absolute h-100 w-100 rounded-full bg-purple-500/5 blur-[140px]" />
 
         <div className="relative z-10 w-full max-w-md">
           <h1 className="text-center text-5xl font-black text-white">
