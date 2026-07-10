@@ -173,6 +173,133 @@ export async function googleAuth(req, res, next) {
   }
 }
 
+// GET /api/auth/github — kicks off the redirect flow. GitHub doesn't
+// support a popup/implicit flow like Google's; it requires a server-side
+// code-for-token exchange using the client secret, so this has to be a
+// full page redirect rather than a fetch call from the frontend.
+export function githubAuthRedirect(req, res) {
+  const params = new URLSearchParams({
+    client_id: process.env.GITHUB_CLIENT_ID,
+    redirect_uri: process.env.GITHUB_CALLBACK_URL,
+    scope: "read:user user:email",
+    allow_signup: "true",
+  });
+  res.redirect(`https://github.com/login/oauth/authorize?${params.toString()}`);
+}
+
+// GET /api/auth/github/callback?code=...
+// GitHub redirects the browser here after the user approves access. We
+// exchange the code for an access token, fetch the profile + verified
+// email, find-or-create the user, and issue a session exactly like
+// register/login/googleAuth. Since this is a full-page redirect (not a
+// fetch from the frontend), we can't hand back JSON with an accessToken
+// directly — instead we set the httpOnly refresh cookie and redirect to
+// the frontend, which already calls POST /auth/refresh on every page
+// load (see AuthContext's restoreSession) and will pick up the new
+// session automatically.
+export async function githubAuthCallback(req, res, next) {
+  const frontendUrl = Array.isArray(process.env.CLIENT_URL)
+    ? process.env.CLIENT_URL[0]
+    : String(process.env.CLIENT_URL).split(",")[0];
+
+  try {
+    const { code } = req.query;
+    if (!code) {
+      throw new AppError("Missing GitHub authorization code", 400, "MISSING_CODE");
+    }
+
+    const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code,
+        redirect_uri: process.env.GITHUB_CALLBACK_URL,
+      }),
+    });
+
+    const tokenData = await tokenRes.json();
+    if (!tokenData.access_token) {
+      throw new AppError("GitHub sign-in failed — could not obtain an access token", 401, "GITHUB_TOKEN_INVALID");
+    }
+
+    const githubAccessToken = tokenData.access_token;
+
+    const [profileRes, emailsRes] = await Promise.all([
+      fetch("https://api.github.com/user", {
+        headers: { Authorization: `Bearer ${githubAccessToken}`, "User-Agent": "StudyOS" },
+      }),
+      fetch("https://api.github.com/user/emails", {
+        headers: { Authorization: `Bearer ${githubAccessToken}`, "User-Agent": "StudyOS" },
+      }),
+    ]);
+
+    if (!profileRes.ok) {
+      throw new AppError("Could not fetch GitHub profile", 401, "GITHUB_PROFILE_FAILED");
+    }
+
+    const profile = await profileRes.json();
+    const emails = emailsRes.ok ? await emailsRes.json() : [];
+
+    // GitHub's /user endpoint only returns a public email if the user has
+    // one set publicly. The verified primary email (what we actually
+    // want) comes from /user/emails, which requires the user:email scope.
+    const primaryEmailEntry = Array.isArray(emails)
+      ? emails.find((e) => e.primary && e.verified) || emails.find((e) => e.verified)
+      : null;
+    const email = (primaryEmailEntry?.email || profile.email || "").toLowerCase();
+
+    if (!email) {
+      // No email available at all — send them back to login with a
+      // message instead of creating an account we can't contact.
+      return res.redirect(
+        `${frontendUrl}/login?error=${encodeURIComponent(
+          "Your GitHub account has no public or verified email. Please add one on GitHub and try again."
+        )}`
+      );
+    }
+
+    const githubId = String(profile.id);
+
+    let user = await User.findOne({ githubId }).select("+passwordHash");
+
+    if (!user) {
+      user = await User.findOne({ email }).select("+passwordHash");
+      if (user) {
+        user.githubId = githubId;
+        if (profile.avatar_url) user.avatarFromGithub = profile.avatar_url;
+        if (profile.login) user.githubUsername = profile.login;
+        if (primaryEmailEntry?.verified) user.emailVerified = true;
+        await user.save();
+      }
+    }
+
+    if (!user) {
+      user = new User({
+        name: profile.name || profile.login || email.split("@")[0],
+        email,
+        githubId,
+        avatarFromGithub: profile.avatar_url || null,
+        githubUsername: profile.login || null,
+        emailVerified: !!primaryEmailEntry?.verified,
+      });
+      await user.save();
+    }
+
+    await issueSession(res, user);
+    res.redirect(`${frontendUrl}/dashboard`);
+  } catch (err) {
+    console.error("GitHub OAuth callback failed:", err);
+    res.redirect(
+      `${frontendUrl}/login?error=${encodeURIComponent("GitHub sign-in failed. Please try again.")}`
+    );
+  }
+}
+
 export async function refresh(req, res, next) {
   try {
     const token = req.cookies?.[REFRESH_COOKIE_NAME];

@@ -87,8 +87,8 @@ const userSchema = new mongoose.Schema(
     // login as a backup.
     passwordHash: {
       type: String,
-      required: function requirePasswordUnlessGoogle() {
-        return !this.googleId;
+      required: function requirePasswordUnlessOAuth() {
+        return !this.googleId && !this.githubId;
       },
       select: false,
     },
@@ -98,6 +98,11 @@ const userSchema = new mongoose.Schema(
     // without violating the unique index.
     googleId: { type: String, default: null, unique: true, sparse: true, select: false },
     avatarFromGoogle: { type: String, default: null },
+
+    // Same pattern as googleId, for GitHub Sign-In.
+    githubId: { type: String, default: null, unique: true, sparse: true, select: false },
+    avatarFromGithub: { type: String, default: null },
+    githubUsername: { type: String, default: null },
 
     role: { type: String, enum: ["student", "admin"], default: "student" },
     avatarUrl: { type: String, default: null },
@@ -165,6 +170,7 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
   delete obj.passwordResetToken;
   delete obj.passwordResetExpires;
   delete obj.googleId;
+  delete obj.githubId;
   return obj;
 };
 

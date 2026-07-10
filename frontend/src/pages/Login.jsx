@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
@@ -6,6 +6,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 
 import AuthHero from "../components/AuthHero/AuthHero";
 import { useAuth } from "../context/AuthContext";
+import { BASE_URL } from "../lib/api";
 
 function Login() {
   const navigate = useNavigate();
@@ -17,6 +18,18 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // If GitHub's callback failed, our backend redirects here with
+  // ?error=... so the person sees why instead of landing on a blank
+  // login page with no explanation.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const oauthError = params.get("error");
+    if (oauthError) {
+      setError(oauthError);
+      navigate(location.pathname, { replace: true }); // strip the query param from the URL
+    }
+  }, [location.search, location.pathname, navigate]);
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -34,11 +47,11 @@ function Login() {
     onError: () => setError("Google sign-in was cancelled or failed. Please try again."),
   });
 
-  // GitHub isn't wired yet — same reasoning as before: our backend has its
-  // own JWT session system, and a GitHub flow needs its own backend route
-  // (like /auth/github) before it can issue a real session here.
-  function handleSocialLogin(provider) {
-    setError(`${provider} sign-in isn't connected yet — please use email and password for now.`);
+  // GitHub uses a full-page redirect flow (not a popup like Google) —
+  // the browser navigates away to GitHub, then back to our backend
+  // callback, which sets the session cookie and redirects here again.
+  function handleGithubLogin() {
+    window.location.href = `${BASE_URL}/auth/github`;
   }
 
   async function handleManualLogin(e) {
@@ -259,10 +272,9 @@ function Login() {
               {googleLoading ? "Signing in..." : "Google"}
             </button>
 
-            {/* GitHub — still a placeholder */}
+            {/* GitHub — now live */}
             <button
-              onClick={() => handleSocialLogin("GitHub")}
-              title="Not connected yet"
+              onClick={handleGithubLogin}
               type="button"
               className="
                 flex
@@ -276,7 +288,6 @@ function Login() {
                 bg-black/20
                 py-4
                 text-white
-                opacity-60
                 transition
                 hover:border-purple-500/40
                 hover:bg-white/5

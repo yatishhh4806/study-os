@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import { useGoogleLogin } from "@react-oauth/google";
 import AuthHero from "../components/AuthHero/AuthHero";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../lib/api";
+import { api, BASE_URL } from "../lib/api";
 
 const COLLEGE_COURSES = [
   "B.Tech",
@@ -35,11 +35,23 @@ function FieldError({ msg }) {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, loginWithGoogle } = useAuth();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // If GitHub's callback failed, our backend redirects here with
+  // ?error=... so the person sees why instead of a silent failure.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const oauthError = params.get("error");
+    if (oauthError) {
+      setErrors((prev) => ({ ...prev, form: oauthError }));
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search, location.pathname, navigate]);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -172,13 +184,9 @@ export default function Signup() {
       })),
   });
 
-  // GitHub isn't wired yet — needs its own backend route before it can
-  // issue a real session here.
-  function handleSocialSignup(provider) {
-    setErrors((prev) => ({
-      ...prev,
-      form: `${provider} sign-up isn't connected yet — please use the form below for now.`,
-    }));
+  // Same full-page redirect flow as Login.jsx — see handleGithubLogin there.
+  function handleGithubSignup() {
+    window.location.href = `${BASE_URL}/auth/github`;
   }
 
   const inputClass =
@@ -320,9 +328,8 @@ export default function Signup() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSocialSignup("GitHub")}
-                    title="Not connected yet"
-                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white opacity-60 transition hover:border-purple-500/40 hover:bg-white/5"
+                    onClick={handleGithubSignup}
+                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white transition hover:border-purple-500/40 hover:bg-white/5"
                   >
                     <FaGithub size={22} /> GitHub
                   </button>

@@ -2,6 +2,7 @@
 import axios from "axios";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+export { BASE_URL };
 
 // The access token lives in memory only (never localStorage) — it's short-
 // lived (15 min) by design, and keeping it out of localStorage avoids
