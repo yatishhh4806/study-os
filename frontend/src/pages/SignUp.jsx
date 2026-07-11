@@ -42,8 +42,6 @@ export default function Signup() {
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // If GitHub's callback failed, our backend redirects here with
-  // ?error=... so the person sees why instead of a silent failure.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const oauthError = params.get("error");
@@ -163,10 +161,6 @@ export default function Signup() {
       setGoogleLoading(true);
       try {
         await loginWithGoogle(tokenResponse.access_token);
-        // Google users skip the academic-profile step for now — they can
-        // fill it in later from the Profile page. Sending them straight
-        // to /dashboard avoids forcing step 2 on a flow that didn't
-        // collect a password.
         navigate("/dashboard");
       } catch (err) {
         setErrors((prev) => ({
@@ -184,7 +178,6 @@ export default function Signup() {
       })),
   });
 
-  // Same full-page redirect flow as Login.jsx — see handleGithubLogin there.
   function handleGithubSignup() {
     window.location.href = `${BASE_URL}/auth/github`;
   }
@@ -197,20 +190,20 @@ export default function Signup() {
   const errInputClass = "border-red-500/60 focus:border-red-500";
 
   return (
-    <div className="flex min-h-screen bg-[#09070f]">
+    <div className="flex min-h-screen flex-col bg-[#09070f] lg:flex-row">
       {/* LEFT */}
-      <div className="relative hidden w-[40%] overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:flex-col lg:justify-between lg:p-16">
-        <div className="absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[160px]" />
+      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[40%] lg:flex-col lg:justify-between lg:p-10 xl:p-16">
+        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[120px] sm:h-96 sm:w-96 lg:h-125 lg:w-125 lg:blur-[160px]" />
         <div className="relative z-10">
           <AuthHero />
         </div>
-        <div className="relative z-10 mb-20">
-          <h1 className="text-7xl font-black text-purple-300">
+        <div className="relative z-10 mb-10 xl:mb-20">
+          <h1 className="text-4xl font-black leading-tight text-purple-300 xl:text-7xl">
             START
             <br />
             LEARNING
           </h1>
-          <p className="mt-4 max-w-md text-lg leading-8 text-gray-300">
+          <p className="mt-4 max-w-md text-base leading-7 text-gray-300 xl:text-lg xl:leading-8">
             Join thousands of students using StudyOS to organize their academics
             and boost productivity.
           </p>
@@ -218,36 +211,29 @@ export default function Signup() {
       </div>
 
       {/* RIGHT */}
-      <div className="relative flex flex-1 items-center justify-center px-10 py-20">
-        <div className="absolute h-100 w-100 rounded-full bg-purple-500/5 blur-[140px]" />
+      <div className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-8 sm:py-14">
+        <div className="absolute h-64 w-64 rounded-full bg-purple-500/5 blur-[100px] sm:h-96 sm:w-96 lg:h-100 lg:w-100 lg:blur-[140px]" />
 
         <div className="relative z-10 w-full max-w-md">
-          <h1 className="text-center text-5xl font-black text-white">
+          <h1 className="text-center text-3xl font-black text-white sm:text-4xl md:text-5xl">
             Study<span className="text-purple-400">OS</span>
           </h1>
 
-          <h2 className="mt-10 text-center text-4xl font-bold text-white">
+          <h2 className="mt-6 text-center text-2xl font-bold text-white sm:mt-8 sm:text-3xl md:mt-10 md:text-4xl">
             Create Account
           </h2>
 
-          <p className="mt-3 text-center text-gray-400">
+          <p className="mt-3 text-center text-sm text-gray-400 sm:text-base">
             Already have an account?
-            <Link
-              to="/login"
-              className="ml-2 font-semibold text-purple-400 hover:text-purple-300"
-            >
+            <Link to="/login" className="ml-2 font-semibold text-purple-400 hover:text-purple-300">
               Sign In
             </Link>
           </p>
 
           {/* Progress */}
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <div
-              className={`h-2 w-20 rounded-full transition-all ${step >= 1 ? "bg-purple-500" : "bg-white/10"}`}
-            />
-            <div
-              className={`h-2 w-20 rounded-full transition-all ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`}
-            />
+          <div className="mt-8 flex items-center justify-center gap-3 sm:mt-10">
+            <div className={`h-2 w-16 rounded-full transition-all sm:w-20 ${step >= 1 ? "bg-purple-500" : "bg-white/10"}`} />
+            <div className={`h-2 w-16 rounded-full transition-all sm:w-20 ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`} />
           </div>
 
           {errors.form && (
@@ -260,7 +246,7 @@ export default function Signup() {
             {/* ── STEP 1 ── */}
             {step === 1 && (
               <>
-                <div className="mt-10">
+                <div className="mt-8 sm:mt-10">
                   <label className={labelClass}>Full Name</label>
                   <input
                     name="fullName"
@@ -308,37 +294,38 @@ export default function Signup() {
                   <FieldError msg={errors.confirmPassword} />
                 </div>
 
-                <div className="my-8 flex items-center gap-4">
+                <div className="my-6 flex items-center gap-4 sm:my-8">
                   <div className="h-px flex-1 bg-white/10" />
-                  <span className="text-sm text-gray-500">
-                    or continue with
-                  </span>
+                  <span className="text-sm text-gray-500">or continue with</span>
                   <div className="h-px flex-1 bg-white/10" />
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex gap-3 sm:gap-4">
                   <button
                     type="button"
                     onClick={() => googleSignup()}
                     disabled={googleLoading}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-3 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed sm:gap-3 sm:py-4 sm:text-base"
                   >
-                    <FcGoogle size={24} />
+                    <FcGoogle size={20} className="sm:hidden" />
+                    <FcGoogle size={24} className="hidden sm:block" />
                     {googleLoading ? "Signing in..." : "Google"}
                   </button>
                   <button
                     type="button"
                     onClick={handleGithubSignup}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-xl border border-white/10 bg-black/20 py-4 text-white transition hover:border-purple-500/40 hover:bg-white/5"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-3 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5 sm:gap-3 sm:py-4 sm:text-base"
                   >
-                    <FaGithub size={22} /> GitHub
+                    <FaGithub size={18} className="sm:hidden" />
+                    <FaGithub size={22} className="hidden sm:block" />
+                    GitHub
                   </button>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="mt-10 w-full rounded-xl bg-purple-500 py-4 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600"
+                  className="mt-8 w-full rounded-xl bg-purple-500 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 sm:mt-10 sm:py-4"
                 >
                   Next →
                 </button>
@@ -348,7 +335,7 @@ export default function Signup() {
             {/* ── STEP 2 ── */}
             {step === 2 && (
               <>
-                <div className="mt-10">
+                <div className="mt-8 sm:mt-10">
                   <label className={labelClass}>Institution Type</label>
                   <select
                     name="institutionType"
@@ -356,9 +343,7 @@ export default function Signup() {
                     onChange={handleChange}
                     className={selectClass}
                   >
-                    <option className="bg-[#09070f]">
-                      College / University
-                    </option>
+                    <option className="bg-[#09070f]">College / University</option>
                     <option className="bg-[#09070f]">School</option>
                   </select>
                 </div>
@@ -494,21 +479,21 @@ export default function Signup() {
                   </>
                 )}
 
-                <div className="mt-10 flex gap-4">
+                <div className="mt-8 flex gap-4 sm:mt-10">
                   <button
                     type="button"
                     onClick={() => {
                       setErrors({});
                       setStep(1);
                     }}
-                    className="flex-1 rounded-xl border border-white/10 py-4 font-semibold text-white transition hover:bg-white/5"
+                    className="flex-1 rounded-xl border border-white/10 py-3 font-semibold text-white transition hover:bg-white/5 sm:py-4"
                   >
                     ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 rounded-xl bg-purple-500 py-4 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-xl bg-purple-500 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed sm:py-4"
                   >
                     {submitting ? "Creating account..." : "Create Account"}
                   </button>
