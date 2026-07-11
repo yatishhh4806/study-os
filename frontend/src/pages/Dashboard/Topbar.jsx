@@ -158,7 +158,7 @@ function Topbar() {
                 className="h-12 w-12 rounded-full border border-purple-500/30 object-cover"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-purple-500/30 bg-gradient-to-br from-purple-500 to-purple-700 text-sm font-semibold text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-purple-500/30 bg-linear-to-br from-purple-500 to-purple-700 text-sm font-semibold text-white">
                 {getInitials(displayName)}
               </div>
             )}
