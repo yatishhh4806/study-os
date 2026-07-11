@@ -183,27 +183,31 @@ export default function Signup() {
   }
 
   const inputClass =
-    "mt-3 w-full rounded-xl border border-white/10 bg-black/30 p-4 text-white outline-none transition focus:border-purple-500 placeholder:text-gray-600";
+    "mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition focus:border-purple-500 placeholder:text-gray-600";
   const selectClass =
-    "mt-3 w-full rounded-xl border border-white/10 bg-black/30 p-4 text-white outline-none focus:border-purple-500";
+    "mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none focus:border-purple-500";
   const labelClass = "text-sm text-gray-400 font-medium";
   const errInputClass = "border-red-500/60 focus:border-red-500";
 
   return (
+    // Same compact, height-safe approach as Login.jsx — sizes stay
+    // consistent regardless of viewport width, only growing when there's
+    // genuine vertical headroom, so wide-but-short laptop screens
+    // (1366x768, 1536x864) don't get content pushed below the fold.
     <div className="flex min-h-screen flex-col bg-[#09070f] lg:flex-row">
       {/* LEFT */}
-      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[40%] lg:flex-col lg:justify-between lg:p-10 xl:p-16">
-        <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[120px] sm:h-96 sm:w-96 lg:h-125 lg:w-125 lg:blur-[160px]" />
+      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between lg:p-8 xl:w-[40%]">
+        <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[110px] [@media(min-height:850px)]:h-72 [@media(min-height:850px)]:w-72 [@media(min-height:1000px)]:h-96 [@media(min-height:1000px)]:w-96 [@media(min-height:1000px)]:blur-[150px]" />
         <div className="relative z-10">
           <AuthHero />
         </div>
-        <div className="relative z-10 mb-10 xl:mb-20">
-          <h1 className="text-4xl font-black leading-tight text-purple-300 xl:text-7xl">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-black leading-tight text-purple-300 [@media(min-height:850px)]:text-4xl [@media(min-height:1000px)]:text-6xl">
             START
             <br />
             LEARNING
           </h1>
-          <p className="mt-4 max-w-md text-base leading-7 text-gray-300 xl:text-lg xl:leading-8">
+          <p className="mt-3 max-w-md text-sm leading-6 text-gray-300 [@media(min-height:850px)]:text-base [@media(min-height:850px)]:leading-7">
             Join thousands of students using StudyOS to organize their academics
             and boost productivity.
           </p>
@@ -211,19 +215,19 @@ export default function Signup() {
       </div>
 
       {/* RIGHT */}
-      <div className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-8 sm:py-14">
-        <div className="absolute h-64 w-64 rounded-full bg-purple-500/5 blur-[100px] sm:h-96 sm:w-96 lg:h-100 lg:w-100 lg:blur-[140px]" />
+      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:px-8">
+        <div className="absolute h-56 w-56 rounded-full bg-purple-500/5 blur-[90px] [@media(min-height:850px)]:h-72 [@media(min-height:850px)]:w-72 [@media(min-height:1000px)]:h-96 [@media(min-height:1000px)]:w-96" />
 
-        <div className="relative z-10 w-full max-w-md">
-          <h1 className="text-center text-3xl font-black text-white sm:text-4xl md:text-5xl">
+        <div className="relative z-10 w-full max-w-md py-2">
+          <h1 className="text-center text-2xl font-black text-white [@media(min-height:850px)]:text-3xl [@media(min-height:1000px)]:text-4xl">
             Study<span className="text-purple-400">OS</span>
           </h1>
 
-          <h2 className="mt-6 text-center text-2xl font-bold text-white sm:mt-8 sm:text-3xl md:mt-10 md:text-4xl">
+          <h2 className="mt-4 text-center text-xl font-bold text-white [@media(min-height:850px)]:mt-6 [@media(min-height:850px)]:text-2xl [@media(min-height:1000px)]:text-3xl">
             Create Account
           </h2>
 
-          <p className="mt-3 text-center text-sm text-gray-400 sm:text-base">
+          <p className="mt-2 text-center text-sm text-gray-400">
             Already have an account?
             <Link to="/login" className="ml-2 font-semibold text-purple-400 hover:text-purple-300">
               Sign In
@@ -231,13 +235,13 @@ export default function Signup() {
           </p>
 
           {/* Progress */}
-          <div className="mt-8 flex items-center justify-center gap-3 sm:mt-10">
-            <div className={`h-2 w-16 rounded-full transition-all sm:w-20 ${step >= 1 ? "bg-purple-500" : "bg-white/10"}`} />
-            <div className={`h-2 w-16 rounded-full transition-all sm:w-20 ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`} />
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 1 ? "bg-purple-500" : "bg-white/10"}`} />
+            <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`} />
           </div>
 
           {errors.form && (
-            <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
               {errors.form}
             </div>
           )}
@@ -246,7 +250,7 @@ export default function Signup() {
             {/* ── STEP 1 ── */}
             {step === 1 && (
               <>
-                <div className="mt-8 sm:mt-10">
+                <div className="mt-4">
                   <label className={labelClass}>Full Name</label>
                   <input
                     name="fullName"
@@ -258,7 +262,7 @@ export default function Signup() {
                   <FieldError msg={errors.fullName} />
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-3">
                   <label className={labelClass}>Email</label>
                   <input
                     name="email"
@@ -270,7 +274,7 @@ export default function Signup() {
                   <FieldError msg={errors.email} />
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-3">
                   <label className={labelClass}>Password</label>
                   <input
                     name="password"
@@ -282,7 +286,7 @@ export default function Signup() {
                   <FieldError msg={errors.password} />
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-3">
                   <label className={labelClass}>Confirm Password</label>
                   <input
                     name="confirmPassword"
@@ -294,30 +298,28 @@ export default function Signup() {
                   <FieldError msg={errors.confirmPassword} />
                 </div>
 
-                <div className="my-6 flex items-center gap-4 sm:my-8">
+                <div className="my-4 flex items-center gap-4">
                   <div className="h-px flex-1 bg-white/10" />
-                  <span className="text-sm text-gray-500">or continue with</span>
+                  <span className="text-xs text-gray-500">or continue with</span>
                   <div className="h-px flex-1 bg-white/10" />
                 </div>
 
-                <div className="flex gap-3 sm:gap-4">
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => googleSignup()}
                     disabled={googleLoading}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-3 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed sm:gap-3 sm:py-4 sm:text-base"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-2.5 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FcGoogle size={20} className="sm:hidden" />
-                    <FcGoogle size={24} className="hidden sm:block" />
+                    <FcGoogle size={20} />
                     {googleLoading ? "Signing in..." : "Google"}
                   </button>
                   <button
                     type="button"
                     onClick={handleGithubSignup}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-3 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5 sm:gap-3 sm:py-4 sm:text-base"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-2.5 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5"
                   >
-                    <FaGithub size={18} className="sm:hidden" />
-                    <FaGithub size={22} className="hidden sm:block" />
+                    <FaGithub size={18} />
                     GitHub
                   </button>
                 </div>
@@ -325,7 +327,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="mt-8 w-full rounded-xl bg-purple-500 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 sm:mt-10 sm:py-4"
+                  className="mt-4 w-full rounded-xl bg-purple-500 py-2.5 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600"
                 >
                   Next →
                 </button>
@@ -335,7 +337,7 @@ export default function Signup() {
             {/* ── STEP 2 ── */}
             {step === 2 && (
               <>
-                <div className="mt-8 sm:mt-10">
+                <div className="mt-4">
                   <label className={labelClass}>Institution Type</label>
                   <select
                     name="institutionType"
@@ -348,7 +350,7 @@ export default function Signup() {
                   </select>
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-3">
                   <label className={labelClass}>Institution Name</label>
                   <input
                     name="institutionName"
@@ -362,7 +364,7 @@ export default function Signup() {
 
                 {!isSchool(formData.institutionType) && (
                   <>
-                    <div className="mt-6">
+                    <div className="mt-3">
                       <label className={labelClass}>Course / Degree</label>
                       <select
                         name="course"
@@ -378,7 +380,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="mt-6">
+                    <div className="mt-3">
                       <label className={labelClass}>Branch / Stream</label>
                       <input
                         name="branch"
@@ -391,7 +393,7 @@ export default function Signup() {
                       <FieldError msg={errors.branch} />
                     </div>
 
-                    <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className="mt-3 grid grid-cols-2 gap-3">
                       <div>
                         <label className={labelClass}>Year</label>
                         <select
@@ -428,7 +430,7 @@ export default function Signup() {
 
                 {isSchool(formData.institutionType) && (
                   <>
-                    <div className="mt-6">
+                    <div className="mt-3">
                       <label className={labelClass}>Class</label>
                       <select
                         name="schoolClass"
@@ -444,7 +446,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className="mt-3 grid grid-cols-2 gap-3">
                       <div>
                         <label className={labelClass}>Stream</label>
                         <select
@@ -479,21 +481,21 @@ export default function Signup() {
                   </>
                 )}
 
-                <div className="mt-8 flex gap-4 sm:mt-10">
+                <div className="mt-4 flex gap-4">
                   <button
                     type="button"
                     onClick={() => {
                       setErrors({});
                       setStep(1);
                     }}
-                    className="flex-1 rounded-xl border border-white/10 py-3 font-semibold text-white transition hover:bg-white/5 sm:py-4"
+                    className="flex-1 rounded-xl border border-white/10 py-2.5 font-semibold text-white transition hover:bg-white/5"
                   >
                     ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 rounded-xl bg-purple-500 py-3 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed sm:py-4"
+                    className="flex-1 rounded-xl bg-purple-500 py-2.5 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {submitting ? "Creating account..." : "Create Account"}
                   </button>
