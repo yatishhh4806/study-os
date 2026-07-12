@@ -196,17 +196,17 @@ export default function Signup() {
     <div className="flex min-h-screen flex-col bg-[#09070f] lg:flex-row">
       {/* LEFT */}
       <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between xl:w-[40%] p-[clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:lg:p-16">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 w-[clamp(14rem,32vh,31.25rem)] [height:clamp(14rem,32vh,31.25rem)] [filter:blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 w-[clamp(14rem,32vh,31.25rem)] h-[clamp(14rem,32vh,31.25rem)] filter-[blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
         <div className="relative z-10">
           <AuthHero />
         </div>
         <div className="relative z-10">
-          <h1 className="font-black leading-[0.95] text-purple-300 [font-size:clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
+          <h1 className="font-black leading-[0.95] text-purple-300 text-[clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
             START
             <br />
             LEARNING
           </h1>
-          <p className="max-w-md leading-7 text-gray-300 [font-size:clamp(0.875rem,2vh,1.125rem)] [margin-top:clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
+          <p className="max-w-md leading-7 text-gray-300 text-[clamp(0.875rem,2vh,1.125rem)] mt-[clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
             Join thousands of students using StudyOS to organize their academics
             and boost productivity.
           </p>
@@ -214,8 +214,8 @@ export default function Signup() {
       </div>
 
       {/* RIGHT */}
-      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 [padding-top:clamp(1.5rem,4vh,4rem)] [padding-bottom:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:py-16">
-        <div className="absolute rounded-full bg-purple-500/5 [width:clamp(14rem,28vh,25rem)] [height:clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
+      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 pt-[clamp(1.5rem,4vh,4rem)] pb-[clamp(1.5rem,4vh,4rem)]-height:1000px)]:py-16">
+        <div className="absolute rounded-full bg-purple-500/5 w-[clamp(14rem,28vh,25rem)] h-[clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
 
         <div className="relative z-10 w-full [max-width:clamp(22rem,32vw,28rem)]">
           <h1 className="text-center font-black text-white [font-size:clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
