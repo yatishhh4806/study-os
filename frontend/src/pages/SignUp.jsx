@@ -429,7 +429,7 @@ export default function Signup() {
 
                 {isSchool(formData.institutionType) && (
                   <>
-                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Class</label>
                       <select
                         name="schoolClass"
