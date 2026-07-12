@@ -363,7 +363,7 @@ export default function Signup() {
 
                 {!isSchool(formData.institutionType) && (
                   <>
-                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Course / Degree</label>
                       <select
                         name="course"
@@ -379,7 +379,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Branch / Stream</label>
                       <input
                         name="branch"
@@ -392,7 +392,7 @@ export default function Signup() {
                       <FieldError msg={errors.branch} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 [margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="grid grid-cols-2 gap-3 mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <div>
                         <label className={labelClass}>Year</label>
                         <select
