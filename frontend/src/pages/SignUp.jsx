@@ -445,7 +445,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 [margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="grid grid-cols-2 gap-3 mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <div>
                         <label className={labelClass}>Stream</label>
                         <select
@@ -480,21 +480,21 @@ export default function Signup() {
                   </>
                 )}
 
-                <div className="flex gap-4 [margin-top:clamp(1rem,2.5vh,1.5rem)]">
+                <div className="flex gap-4 mt-[clamp(1rem,2.5vh,1.5rem)]">
                   <button
                     type="button"
                     onClick={() => {
                       setErrors({});
                       setStep(1);
                     }}
-                    className="flex-1 rounded-xl border border-white/10 font-semibold text-white transition hover:bg-white/5 [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex-1 rounded-xl border border-white/10 font-semibold text-white transition hover:bg-white/5 pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
                   >
                     ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex-1 rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
                   >
                     {submitting ? "Creating account..." : "Create Account"}
                   </button>
