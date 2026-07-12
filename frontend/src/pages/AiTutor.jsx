@@ -64,15 +64,15 @@ export default function AiTutor() {
   // Suggestion chips still come from the dashboard hook (real data) —
   // only the chat reply itself was ever mocked.
   const suggestions = useMemo(() => {
-    if (!dashboardData?.subjects) return [];
+    if (!dashboardData?.subjects?.length) return [];
 
     const weakest = [...dashboardData.subjects]
-      .sort((a, b) => a.mastery - b.mastery)
+      .sort((a, b) => a.masteryPct - b.masteryPct)
       .slice(0, 2);
 
     const chips = weakest.map((s) => ({
       icon: Target,
-      label: `Help me improve ${s.name} (currently ${s.mastery}%)`,
+      label: `Help me improve ${s.name} (currently ${s.masteryPct}%)`,
     }));
 
     const mostDue = [...dashboardData.subjects].sort(
