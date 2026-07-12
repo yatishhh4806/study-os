@@ -126,11 +126,11 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Enter your email"
-                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none transition focus:border-purple-500 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:p-4 [@media(min-height:1000px)]:text-base"
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none transition focus:border-purple-500 text-[clamp(0.8125rem,1.6vh,1rem)] p-[clamp(0.625rem,1.8vh,1rem)]ia(min-height:1000px)]:p-4 [@media(min-height:1000px)]:text-base"
               />
             </div>
 
-            <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)] [@media(min-height:1000px)]:mt-6">
+            <div className="mt-[clamp(0.75rem,2vh,1.25rem)] [@media(min-height:1000px)]:mt-6">
               <label className="text-sm text-gray-400">Password</label>
               <input
                 type="password"
@@ -138,7 +138,7 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Enter your password"
-                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none transition focus:border-purple-500 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:p-4 [@media(min-height:1000px)]:text-base"
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none transition focus:border-purple-500 text-[clamp(0.8125rem,1.6vh,1rem)]dp-[clamp(0.625rem,1.8vh,1rem)]dia(min-height:1000px)]:p-4 [@media(min-height:1000px)]:text-base"
               />
             </div>
 
@@ -151,7 +151,7 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-purple-500 font-bold text-white transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed [font-size:clamp(0.875rem,1.8vh,1rem)] [margin-top:clamp(1rem,2.5vh,1.5rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:mt-8 [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
+              className="w-full rounded-xl bg-purple-500 font-bold text-white transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-[clamp(0.875rem,1.8vh,1rem)] mt-[clamp(1rem,2.5vh,1.5rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:mt-8 [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
