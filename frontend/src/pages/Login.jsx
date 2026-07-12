@@ -78,21 +78,21 @@ function Login() {
         </div>
 
         <div className="relative z-10">
-          <h1 className="font-black leading-[0.95] text-purple-300 [font-size:clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
+          <h1 className="font-black leading-[0.95] text-purple-300 text-[clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
             WELCOME
             <br />
             BACK
           </h1>
 
-          <p className="max-w-md leading-7 text-gray-300 [font-size:clamp(0.875rem,2vh,1.125rem)] [margin-top:clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
+          <p className="max-w-md leading-7 text-gray-300 text-[clamp(0.875rem,2vh,1.125rem)] mt-[clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
             Continue your journey toward academic excellence with StudyOS.
           </p>
         </div>
       </div>
 
       {/* RIGHT */}
-      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 [padding-top:clamp(1.5rem,4vh,4rem)] [padding-bottom:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:py-16">
-        <div className="absolute rounded-full bg-purple-500/5 [width:clamp(14rem,28vh,25rem)] [height:clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
+      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 pt-[clamp(1.5rem,4vh,4rem)] pb-[clamp(1.5rem,4vh,4rem)]-height:1000px)]:py-16">
+        <div className="absolute rounded-full bg-purple-500/5 w-[clamp(14rem,28vh,25rem)] h-[clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
 
         <div className="relative z-10 w-full [max-width:clamp(22rem,32vw,28rem)]">
           <h1 className="text-center font-black text-white [font-size:clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
