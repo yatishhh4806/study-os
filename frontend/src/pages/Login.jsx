@@ -157,7 +157,7 @@ function Login() {
             </button>
           </form>
 
-          <div className="flex items-center gap-4 [margin-top:clamp(1rem,2.5vh,2rem)] [margin-bottom:clamp(1rem,2.5vh,2rem)] [@media(min-height:1000px)]:my-8">
+          <div className="flex items-center gap-4 mt-[clamp(1rem,2.5vh,2rem)] mb-[clamp(1rem,2.5vh,2rem)] [@media(min-height:1000px)]:my-8">
             <div className="h-px flex-1 bg-white/10" />
             <span className="text-xs text-gray-500 [@media(min-height:1000px)]:text-sm">or continue with</span>
             <div className="h-px flex-1 bg-white/10" />
@@ -168,7 +168,7 @@ function Login() {
               onClick={() => googleLogin()}
               disabled={googleLoading}
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed text-[clamp(0.8125rem,1.6vh,1rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
             >
               <FcGoogle size={20} />
               {googleLoading ? "Signing in..." : "Google"}
@@ -177,7 +177,7 @@ function Login() {
             <button
               onClick={handleGithubLogin}
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 text-[clamp(0.8125rem,1.6vh,1rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
             >
               <FaGithub size={18} />
               GitHub

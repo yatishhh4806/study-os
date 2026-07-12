@@ -195,8 +195,8 @@ export default function Signup() {
     // jumping between a few fixed breakpoint tiers.
     <div className="flex min-h-screen flex-col bg-[#09070f] lg:flex-row">
       {/* LEFT */}
-      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between xl:w-[40%] [padding:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:lg:p-16">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 [width:clamp(14rem,32vh,31.25rem)] [height:clamp(14rem,32vh,31.25rem)] [filter:blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
+      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between xl:w-[40%] p-[clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:lg:p-16">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 w-[clamp(14rem,32vh,31.25rem)] [height:clamp(14rem,32vh,31.25rem)] [filter:blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
         <div className="relative z-10">
           <AuthHero />
         </div>
