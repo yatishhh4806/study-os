@@ -44,7 +44,6 @@ const BLOCK_TYPES = [
   { type: "image",    label: "Image",          icon: ImagePlus,   hint: "Upload" },
 ];
 
-// typing these at the start of a block + space converts it
 const MD_SHORTCUTS = [
   { match: "#",   type: "h1" },
   { match: "##",  type: "h2" },
@@ -79,7 +78,6 @@ const createBlock = (type = "p", text = "") => ({
   checked: false,
 });
 
-// ── helpers ──────────────────────────────────────────────────
 function relativeTime(iso) {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -115,9 +113,6 @@ function numberedIndex(blocks, index) {
   return n;
 }
 
-// ─────────────────────────────────────────────────────────────
-// SlashMenu — unchanged from the mock version, purely UI
-// ─────────────────────────────────────────────────────────────
 function SlashMenu({ anchorRect, query, onSelect, onClose }) {
   const menuRef = useRef(null);
   const [active, setActive] = useState(0);
@@ -197,9 +192,6 @@ function SlashMenu({ anchorRect, query, onSelect, onClose }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// BlockMenu — unchanged from the mock version, purely UI
-// ─────────────────────────────────────────────────────────────
 function BlockMenu({ anchorRect, onTurnInto, onDuplicate, onDelete, onClose }) {
   const menuRef = useRef(null);
   const [showTurnInto, setShowTurnInto] = useState(false);
@@ -273,9 +265,6 @@ function BlockMenu({ anchorRect, onTurnInto, onDuplicate, onDelete, onClose }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// BlockRow — unchanged from the mock version, purely UI
-// ─────────────────────────────────────────────────────────────
 function BlockRow({
   block,
   index,
@@ -536,10 +525,6 @@ function BlockRow({
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Editor pane — same UI as before; onChange now flows up to a
-// debounced save instead of updating local mock state directly
-// ─────────────────────────────────────────────────────────────
 function Editor({ note, subject, onChange, saveStatus }) {
   const scrollRef = useRef(null);
   const [slash, setSlash] = useState({ blockId: null, anchorRect: null, query: "" });
@@ -723,9 +708,6 @@ function Editor({ note, subject, onChange, saveStatus }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Page — this is where real API integration lives
-// ─────────────────────────────────────────────────────────────
 export default function Notes() {
   const [subjects, setSubjects] = useState([]);
   const [notes, setNotes] = useState([]);
@@ -736,11 +718,11 @@ export default function Notes() {
   const [newSubject, setNewSubject] = useState("");
   const [coverMenuOpen, setCoverMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState(null); // null | "saving" | "saved"
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [deletingSubjectId, setDeletingSubjectId] = useState(null);
   const coverMenuRef = useRef(null);
   const saveTimers = useRef({});
 
-  // ── initial load: subjects + all notes ──
   useEffect(() => {
     async function load() {
       try {
@@ -791,16 +773,10 @@ export default function Notes() {
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  // clear any pending debounced saves on unmount, so a save doesn't fire
-  // for a component that's no longer there
   useEffect(() => {
     return () => Object.values(saveTimers.current).forEach(clearTimeout);
   }, []);
 
-  // Editor calls this on every keystroke. Local state updates instantly
-  // (so typing feels normal), but the actual PATCH to the backend is
-  // debounced — otherwise every single character would fire a network
-  // request.
   const updateNote = useCallback((next) => {
     setNotes((prev) =>
       prev.map((n) => (n._id === next._id ? { ...next, updatedAt: new Date().toISOString() } : n))
@@ -853,7 +829,6 @@ export default function Notes() {
     const note = notes.find((n) => n._id === id);
     if (!note) return;
     const nextStarred = !note.starred;
-    // optimistic update — flip it locally immediately, revert on failure
     setNotes((prev) => prev.map((n) => (n._id === id ? { ...n, starred: nextStarred } : n)));
     try {
       await api.patch(`/notes/${id}`, { starred: nextStarred });
@@ -881,6 +856,43 @@ export default function Notes() {
       setActiveNoteId(noteRes.data.note._id);
     } catch (err) {
       console.error("Failed to create subject:", err);
+    }
+  };
+
+  // Deletes a subject and, since the backend cascades, all of its notes
+  // too — so this asks for confirmation first and cleans up local state
+  // for both the subject and any notes that belonged to it.
+  const deleteSubject = async (id) => {
+    const subject = subjects.find((s) => s._id === id);
+    const noteCount = notes.filter((n) => n.subjectId === id).length;
+    const confirmed = window.confirm(
+      noteCount > 0
+        ? `Delete "${subject?.name}"? This will also permanently delete ${noteCount} note${noteCount === 1 ? "" : "s"} in it.`
+        : `Delete "${subject?.name}"?`
+    );
+    if (!confirmed) return;
+
+    setDeletingSubjectId(id);
+    try {
+      await api.delete(`/subjects/${id}`);
+
+      const remainingSubjects = subjects.filter((s) => s._id !== id);
+      const remainingNotes = notes.filter((n) => n.subjectId !== id);
+      setSubjects(remainingSubjects);
+      setNotes(remainingNotes);
+
+      if (activeSubjectId === id) {
+        const nextSubjectId = remainingSubjects[0]?._id || null;
+        setActiveSubjectId(nextSubjectId);
+        setActiveNoteId(
+          remainingNotes.find((n) => n.subjectId === nextSubjectId)?._id || null
+        );
+      }
+    } catch (err) {
+      console.error("Failed to delete subject:", err);
+      alert(err.response?.data?.error || "Couldn't delete this subject. Please try again.");
+    } finally {
+      setDeletingSubjectId(null);
     }
   };
 
@@ -950,23 +962,47 @@ export default function Notes() {
           {subjects.map((s) => {
             const active = s._id === activeSubjectId;
             const count = notes.filter((n) => n.subjectId === s._id).length;
+            const isDeleting = deletingSubjectId === s._id;
             return (
-              <button
+              <div
                 key={s._id}
-                onClick={() => {
-                  setActiveSubjectId(s._id);
-                  setActiveNoteId(notes.find((n) => n.subjectId === s._id)?._id || null);
-                }}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-colors ${
+                className={`group/subject relative flex items-center rounded-lg transition-colors ${
                   active
-                    ? "bg-purple-500/15 border border-purple-400/30 text-white"
-                    : "border border-transparent text-white/70 hover:bg-white/5 hover:text-white"
+                    ? "bg-purple-500/15 border border-purple-400/30"
+                    : "border border-transparent hover:bg-white/5"
                 }`}
               >
-                <span className="text-sm">{s.emoji}</span>
-                <span className="flex-1 text-sm truncate">{s.name}</span>
-                <span className="text-[11px] text-white/35">{count}</span>
-              </button>
+                <button
+                  onClick={() => {
+                    setActiveSubjectId(s._id);
+                    setActiveNoteId(notes.find((n) => n.subjectId === s._id)?._id || null);
+                  }}
+                  className={`flex-1 flex items-center gap-2.5 px-2.5 py-2 text-left min-w-0 ${
+                    active ? "text-white" : "text-white/70 hover:text-white"
+                  }`}
+                >
+                  <span className="text-sm">{s.emoji}</span>
+                  <span className="flex-1 text-sm truncate">{s.name}</span>
+                  <span className="text-[11px] text-white/35">{count}</span>
+                </button>
+
+                <button
+                  type="button"
+                  title="Delete subject"
+                  disabled={isDeleting}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteSubject(s._id);
+                  }}
+                  className="mr-1.5 w-6 h-6 flex-shrink-0 rounded-md flex items-center justify-center text-white/30 opacity-0 group-hover/subject:opacity-100 hover:text-red-400 hover:bg-white/10 disabled:opacity-50 transition-colors"
+                >
+                  {isDeleting ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
             );
           })}
 
