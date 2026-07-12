@@ -92,19 +92,19 @@ function Login() {
 
       {/* RIGHT */}
       <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 pt-[clamp(1.5rem,4vh,4rem)] pb-[clamp(1.5rem,4vh,4rem)]-height:1000px)]:py-16">
-        <div className="absolute rounded-full bg-purple-500/5 w-[clamp(14rem,28vh,25rem)] h-[clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
+        <div className="absolute rounded-full bg-purple-500/5 w-[clamp(14rem,28vh,25rem)] h-[clamp(14rem,28vh,25rem)] filter-[blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
 
-        <div className="relative z-10 w-full [max-width:clamp(22rem,32vw,28rem)]">
-          <h1 className="text-center font-black text-white [font-size:clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
+        <div className="relative z-10 w-full max-w-[clamp(22rem,32vw,28rem)]">
+          <h1 className="text-center font-black text-white text-[clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
             Study
             <span className="text-purple-400">OS</span>
           </h1>
 
-          <h2 className="text-center font-bold text-white [font-size:clamp(1.25rem,3.5vh,2.5rem)] [margin-top:clamp(0.75rem,2vh,1.5rem)] [@media(min-height:1000px)]:mt-10 [@media(min-height:1000px)]:text-4xl">
+          <h2 className="text-center font-bold text-white text-[clamp(1.25rem,3.5vh,2.5rem)] mt-[clamp(0.75rem,2vh,1.5rem)] [@media(min-height:1000px)]:mt-10 [@media(min-height:1000px)]:text-4xl">
             Welcome Back
           </h2>
 
-          <p className="mt-2 text-center text-gray-400 [font-size:clamp(0.8125rem,1.6vh,1rem)] [@media(min-height:1000px)]:text-base">
+          <p className="mt-2 text-center text-gray-400 text-[clamp(0.8125rem,1.6vh,1rem)] [@media(min-height:1000px)]:text-base">
             New to StudyOS?
             <Link to="/signup" className="ml-2 font-semibold text-purple-400 hover:text-purple-300">
               Sign up
@@ -118,7 +118,7 @@ function Login() {
           )}
 
           <form onSubmit={handleManualLogin}>
-            <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)] [@media(min-height:1000px)]:mt-8">
+            <div className="mt-[clamp(1rem,2.5vh,1.5rem)] [@media(min-height:1000px)]:mt-8">
               <label className="text-sm text-gray-400">Email</label>
               <input
                 type="email"
