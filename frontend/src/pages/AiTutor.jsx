@@ -18,57 +18,7 @@ import {
   Bell,
 } from "lucide-react";
 import { useDashboardData } from "../hooks/useDashboardData";
-
-// ─────────────────────────────────────────────────────────────
-// TEMPORARY: simulated reply generator, used until the backend
-// (server/routes/aiTutor.js) is wired up. It uses the same context
-// object the real API call will eventually send, so nothing about
-// the component's data flow changes when you connect the backend —
-// only sendMessage()'s implementation swaps out.
-// ─────────────────────────────────────────────────────────────
-function simulateTutorReply(userText, context) {
-  const text = userText.toLowerCase();
-  const subjects = context.subjects || [];
-  const weakest = [...subjects].sort((a, b) => a.mastery - b.mastery)[0];
-  const mentioned = subjects.find((s) => text.includes(s.name.toLowerCase()));
-
-  if (mentioned) {
-    return `${mentioned.name} is at ${mentioned.mastery}% mastery with ${mentioned.dueCards} cards due. Once the real tutor is connected, I'll actually teach you the concept here — for now this is a placeholder reply so you can test the chat UI.`;
-  }
-
-  if (text.includes("quiz")) {
-    return `I'd quiz you on ${weakest?.name || "your weakest subject"} here once the backend is live. This is a placeholder response for UI testing.`;
-  }
-
-  return `(Simulated reply) Once connected to the backend, I'll answer using your real dashboard data. Right now your weakest subject is ${weakest?.name} at ${weakest?.mastery}%.`;
-}
-
-/**
- * Builds the payload that will eventually be sent to the backend.
- * Kept identical to the real integration's shape so swapping
- * simulateTutorReply() for a real fetch() later is a one-line change.
- */
-function buildTutorContext(dashboardData) {
-  if (!dashboardData) return {};
-
-  const { streak, studyHours, productivity, subjects, deadlines, schedule } =
-    dashboardData;
-
-  const dueCardsTotal = (subjects || []).reduce(
-    (sum, s) => sum + (s.dueCards || 0),
-    0,
-  );
-
-  return {
-    streak,
-    studyHours,
-    productivity,
-    dueCardsTotal,
-    subjects: subjects || [],
-    deadlines: deadlines || [],
-    todaySchedule: schedule || [],
-  };
-}
+import { api } from "../lib/api";
 
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -77,24 +27,42 @@ function formatBytes(bytes) {
 }
 
 export default function AiTutor() {
-  const { dashboardData, loading: dashboardLoading } = useDashboardData();
+  const { dashboardData } = useDashboardData();
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
+  const [usage, setUsage] = useState(null); // { allowed, remaining, limit }
+  const [errorBanner, setErrorBanner] = useState("");
 
   const scrollRef = useRef(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
   const attachMenuRef = useRef(null);
 
-  const context = useMemo(
-    () => buildTutorContext(dashboardData),
-    [dashboardData],
-  );
+  // Fetch real usage on mount so the composer can be disabled up front
+  // if the person already hit today's limit, instead of only finding
+  // out after a failed send.
+  useEffect(() => {
+    let cancelled = false;
+    async function loadUsage() {
+      try {
+        const { data } = await api.get("/ai-tutor/usage");
+        if (!cancelled) setUsage(data);
+      } catch {
+        // non-fatal — worst case the limit is only enforced on send
+      }
+    }
+    loadUsage();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
+  // Suggestion chips still come from the dashboard hook (real data) —
+  // only the chat reply itself was ever mocked.
   const suggestions = useMemo(() => {
     if (!dashboardData?.subjects) return [];
 
@@ -120,7 +88,6 @@ export default function AiTutor() {
     return chips.slice(0, 3);
   }, [dashboardData]);
 
-  // ── attach menu — mock actions until file/backend handling exists ──
   const attachOptions = [
     {
       icon: FileUp,
@@ -160,7 +127,6 @@ export default function AiTutor() {
     setAttachedFiles((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  // close attach menu on outside click
   useEffect(() => {
     function handleClick(e) {
       if (attachMenuRef.current && !attachMenuRef.current.contains(e.target)) {
@@ -196,6 +162,9 @@ export default function AiTutor() {
       : "";
     if (!trimmed && !fileNote) return;
     if (isSending) return;
+    if (usage && usage.allowed === false) return; // composer should already be disabled, but guard anyway
+
+    setErrorBanner("");
 
     const nextMessages = [
       ...messages,
@@ -207,25 +176,37 @@ export default function AiTutor() {
     setIsSending(true);
     requestAnimationFrame(autoGrow);
 
-    // ── SWAP POINT ──────────────────────────────────────────────
-    // Replace this block with the real fetch() call once your
-    // backend exists:
-    //
-    //   const res = await fetch("/api/ai-tutor/chat", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ messages: nextMessages, context }),
-    //   });
-    //   const data = await res.json();
-    //   setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
-    //
-    // For now, simulate network latency + a canned reply so the UI
-    // is fully testable.
-    setTimeout(() => {
-      const reply = simulateTutorReply(trimmed, context);
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+    try {
+      // Backend builds real context (subjects, due cards, deadlines) from
+      // the database itself — we only send the message history, not a
+      // client-built context object.
+      const { data } = await api.post("/ai-tutor/chat", {
+        messages: nextMessages.map(({ role, content }) => ({ role, content })),
+      });
+
+      setMessages((prev) => [...prev, { role: "assistant", content: data.reply }]);
+      setUsage((prev) => ({
+        ...prev,
+        allowed: data.usage.remaining > 0,
+        remaining: data.usage.remaining,
+        limit: data.usage.limit,
+      }));
+    } catch (err) {
+      const code = err.response?.data?.code;
+      const message =
+        err.response?.data?.error ||
+        "AI Tutor is temporarily unavailable. Please try again.";
+
+      if (code === "DAILY_LIMIT_REACHED" || code === "UPGRADE_REQUIRED") {
+        setUsage((prev) => ({ ...prev, allowed: false }));
+      }
+      setErrorBanner(message);
+      // Roll back the optimistic user message's "sent" state by leaving it
+      // in place (so they don't lose what they typed) but show the error
+      // banner rather than a fake assistant reply.
+    } finally {
       setIsSending(false);
-    }, 700);
+    }
   }
 
   function handleSubmit(e) {
@@ -239,6 +220,8 @@ export default function AiTutor() {
       sendMessage(input);
     }
   }
+
+  const limitReached = usage?.allowed === false;
 
   return (
     <div className="relative flex flex-col h-[calc(100vh-2rem)] w-full overflow-hidden">
@@ -292,7 +275,6 @@ export default function AiTutor() {
         .tutor-blob-c { animation: tutorFloatC 16s ease-in-out infinite; }
         .tutor-dot { animation: tutorBounce 1.2s ease-in-out infinite; }
 
-        /* Composer: hover/focus glow + slight lift, pure CSS, no JS tracking */
         .tutor-composer-glow {
           position: absolute;
           inset: -3px;
@@ -325,7 +307,6 @@ export default function AiTutor() {
         }
       `}</style>
 
-      {/* Ambient background wash + drifting blobs — full page width, sits behind content (no negative z-index needed since it's first in the DOM) */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute inset-0"
@@ -343,7 +324,7 @@ export default function AiTutor() {
       <div className="relative z-10 border-b border-purple-400/20 bg-linear-to-br from-purple-500/8 via-white/2 to-transparent backdrop-blur-sm">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-brrom-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-500 to-purple-700 flex items-center justify-center shadow-lg shadow-purple-900/30 tutor-pulse">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -356,7 +337,12 @@ export default function AiTutor() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {usage && (
+              <span className="text-xs text-white/40">
+                {usage.remaining}/{usage.limit} messages left today
+              </span>
+            )}
             <button
               type="button"
               title="Help"
@@ -451,18 +437,9 @@ export default function AiTutor() {
                 <Sparkles className="w-3.5 h-3.5 text-white" />
               </div>
               <div className="bg-white/5 border border-white/10 rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-1.5 backdrop-blur-sm">
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot"
-                  style={{ animationDelay: "0ms" }}
-                />
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot"
-                  style={{ animationDelay: "150ms" }}
-                />
-                <span
-                  className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot"
-                  style={{ animationDelay: "300ms" }}
-                />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 tutor-dot" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           )}
@@ -472,7 +449,19 @@ export default function AiTutor() {
       {/* Composer */}
       <div className="relative z-10 border-t border-white/10 bg-linear-to-t from-white/3 to-transparent">
         <div className="max-w-4xl mx-auto px-6 py-4">
-          {/* Attached file chips */}
+          {errorBanner && (
+            <div className="mb-2.5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
+              {errorBanner}
+            </div>
+          )}
+
+          {limitReached && !errorBanner && (
+            <div className="mb-2.5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2.5 text-sm text-yellow-300">
+              You've reached today's AI Tutor limit. It resets at midnight
+              {usage?.limit ? ` (${usage.limit}/day on your current plan)` : ""}.
+            </div>
+          )}
+
           {attachedFiles.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2.5">
               {attachedFiles.map((f, i) => (
@@ -496,16 +485,15 @@ export default function AiTutor() {
           )}
 
           <form onSubmit={handleSubmit} className="tutor-composer relative">
-            {/* glow layer, purely CSS-driven by :hover / :focus-within */}
             <div className="tutor-composer-glow" />
 
             <div className="tutor-composer-inner relative z-1 flex items-end gap-2 bg-[#120f17]/95 border border-white/10 rounded-2xl px-2 py-2">
-              {/* Attach button */}
               <div className="relative" ref={attachMenuRef}>
                 <button
                   type="button"
                   onClick={() => setAttachMenuOpen((v) => !v)}
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                  disabled={limitReached}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
                     attachMenuOpen
                       ? "bg-purple-500/20 text-purple-300 rotate-45"
                       : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
@@ -516,23 +504,21 @@ export default function AiTutor() {
 
                 {attachMenuOpen && (
                   <div className="tutor-menu-in absolute bottom-full mb-2 left-0 w-64 rounded-xl bg-[#15111c] border border-white/10 shadow-2xl shadow-black/50 p-1.5 z-20">
-                    {attachOptions.map(
-                      ({ icon: Icon, label, hint, action }) => (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() => {
-                            setAttachMenuOpen(false);
-                            action();
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors"
-                        >
-                          <Icon className="w-4 h-4 text-purple-400 shrink-0" />
-                          <span className="flex-1">{label}</span>
-                          <span className="text-xs text-white/40">{hint}</span>
-                        </button>
-                      ),
-                    )}
+                    {attachOptions.map(({ icon: Icon, label, hint, action }) => (
+                      <button
+                        key={label}
+                        type="button"
+                        onClick={() => {
+                          setAttachMenuOpen(false);
+                          action();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left text-sm text-white/80 hover:bg-white/5 hover:text-white transition-colors"
+                      >
+                        <Icon className="w-4 h-4 text-purple-400 shrink-0" />
+                        <span className="flex-1">{label}</span>
+                        <span className="text-xs text-white/40">{hint}</span>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -552,15 +538,18 @@ export default function AiTutor() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about a topic, or type 'quiz me on DBMS'..."
-                className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-white placeholder-white/40 focus:outline-none max-h-40"
+                disabled={limitReached}
+                placeholder={
+                  limitReached
+                    ? "Daily message limit reached — resets at midnight"
+                    : "Ask about a topic, or type 'quiz me on DBMS'..."
+                }
+                className="flex-1 resize-none bg-transparent px-2 py-2 text-sm text-white placeholder-white/40 focus:outline-none max-h-40 disabled:cursor-not-allowed"
               />
 
               <button
                 type="submit"
-                disabled={
-                  isSending || (!input.trim() && attachedFiles.length === 0)
-                }
+                disabled={isSending || limitReached || (!input.trim() && attachedFiles.length === 0)}
                 className="w-9 h-9 rounded-xl bg-linear-to-br from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 disabled:opacity-40 disabled:hover:from-purple-500 disabled:hover:to-purple-700 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/30 shrink-0"
               >
                 <Send className="w-4 h-4 text-white" />

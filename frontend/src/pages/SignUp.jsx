@@ -195,18 +195,18 @@ export default function Signup() {
     // jumping between a few fixed breakpoint tiers.
     <div className="flex min-h-screen flex-col bg-[#09070f] lg:flex-row">
       {/* LEFT */}
-      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between xl:w-[40%] p-[clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:lg:p-16">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 w-[clamp(14rem,32vh,31.25rem)] h-[clamp(14rem,32vh,31.25rem)] filter-[blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
+      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between xl:w-[40%] [padding:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:lg:p-16">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 [width:clamp(14rem,32vh,31.25rem)] [height:clamp(14rem,32vh,31.25rem)] [filter:blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
         <div className="relative z-10">
           <AuthHero />
         </div>
         <div className="relative z-10">
-          <h1 className="font-black leading-[0.95] text-purple-300 text-[clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
+          <h1 className="font-black leading-[0.95] text-purple-300 [font-size:clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
             START
             <br />
             LEARNING
           </h1>
-          <p className="max-w-md leading-7 text-gray-300 text-[clamp(0.875rem,2vh,1.125rem)] mt-[clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
+          <p className="max-w-md leading-7 text-gray-300 [font-size:clamp(0.875rem,2vh,1.125rem)] [margin-top:clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
             Join thousands of students using StudyOS to organize their academics
             and boost productivity.
           </p>
@@ -214,19 +214,19 @@ export default function Signup() {
       </div>
 
       {/* RIGHT */}
-      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 pt-[clamp(1.5rem,4vh,4rem)] pb-[clamp(1.5rem,4vh,4rem)]-height:1000px)]:py-16">
-        <div className="absolute rounded-full bg-purple-500/5 w-[clamp(14rem,28vh,25rem)] h-[clamp(14rem,28vh,25rem)] filter-[blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
+      <div className="relative flex flex-1 overflow-y-auto px-4 sm:px-8 [padding-top:clamp(1.5rem,4vh,4rem)] [padding-bottom:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:py-16">
+        <div className="absolute rounded-full bg-purple-500/5 [width:clamp(14rem,28vh,25rem)] [height:clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
 
-        <div className="relative z-10 w-full max-w-[clamp(22rem,32vw,28rem)]">
-          <h1 className="text-center font-black text-white text-[clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
+        <div className="relative z-10 m-auto w-full [max-width:clamp(22rem,32vw,28rem)]">
+          <h1 className="text-center font-black text-white [font-size:clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
             Study<span className="text-purple-400">OS</span>
           </h1>
 
-          <h2 className="text-center font-bold text-white text-[clamp(1.25rem,3.5vh,2.5rem)] mt-[clamp(0.75rem,2vh,1.5rem)] [@media(min-height:1000px)]:mt-10 [@media(min-height:1000px)]:text-4xl">
+          <h2 className="text-center font-bold text-white [font-size:clamp(1.25rem,3.5vh,2.5rem)] [margin-top:clamp(0.75rem,2vh,1.5rem)] [@media(min-height:1000px)]:mt-10 [@media(min-height:1000px)]:text-4xl">
             Create Account
           </h2>
 
-          <p className="mt-2 text-center text-gray-400 text-[clamp(0.8125rem,1.6vh,1rem)]">
+          <p className="mt-2 text-center text-gray-400 [font-size:clamp(0.8125rem,1.6vh,1rem)]">
             Already have an account?
             <Link to="/login" className="ml-2 font-semibold text-purple-400 hover:text-purple-300">
               Sign In
@@ -234,7 +234,7 @@ export default function Signup() {
           </p>
 
           {/* Progress */}
-          <div className="flex items-center justify-center gap-3 mt-[clamp(1rem,2.5vh,1.5rem)]">
+          <div className="flex items-center justify-center gap-3 [margin-top:clamp(1rem,2.5vh,1.5rem)]">
             <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 1 ? "bg-purple-500" : "bg-white/10"}`} />
             <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`} />
           </div>
@@ -249,7 +249,7 @@ export default function Signup() {
             {/* ── STEP 1 ── */}
             {step === 1 && (
               <>
-                <div className="mt-[clamp(1rem,2.5vh,1.5rem)]">
+                <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)]">
                   <label className={labelClass}>Full Name</label>
                   <input
                     name="fullName"
@@ -261,7 +261,7 @@ export default function Signup() {
                   <FieldError msg={errors.fullName} />
                 </div>
 
-                <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Email</label>
                   <input
                     name="email"
@@ -273,7 +273,7 @@ export default function Signup() {
                   <FieldError msg={errors.email} />
                 </div>
 
-                <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Password</label>
                   <input
                     name="password"
@@ -285,7 +285,7 @@ export default function Signup() {
                   <FieldError msg={errors.password} />
                 </div>
 
-                <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Confirm Password</label>
                   <input
                     name="confirmPassword"
@@ -297,7 +297,7 @@ export default function Signup() {
                   <FieldError msg={errors.confirmPassword} />
                 </div>
 
-                <div className="flex items-center gap-4 mt-[clamp(1rem,2.5vh,2rem)] mb-[clamp(1rem,2.5vh,2rem)]">
+                <div className="flex items-center gap-4 [margin-top:clamp(1rem,2.5vh,2rem)] [margin-bottom:clamp(1rem,2.5vh,2rem)]">
                   <div className="h-px flex-1 bg-white/10" />
                   <span className="text-xs text-gray-500">or continue with</span>
                   <div className="h-px flex-1 bg-white/10" />
@@ -308,7 +308,7 @@ export default function Signup() {
                     type="button"
                     onClick={() => googleSignup()}
                     disabled={googleLoading}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed text-[clamp(0.8125rem,1.6vh,1rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     <FcGoogle size={20} />
                     {googleLoading ? "Signing in..." : "Google"}
@@ -316,7 +316,7 @@ export default function Signup() {
                   <button
                     type="button"
                     onClick={handleGithubSignup}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 text-[clamp(0.8125rem,1.6vh,1rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     <FaGithub size={18} />
                     GitHub
@@ -326,7 +326,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="w-full rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 text-[clamp(0.875rem,1.8vh,1rem)] mt-[clamp(1rem,2.5vh,1.5rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
+                  className="w-full rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 [font-size:clamp(0.875rem,1.8vh,1rem)] [margin-top:clamp(1rem,2.5vh,1.5rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                 >
                   Next →
                 </button>
@@ -336,7 +336,7 @@ export default function Signup() {
             {/* ── STEP 2 ── */}
             {step === 2 && (
               <>
-                <div className="mt-[clamp(1rem,2.5vh,1.5rem)]">
+                <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)]">
                   <label className={labelClass}>Institution Type</label>
                   <select
                     name="institutionType"
@@ -349,7 +349,7 @@ export default function Signup() {
                   </select>
                 </div>
 
-                <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Institution Name</label>
                   <input
                     name="institutionName"
@@ -363,7 +363,7 @@ export default function Signup() {
 
                 {!isSchool(formData.institutionType) && (
                   <>
-                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Course / Degree</label>
                       <select
                         name="course"
@@ -379,7 +379,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Branch / Stream</label>
                       <input
                         name="branch"
@@ -392,7 +392,7 @@ export default function Signup() {
                       <FieldError msg={errors.branch} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mt-[clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="grid grid-cols-2 gap-3 [margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <div>
                         <label className={labelClass}>Year</label>
                         <select
@@ -429,7 +429,7 @@ export default function Signup() {
 
                 {isSchool(formData.institutionType) && (
                   <>
-                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Class</label>
                       <select
                         name="schoolClass"
@@ -445,7 +445,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 mt-[clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="grid grid-cols-2 gap-3 [margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <div>
                         <label className={labelClass}>Stream</label>
                         <select
@@ -480,21 +480,21 @@ export default function Signup() {
                   </>
                 )}
 
-                <div className="flex gap-4 mt-[clamp(1rem,2.5vh,1.5rem)]">
+                <div className="flex gap-4 [margin-top:clamp(1rem,2.5vh,1.5rem)]">
                   <button
                     type="button"
                     onClick={() => {
                       setErrors({});
                       setStep(1);
                     }}
-                    className="flex-1 rounded-xl border border-white/10 font-semibold text-white transition hover:bg-white/5 pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex-1 rounded-xl border border-white/10 font-semibold text-white transition hover:bg-white/5 [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex-1 rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     {submitting ? "Creating account..." : "Create Account"}
                   </button>
