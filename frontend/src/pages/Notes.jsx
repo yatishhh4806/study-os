@@ -720,6 +720,7 @@ export default function Notes() {
   const [loading, setLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState(null);
   const [deletingSubjectId, setDeletingSubjectId] = useState(null);
+  const [subjectToDelete, setSubjectToDelete] = useState(null); // subject object pending confirmation, or null
   const coverMenuRef = useRef(null);
   const saveTimers = useRef({});
 
@@ -859,20 +860,16 @@ export default function Notes() {
     }
   };
 
-  // Deletes a subject and, since the backend cascades, all of its notes
-  // too — so this asks for confirmation first and cleans up local state
-  // for both the subject and any notes that belonged to it.
-  const deleteSubject = async (id) => {
-    const subject = subjects.find((s) => s._id === id);
-    const noteCount = notes.filter((n) => n.subjectId === id).length;
-    const confirmed = window.confirm(
-      noteCount > 0
-        ? `Delete "${subject?.name}"? This will also permanently delete ${noteCount} note${noteCount === 1 ? "" : "s"} in it.`
-        : `Delete "${subject?.name}"?`
-    );
-    if (!confirmed) return;
+  // Opens the custom in-app confirmation modal instead of the browser's
+  // native confirm() dialog, which looks jarring against the app's UI.
+  const requestDeleteSubject = (subject) => setSubjectToDelete(subject);
+
+  const confirmDeleteSubject = async () => {
+    if (!subjectToDelete) return;
+    const id = subjectToDelete._id;
 
     setDeletingSubjectId(id);
+    setSubjectToDelete(null);
     try {
       await api.delete(`/subjects/${id}`);
 
@@ -992,7 +989,7 @@ export default function Notes() {
                   disabled={isDeleting}
                   onClick={(e) => {
                     e.stopPropagation();
-                    deleteSubject(s._id);
+                    requestDeleteSubject(s);
                   }}
                   className="mr-1.5 w-6 h-6 flex-shrink-0 rounded-md flex items-center justify-center text-white/30 opacity-0 group-hover/subject:opacity-100 hover:text-red-400 hover:bg-white/10 disabled:opacity-50 transition-colors"
                 >
@@ -1251,6 +1248,65 @@ export default function Notes() {
           </div>
         )}
       </main>
+
+      {/* ── Delete subject confirmation modal ─────────────── */}
+      {subjectToDelete && (
+        <div
+          className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setSubjectToDelete(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="notes-menu-in w-full max-w-sm rounded-2xl border border-white/10 bg-[#15111c] p-6 shadow-2xl shadow-black/60"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-base font-semibold text-white">
+                Delete subject
+              </h3>
+            </div>
+
+            <p className="text-sm text-white/60 leading-relaxed mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-white">
+                "{subjectToDelete.name}"
+              </span>
+              ?
+              {(() => {
+                const count = notes.filter((n) => n.subjectId === subjectToDelete._id).length;
+                return count > 0 ? (
+                  <>
+                    {" "}This will also permanently delete{" "}
+                    <span className="font-medium text-red-300">
+                      {count} note{count === 1 ? "" : "s"}
+                    </span>{" "}
+                    in it. This can't be undone.
+                  </>
+                ) : (
+                  " This can't be undone."
+                );
+              })()}
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSubjectToDelete(null)}
+                className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteSubject}
+                className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
