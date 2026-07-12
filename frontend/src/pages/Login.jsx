@@ -63,49 +63,48 @@ function Login() {
   }
 
   return (
-    // Auth pages are intentionally compact and NOT width-scaled — a login
-    // form doesn't need to get bigger on a wider screen, it just needs to
-    // fit the viewport height. Many common laptop resolutions (1366x768,
-    // 1536x864) are wide but short, so scaling sizes up with width alone
-    // caused content to overflow vertically on exactly those screens.
+    // Fluid clamp()-based sizing handles the short-to-medium range
+    // smoothly. On top of that, an explicit [@media(min-height:1000px)]
+    // override restores the full, spacious original design for genuinely
+    // tall/common screens (1080p and up), since clamp's vh-based scaling
+    // alone was too conservative to look "full size" even at 1920x1080.
     <div className="flex min-h-screen flex-col bg-[#09070f] lg:flex-row">
-      {/* LEFT — visual panel, shown only when there's enough width for it */}
-      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between lg:p-8 xl:w-[40%]">
-        <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[110px] [@media(min-height:850px)]:h-72 [@media(min-height:850px)]:w-72 [@media(min-height:1000px)]:h-96 [@media(min-height:1000px)]:w-96 [@media(min-height:1000px)]:blur-[150px]" />
+      {/* LEFT */}
+      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between xl:w-[40%] [padding:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:lg:p-16">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 [width:clamp(14rem,32vh,31.25rem)] [height:clamp(14rem,32vh,31.25rem)] [filter:blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
 
         <div className="relative z-10">
           <AuthHero />
         </div>
 
         <div className="relative z-10">
-          <h1 className="text-3xl font-black leading-tight text-purple-300 [@media(min-height:850px)]:text-4xl [@media(min-height:1000px)]:text-6xl">
+          <h1 className="font-black leading-[0.95] text-purple-300 [font-size:clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
             WELCOME
             <br />
             BACK
           </h1>
 
-          <p className="mt-3 max-w-md text-sm leading-6 text-gray-300 [@media(min-height:850px)]:text-base [@media(min-height:850px)]:leading-7">
+          <p className="max-w-md leading-7 text-gray-300 [font-size:clamp(0.875rem,2vh,1.125rem)] [margin-top:clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
             Continue your journey toward academic excellence with StudyOS.
           </p>
         </div>
       </div>
 
-      {/* RIGHT — the actual form, sized to comfortably fit a short viewport
-          first; only gets roomier when there's vertical space to spare */}
-      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:px-8">
-        <div className="absolute h-56 w-56 rounded-full bg-purple-500/5 blur-[90px] [@media(min-height:850px)]:h-72 [@media(min-height:850px)]:w-72 [@media(min-height:1000px)]:h-96 [@media(min-height:1000px)]:w-96" />
+      {/* RIGHT */}
+      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 [padding-top:clamp(1.5rem,4vh,4rem)] [padding-bottom:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:py-16">
+        <div className="absolute rounded-full bg-purple-500/5 [width:clamp(14rem,28vh,25rem)] [height:clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
 
-        <div className="relative z-10 w-full max-w-md py-2">
-          <h1 className="text-center text-2xl font-black text-white [@media(min-height:850px)]:text-3xl [@media(min-height:1000px)]:text-4xl">
+        <div className="relative z-10 w-full [max-width:clamp(22rem,32vw,28rem)]">
+          <h1 className="text-center font-black text-white [font-size:clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
             Study
             <span className="text-purple-400">OS</span>
           </h1>
 
-          <h2 className="mt-4 text-center text-xl font-bold text-white [@media(min-height:850px)]:mt-6 [@media(min-height:850px)]:text-2xl [@media(min-height:1000px)]:text-3xl">
+          <h2 className="text-center font-bold text-white [font-size:clamp(1.25rem,3.5vh,2.5rem)] [margin-top:clamp(0.75rem,2vh,1.5rem)] [@media(min-height:1000px)]:mt-10 [@media(min-height:1000px)]:text-4xl">
             Welcome Back
           </h2>
 
-          <p className="mt-2 text-center text-sm text-gray-400">
+          <p className="mt-2 text-center text-gray-400 [font-size:clamp(0.8125rem,1.6vh,1rem)] [@media(min-height:1000px)]:text-base">
             New to StudyOS?
             <Link to="/signup" className="ml-2 font-semibold text-purple-400 hover:text-purple-300">
               Sign up
@@ -119,7 +118,7 @@ function Login() {
           )}
 
           <form onSubmit={handleManualLogin}>
-            <div className="mt-4">
+            <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)] [@media(min-height:1000px)]:mt-8">
               <label className="text-sm text-gray-400">Email</label>
               <input
                 type="email"
@@ -127,11 +126,11 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Enter your email"
-                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition focus:border-purple-500"
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none transition focus:border-purple-500 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:p-4 [@media(min-height:1000px)]:text-base"
               />
             </div>
 
-            <div className="mt-3">
+            <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)] [@media(min-height:1000px)]:mt-6">
               <label className="text-sm text-gray-400">Password</label>
               <input
                 type="password"
@@ -139,7 +138,7 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Enter your password"
-                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition focus:border-purple-500"
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none transition focus:border-purple-500 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:p-4 [@media(min-height:1000px)]:text-base"
               />
             </div>
 
@@ -152,24 +151,24 @@ function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 w-full rounded-xl bg-purple-500 py-2.5 font-bold text-white transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-xl bg-purple-500 font-bold text-white transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed [font-size:clamp(0.875rem,1.8vh,1rem)] [margin-top:clamp(1rem,2.5vh,1.5rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:mt-8 [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
-          <div className="my-4 flex items-center gap-4">
+          <div className="flex items-center gap-4 [margin-top:clamp(1rem,2.5vh,2rem)] [margin-bottom:clamp(1rem,2.5vh,2rem)] [@media(min-height:1000px)]:my-8">
             <div className="h-px flex-1 bg-white/10" />
-            <span className="text-xs text-gray-500">or continue with</span>
+            <span className="text-xs text-gray-500 [@media(min-height:1000px)]:text-sm">or continue with</span>
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 [@media(min-height:1000px)]:gap-4">
             <button
               onClick={() => googleLogin()}
               disabled={googleLoading}
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-2.5 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
             >
               <FcGoogle size={20} />
               {googleLoading ? "Signing in..." : "Google"}
@@ -178,7 +177,7 @@ function Login() {
             <button
               onClick={handleGithubLogin}
               type="button"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-2.5 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)] [@media(min-height:1000px)]:py-4 [@media(min-height:1000px)]:text-base"
             >
               <FaGithub size={18} />
               GitHub

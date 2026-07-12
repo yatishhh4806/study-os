@@ -183,31 +183,30 @@ export default function Signup() {
   }
 
   const inputClass =
-    "mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none transition focus:border-purple-500 placeholder:text-gray-600";
+    "mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none transition focus:border-purple-500 placeholder:text-gray-600 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding:clamp(0.625rem,1.8vh,1rem)]";
   const selectClass =
-    "mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white outline-none focus:border-purple-500";
+    "mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 text-white outline-none focus:border-purple-500 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding:clamp(0.625rem,1.8vh,1rem)]";
   const labelClass = "text-sm text-gray-400 font-medium";
   const errInputClass = "border-red-500/60 focus:border-red-500";
 
   return (
-    // Same compact, height-safe approach as Login.jsx — sizes stay
-    // consistent regardless of viewport width, only growing when there's
-    // genuine vertical headroom, so wide-but-short laptop screens
-    // (1366x768, 1536x864) don't get content pushed below the fold.
+    // Same fluid, height-based clamp() sizing as Login.jsx — scales
+    // continuously with actual available vertical space rather than
+    // jumping between a few fixed breakpoint tiers.
     <div className="flex min-h-screen flex-col bg-[#09070f] lg:flex-row">
       {/* LEFT */}
-      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between lg:p-8 xl:w-[40%]">
-        <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 blur-[110px] [@media(min-height:850px)]:h-72 [@media(min-height:850px)]:w-72 [@media(min-height:1000px)]:h-96 [@media(min-height:1000px)]:w-96 [@media(min-height:1000px)]:blur-[150px]" />
+      <div className="relative hidden overflow-hidden bg-linear-to-br from-purple-500 via-[#261238] to-[#02030a] lg:flex lg:w-[38%] lg:flex-col lg:justify-between xl:w-[40%] [padding:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:lg:p-16">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/20 [width:clamp(14rem,32vh,31.25rem)] [height:clamp(14rem,32vh,31.25rem)] [filter:blur(clamp(6rem,10vh,10rem))] [@media(min-height:1000px)]:h-125 [@media(min-height:1000px)]:w-125 [@media(min-height:1000px)]:blur-[160px]" />
         <div className="relative z-10">
           <AuthHero />
         </div>
         <div className="relative z-10">
-          <h1 className="text-3xl font-black leading-tight text-purple-300 [@media(min-height:850px)]:text-4xl [@media(min-height:1000px)]:text-6xl">
+          <h1 className="font-black leading-[0.95] text-purple-300 [font-size:clamp(1.75rem,6vh,4.5rem)] [@media(min-height:1000px)]:text-7xl">
             START
             <br />
             LEARNING
           </h1>
-          <p className="mt-3 max-w-md text-sm leading-6 text-gray-300 [@media(min-height:850px)]:text-base [@media(min-height:850px)]:leading-7">
+          <p className="max-w-md leading-7 text-gray-300 [font-size:clamp(0.875rem,2vh,1.125rem)] [margin-top:clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
             Join thousands of students using StudyOS to organize their academics
             and boost productivity.
           </p>
@@ -215,19 +214,19 @@ export default function Signup() {
       </div>
 
       {/* RIGHT */}
-      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:px-8">
-        <div className="absolute h-56 w-56 rounded-full bg-purple-500/5 blur-[90px] [@media(min-height:850px)]:h-72 [@media(min-height:850px)]:w-72 [@media(min-height:1000px)]:h-96 [@media(min-height:1000px)]:w-96" />
+      <div className="relative flex flex-1 items-center justify-center overflow-y-auto px-4 sm:px-8 [padding-top:clamp(1.5rem,4vh,4rem)] [padding-bottom:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:py-16">
+        <div className="absolute rounded-full bg-purple-500/5 [width:clamp(14rem,28vh,25rem)] [height:clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
 
-        <div className="relative z-10 w-full max-w-md py-2">
-          <h1 className="text-center text-2xl font-black text-white [@media(min-height:850px)]:text-3xl [@media(min-height:1000px)]:text-4xl">
+        <div className="relative z-10 w-full [max-width:clamp(22rem,32vw,28rem)]">
+          <h1 className="text-center font-black text-white [font-size:clamp(1.5rem,4.5vh,3rem)] [@media(min-height:1000px)]:text-5xl">
             Study<span className="text-purple-400">OS</span>
           </h1>
 
-          <h2 className="mt-4 text-center text-xl font-bold text-white [@media(min-height:850px)]:mt-6 [@media(min-height:850px)]:text-2xl [@media(min-height:1000px)]:text-3xl">
+          <h2 className="text-center font-bold text-white [font-size:clamp(1.25rem,3.5vh,2.5rem)] [margin-top:clamp(0.75rem,2vh,1.5rem)] [@media(min-height:1000px)]:mt-10 [@media(min-height:1000px)]:text-4xl">
             Create Account
           </h2>
 
-          <p className="mt-2 text-center text-sm text-gray-400">
+          <p className="mt-2 text-center text-gray-400 [font-size:clamp(0.8125rem,1.6vh,1rem)]">
             Already have an account?
             <Link to="/login" className="ml-2 font-semibold text-purple-400 hover:text-purple-300">
               Sign In
@@ -235,7 +234,7 @@ export default function Signup() {
           </p>
 
           {/* Progress */}
-          <div className="mt-4 flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3 [margin-top:clamp(1rem,2.5vh,1.5rem)]">
             <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 1 ? "bg-purple-500" : "bg-white/10"}`} />
             <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`} />
           </div>
@@ -250,7 +249,7 @@ export default function Signup() {
             {/* ── STEP 1 ── */}
             {step === 1 && (
               <>
-                <div className="mt-4">
+                <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)]">
                   <label className={labelClass}>Full Name</label>
                   <input
                     name="fullName"
@@ -262,7 +261,7 @@ export default function Signup() {
                   <FieldError msg={errors.fullName} />
                 </div>
 
-                <div className="mt-3">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Email</label>
                   <input
                     name="email"
@@ -274,7 +273,7 @@ export default function Signup() {
                   <FieldError msg={errors.email} />
                 </div>
 
-                <div className="mt-3">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Password</label>
                   <input
                     name="password"
@@ -286,7 +285,7 @@ export default function Signup() {
                   <FieldError msg={errors.password} />
                 </div>
 
-                <div className="mt-3">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Confirm Password</label>
                   <input
                     name="confirmPassword"
@@ -298,7 +297,7 @@ export default function Signup() {
                   <FieldError msg={errors.confirmPassword} />
                 </div>
 
-                <div className="my-4 flex items-center gap-4">
+                <div className="flex items-center gap-4 [margin-top:clamp(1rem,2.5vh,2rem)] [margin-bottom:clamp(1rem,2.5vh,2rem)]">
                   <div className="h-px flex-1 bg-white/10" />
                   <span className="text-xs text-gray-500">or continue with</span>
                   <div className="h-px flex-1 bg-white/10" />
@@ -309,7 +308,7 @@ export default function Signup() {
                     type="button"
                     onClick={() => googleSignup()}
                     disabled={googleLoading}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-2.5 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     <FcGoogle size={20} />
                     {googleLoading ? "Signing in..." : "Google"}
@@ -317,7 +316,7 @@ export default function Signup() {
                   <button
                     type="button"
                     onClick={handleGithubSignup}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 py-2.5 text-sm text-white transition hover:border-purple-500/40 hover:bg-white/5"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     <FaGithub size={18} />
                     GitHub
@@ -327,7 +326,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="mt-4 w-full rounded-xl bg-purple-500 py-2.5 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600"
+                  className="w-full rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 [font-size:clamp(0.875rem,1.8vh,1rem)] [margin-top:clamp(1rem,2.5vh,1.5rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                 >
                   Next →
                 </button>
@@ -337,7 +336,7 @@ export default function Signup() {
             {/* ── STEP 2 ── */}
             {step === 2 && (
               <>
-                <div className="mt-4">
+                <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)]">
                   <label className={labelClass}>Institution Type</label>
                   <select
                     name="institutionType"
@@ -350,7 +349,7 @@ export default function Signup() {
                   </select>
                 </div>
 
-                <div className="mt-3">
+                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Institution Name</label>
                   <input
                     name="institutionName"
@@ -364,7 +363,7 @@ export default function Signup() {
 
                 {!isSchool(formData.institutionType) && (
                   <>
-                    <div className="mt-3">
+                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Course / Degree</label>
                       <select
                         name="course"
@@ -380,7 +379,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="mt-3">
+                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Branch / Stream</label>
                       <input
                         name="branch"
@@ -393,7 +392,7 @@ export default function Signup() {
                       <FieldError msg={errors.branch} />
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 [margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <div>
                         <label className={labelClass}>Year</label>
                         <select
@@ -430,7 +429,7 @@ export default function Signup() {
 
                 {isSchool(formData.institutionType) && (
                   <>
-                    <div className="mt-3">
+                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Class</label>
                       <select
                         name="schoolClass"
@@ -446,7 +445,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 [margin-top:clamp(0.75rem,2vh,1.25rem)]">
                       <div>
                         <label className={labelClass}>Stream</label>
                         <select
@@ -481,21 +480,21 @@ export default function Signup() {
                   </>
                 )}
 
-                <div className="mt-4 flex gap-4">
+                <div className="flex gap-4 [margin-top:clamp(1rem,2.5vh,1.5rem)]">
                   <button
                     type="button"
                     onClick={() => {
                       setErrors({});
                       setStep(1);
                     }}
-                    className="flex-1 rounded-xl border border-white/10 py-2.5 font-semibold text-white transition hover:bg-white/5"
+                    className="flex-1 rounded-xl border border-white/10 font-semibold text-white transition hover:bg-white/5 [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     ← Back
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 rounded-xl bg-purple-500 py-2.5 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     {submitting ? "Creating account..." : "Create Account"}
                   </button>
