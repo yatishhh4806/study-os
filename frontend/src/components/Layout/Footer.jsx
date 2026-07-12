@@ -5,14 +5,6 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Send, ArrowRight, Sparkles } from "lucide-react";
 
-const FEATURES = [
-  { emoji:"📝", label:"Smart Notes",     desc:"Block-based editor"     },
-  { emoji:"⏱",  label:"Focus Mode",     desc:"Pomodoro + analytics"   },
-  { emoji:"🎓", label:"Flashcards",     desc:"Spaced repetition"      },
-  { emoji:"📅", label:"Planner",        desc:"Google Calendar-style"  },
-  { emoji:"🤖", label:"AI Assistant",   desc:"Personalized learning"  },
-  { emoji:"📊", label:"Analytics",      desc:"Study insights"         },
-];
 
 const SOCIALS = [
   { icon:<SiGmail size={18}/>,        label:"Gmail",     href:"mailto:sagy48@gmail.com",        color:"#f87171" },
@@ -102,32 +94,6 @@ export default function Footer() {
         <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:40,
           paddingBottom:48,borderBottom:"1px solid rgba(255,255,255,.06)",
           flexWrap:"wrap" }}>
-
-          {/* Features */}
-          <div>
-            <h4 style={{ fontSize:11,fontWeight:700,color:"rgba(255,255,255,.3)",
-              letterSpacing:1.5,marginBottom:20,textTransform:"uppercase" }}>Features</h4>
-            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10 }}>
-              {FEATURES.map(f=>(
-                <div key={f.label}
-                  style={{
-                    display:"flex",alignItems:"center",gap:10,
-                    padding:"10px 12px",borderRadius:12,
-                    border:"1px solid rgba(255,255,255,.06)",
-                    background:"rgba(255,255,255,.02)",
-                    transition:"all .15s",cursor:"default",
-                  }}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(168,85,247,.25)";e.currentTarget.style.background="rgba(168,85,247,.06)";}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.06)";e.currentTarget.style.background="rgba(255,255,255,.02)";}}>
-                  <span style={{ fontSize:18 }}>{f.emoji}</span>
-                  <div>
-                    <div style={{ fontSize:12.5,fontWeight:700,color:"rgba(255,255,255,.85)" }}>{f.label}</div>
-                    <div style={{ fontSize:11,color:"rgba(255,255,255,.35)" }}>{f.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Contact */}
           <div>
