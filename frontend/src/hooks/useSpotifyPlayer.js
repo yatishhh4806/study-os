@@ -31,6 +31,8 @@ function loadSpotifySDK() {
 
 export default function useSpotifyPlayer() {
   const playerRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const lastTimestampRef = useRef(0);
 
   const [ready, setReady] = useState(false);
   const [deviceId, setDeviceId] = useState(null);
@@ -83,9 +85,14 @@ export default function useSpotifyPlayer() {
         if (!state) return;
 
         setPaused(state.paused);
+
         setPosition(state.position);
+
         setDuration(state.duration);
+
         setCurrentTrack(state.track_window.current_track);
+
+        lastTimestampRef.current = performance.now();
       });
 
       player.addListener("initialization_error", console.error);
@@ -100,9 +107,26 @@ export default function useSpotifyPlayer() {
     }
 
     initialize();
+    function animate(now) {
+      setPosition((prev) => {
+        if (paused) return prev;
+
+        const delta = now - lastTimestampRef.current;
+
+        lastTimestampRef.current = now;
+
+        return Math.min(prev + delta, duration);
+      });
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    }
+
+    animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       mounted = false;
+
+      cancelAnimationFrame(animationFrameRef.current);
 
       if (playerRef.current) {
         playerRef.current.disconnect();

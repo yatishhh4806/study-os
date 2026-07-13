@@ -4,6 +4,7 @@ import PlaybackControls from "./PlaybackControls";
 import { api } from "../../lib/api";
 import useSpotifyPlayer from "../../hooks/useSpotifyPlayer";
 import ProgressBar from "./ProgressBar";
+import VolumeControl from "./VolumeControl";
 
 export default function SpotifyWebPlayer({ playlistId }) {
   const { ready, deviceId, currentTrack, paused, position, duration } =
@@ -73,6 +74,8 @@ export default function SpotifyWebPlayer({ playlistId }) {
             deviceId={deviceId}
             playlistId={playlistId}
           />
+
+          <VolumeControl />
         </>
       ) : (
         <p className="text-sm text-white/50">Waiting for playback...</p>
