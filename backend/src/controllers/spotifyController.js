@@ -137,9 +137,11 @@ export async function getPlaylists(req, res, next) {
             `/playlists/${playlist.id}`,
           );
 
+          console.log(fullPlaylist.name, fullPlaylist.tracks?.total);
+
           return mapPlaylist(fullPlaylist);
         } catch (err) {
-          // Fallback to simplified playlist if one request fails
+          console.error(err);
           return mapPlaylist(playlist);
         }
       }),
