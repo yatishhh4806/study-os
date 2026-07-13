@@ -3,39 +3,11 @@ import { Brain, Trophy, Clock, Flame, TrendingUp, Target, X, CalendarRange } fro
 
 /**
  * ── DATA CONTRACT ──────────────────────────────────────────────
- * This panel is driven entirely by a `sessions` array you pass in.
- * Every time a Focus session finishes in your timer, push one entry
- * like this (Short/Long breaks can be logged too, but only "focus"
- * entries count toward these stats):
- *
- * {
- *   id: "sess_1",                 // unique id
- *   type: "focus",                // "focus" | "short" | "long"
- *   date: "2026-06-30",           // YYYY-MM-DD, used for "today" + streaks
- *   startTime: "19:05",           // HH:mm (24h), used for Peak Focus Period
- *   durationMin: 25,              // actual focused minutes completed
- *   plannedMin: 25,               // the target duration (25 for a default focus block)
- *   distractions: 1,              // # times user paused/left tab mid-session (you track this)
- *   completed: true               // false if abandoned before timer hit 0
- * }
- *
- * Example minimal logger to wire into your existing PomodoroTimer:
- *
- *   const [sessions, setSessions] = useState([]);
- *   function logSession({ durationMin, plannedMin, distractions, completed }) {
- *     setSessions(prev => [...prev, {
- *       id: crypto.randomUUID(),
- *       type: "focus",
- *       date: new Date().toISOString().slice(0,10),
- *       startTime: new Date().toTimeString().slice(0,5),
- *       durationMin, plannedMin, distractions, completed,
- *     }]);
- *   }
- *   // call logSession(...) when secondsLeft hits 0 (completed: true)
- *   // or when the user hits Reset mid-session (completed: false)
- *
- * Persist `sessions` to localStorage / your Velora backend so the
- * panel has history across reloads.
+ * This panel is driven by a `sessions` array (completed/saved sessions
+ * from the backend) plus an optional `liveMinutes` number representing
+ * an in-progress focus session that hasn't been saved yet — this is
+ * what makes the panel update in real time while the timer is running,
+ * instead of only refreshing once a session finishes.
  * ──────────────────────────────────────────────────────────────
  */
 
@@ -58,18 +30,23 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function computeStats(sessions) {
+// liveMinutes: an in-progress, not-yet-saved focus session's elapsed
+// minutes. Added on top of today's saved totals so the panel reflects
+// the session actually happening right now, not just past ones.
+function computeStats(sessions, liveMinutes = 0) {
   const today = todayStr();
   const todays = sessions.filter((s) => s.type === "focus" && s.date === today);
 
   const sessionsCompleted = todays.filter((s) => s.completed).length;
-  const focusMinutes = todays.reduce((sum, s) => sum + (s.durationMin || 0), 0);
+  const savedFocusMinutes = todays.reduce((sum, s) => sum + (s.durationMin || 0), 0);
+  const focusMinutes = savedFocusMinutes + liveMinutes;
   const distractions = todays.reduce((sum, s) => sum + (s.distractions || 0), 0);
-  const longestSession = todays.reduce((max, s) => Math.max(max, s.durationMin || 0), 0);
+  const longestSavedSession = todays.reduce((max, s) => Math.max(max, s.durationMin || 0), 0);
+  const longestSession = Math.max(longestSavedSession, liveMinutes);
 
   // Consistency: how much of planned time was actually completed today
   const plannedTotal = todays.reduce((sum, s) => sum + (s.plannedMin || 0), 0);
-  const consistency = plannedTotal > 0 ? Math.round((focusMinutes / plannedTotal) * 100) : 0;
+  const consistency = plannedTotal > 0 ? Math.round((savedFocusMinutes / plannedTotal) * 100) : 0;
 
   // Peak focus period: 2-hour bucket with the most accumulated focus minutes (all-time)
   const buckets = new Array(12).fill(0); // 12 buckets of 2 hours
@@ -93,32 +70,36 @@ function computeStats(sessions) {
   };
   const peakPeriod = buckets[peakBucket] > 0 ? `${fmtHour(peakStartHour)} - ${fmtHour(peakEndHour)}` : "Not enough data";
 
-  const hours = Math.floor(focusMinutes / 60);
-  const mins = focusMinutes % 60;
+  const totalMinutesRounded = Math.round(focusMinutes);
+  const hours = Math.floor(totalMinutesRounded / 60);
+  const mins = totalMinutesRounded % 60;
   const focusTimeLabel = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 
   return {
     sessionsCompleted,
-    focusMinutes,
+    focusMinutes: totalMinutesRounded,
     focusTimeLabel,
     distractions,
-    longestSession,
+    longestSession: Math.round(longestSession),
     consistency,
     peakPeriod,
+    isLive: liveMinutes > 0,
   };
 }
 
-function computeWeeklyReport(sessions) {
+function computeWeeklyReport(sessions, liveMinutes = 0) {
+  const today = todayStr();
   const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().slice(0, 10);
     const label = d.toLocaleDateString(undefined, { weekday: "short" });
-    const dayMinutes = sessions
+    const savedMinutes = sessions
       .filter((s) => s.type === "focus" && s.date === dateStr)
       .reduce((sum, s) => sum + (s.durationMin || 0), 0);
-    days.push({ date: dateStr, label, minutes: dayMinutes });
+    const dayMinutes = dateStr === today ? savedMinutes + liveMinutes : savedMinutes;
+    days.push({ date: dateStr, label, minutes: Math.round(dayMinutes) });
   }
   return days;
 }
@@ -128,7 +109,9 @@ function generateInsights(stats, sessions) {
   const today = todayStr();
   const todays = sessions.filter((s) => s.type === "focus" && s.date === today);
 
-  if (stats.sessionsCompleted > 0) {
+  if (stats.isLive) {
+    insights.push("You're mid-session right now — keep going!");
+  } else if (stats.sessionsCompleted > 0) {
     insights.push(`You completed ${stats.sessionsCompleted} session${stats.sessionsCompleted === 1 ? "" : "s"} today.`);
   } else {
     insights.push("No sessions completed yet today — start your first Focus block.");
@@ -161,10 +144,10 @@ function generateInsights(stats, sessions) {
   return insights;
 }
 
-export default function FocusAnalytics({ sessions = SAMPLE_SESSIONS }) {
-  const stats = useMemo(() => computeStats(sessions), [sessions]);
+export default function FocusAnalytics({ sessions = SAMPLE_SESSIONS, liveMinutes = 0 }) {
+  const stats = useMemo(() => computeStats(sessions, liveMinutes), [sessions, liveMinutes]);
   const insights = useMemo(() => generateInsights(stats, sessions), [stats, sessions]);
-  const weeklyReport = useMemo(() => computeWeeklyReport(sessions), [sessions]);
+  const weeklyReport = useMemo(() => computeWeeklyReport(sessions, liveMinutes), [sessions, liveMinutes]);
 
   const [targetHours, setTargetHours] = useState(DEFAULT_TARGET_HOURS);
   const [showTargetModal, setShowTargetModal] = useState(false);
@@ -205,6 +188,7 @@ export default function FocusAnalytics({ sessions = SAMPLE_SESSIONS }) {
     >
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform: translateY(0);} }
+        @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
         .fa-card { animation: fadeUp 0.5s ease both; }
         .fa-row { transition: all 0.2s ease; }
         .fa-row:hover { border-color: rgba(168,85,247,0.35) !important; transform: translateY(-1px); }
@@ -212,6 +196,7 @@ export default function FocusAnalytics({ sessions = SAMPLE_SESSIONS }) {
         .fa-insight:hover { border-color: rgba(168,85,247,0.35) !important; background: rgba(168,85,247,0.05) !important; }
         @keyframes growBar { from { width: 0%; } }
         .fa-bar-fill { animation: growBar 1s cubic-bezier(.4,0,.2,1) both; }
+        .fa-live-dot { animation: livePulse 1.4s ease-in-out infinite; }
       `}</style>
 
       <div
@@ -244,6 +229,20 @@ export default function FocusAnalytics({ sessions = SAMPLE_SESSIONS }) {
             >
               Focus Analytics
             </h2>
+            {stats.isLive && (
+              <span
+                className="fa-live-dot"
+                title="Live session in progress"
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: "#22d3ee",
+                  boxShadow: "0 0 8px #22d3ee",
+                  flexShrink: 0,
+                }}
+              />
+            )}
           </div>
           <button
             onClick={openTargetModal}
@@ -295,6 +294,7 @@ export default function FocusAnalytics({ sessions = SAMPLE_SESSIONS }) {
                 borderRadius: 999,
                 background: `linear-gradient(90deg, ${accent}, #22d3ee)`,
                 boxShadow: `0 0 12px -2px ${glow}`,
+                transition: "width 1s linear",
               }}
             />
           </div>
