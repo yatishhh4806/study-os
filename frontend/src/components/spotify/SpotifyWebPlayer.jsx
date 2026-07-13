@@ -1,15 +1,11 @@
 import { useEffect } from "react";
-import { Loader2, Pause, Play } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import PlaybackControls from "./PlaybackControls";
 import { api } from "../../lib/api";
 import useSpotifyPlayer from "../../hooks/useSpotifyPlayer";
 
 export default function SpotifyWebPlayer({ playlistId }) {
-  const {
-    ready,
-    deviceId,
-    currentTrack,
-    paused,
-  } = useSpotifyPlayer();
+  const { ready, deviceId, currentTrack, paused } = useSpotifyPlayer();
 
   useEffect(() => {
     if (!ready || !deviceId || !playlistId) return;
@@ -62,25 +58,20 @@ export default function SpotifyWebPlayer({ playlistId }) {
             className="mb-4 aspect-square w-full rounded-xl object-cover"
           />
 
-          <h3 className="truncate text-lg font-bold">
-            {currentTrack.name}
-          </h3>
+          <h3 className="truncate text-lg font-bold">{currentTrack.name}</h3>
 
           <p className="truncate text-sm text-white/60">
             {currentTrack.artists.map((a) => a.name).join(", ")}
           </p>
 
-          <button
-            onClick={togglePlayback}
-            className="mt-6 flex h-12 w-12 items-center justify-center rounded-full bg-green-500"
-          >
-            {paused ? <Play size={20} /> : <Pause size={20} />}
-          </button>
+          <PlaybackControls
+            paused={paused}
+            deviceId={deviceId}
+            playlistId={playlistId}
+          />
         </>
       ) : (
-        <p className="text-sm text-white/50">
-          Waiting for playback...
-        </p>
+        <p className="text-sm text-white/50">Waiting for playback...</p>
       )}
     </div>
   );
