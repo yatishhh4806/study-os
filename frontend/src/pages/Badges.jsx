@@ -1,5 +1,5 @@
 // src/pages/Badges.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Award,
   Flame,
@@ -14,15 +14,11 @@ import {
   Star,
   Lock,
   Sparkles,
+  Clock,
+  Loader2,
+  X,
 } from "lucide-react";
-
-// ─────────────────────────────────────────────────────────────
-// TEMPORARY: badge definitions + unlock state are hardcoded here.
-// SWAP POINT — once the backend exists, fetch each badge's
-// unlocked/progress fields from /api/badges instead; the icon,
-// name, description, category, and rarity metadata below can stay
-// as a static catalog either way, since that part rarely changes.
-// ─────────────────────────────────────────────────────────────
+import { api } from "../lib/api";
 
 const RARITY = {
   common:    { label: "Common",    color: "#9ca3af", glow: "rgba(156,163,175,0.35)" },
@@ -31,37 +27,43 @@ const RARITY = {
   legendary: { label: "Legendary", color: "#f59e0b", glow: "rgba(245,158,11,0.5)" },
 };
 
-const CATEGORIES = ["All", "Streaks", "Mastery", "Quizzes", "Leaderboard", "Milestones"];
-
-const BADGES = [
-  { id: "b1",  category: "Streaks",     rarity: "common",    icon: Flame,   name: "Warming Up",     desc: "Reach a 3-day streak",              unlocked: true,  earned: "Jun 12", progress: 3,  target: 3 },
-  { id: "b2",  category: "Streaks",     rarity: "rare",      icon: Flame,   name: "On Fire",        desc: "Reach a 7-day streak",               unlocked: true,  earned: "Jun 16", progress: 7,  target: 7 },
-  { id: "b3",  category: "Streaks",     rarity: "epic",      icon: Flame,   name: "Unstoppable",    desc: "Reach a 30-day streak",              unlocked: false, progress: 18, target: 30 },
-  { id: "b4",  category: "Streaks",     rarity: "legendary", icon: Crown,   name: "Centurion",      desc: "Reach a 100-day streak",             unlocked: false, progress: 18, target: 100 },
-
-  { id: "b5",  category: "Mastery",     rarity: "common",    icon: BookOpen,name: "First Steps",    desc: "Reach 50% mastery in any subject",   unlocked: true,  earned: "Jun 20" },
-  { id: "b6",  category: "Mastery",     rarity: "rare",      icon: Brain,   name: "Subject Expert", desc: "Reach 90% mastery in any subject",   unlocked: false, progress: 78, target: 90 },
-  { id: "b7",  category: "Mastery",     rarity: "epic",      icon: Star,    name: "Polymath",       desc: "Reach 80%+ mastery in 3 subjects",   unlocked: false, progress: 1,  target: 3 },
-  { id: "b8",  category: "Mastery",     rarity: "legendary", icon: Sparkles,name: "Grandmaster",    desc: "Reach 100% mastery in any subject",  unlocked: false, progress: 78, target: 100 },
-
-  { id: "b9",  category: "Quizzes",     rarity: "common",    icon: Zap,     name: "Quick Draw",     desc: "Complete your first quiz",           unlocked: true,  earned: "Jun 10" },
-  { id: "b10", category: "Quizzes",     rarity: "rare",      icon: Target,  name: "Sharp Shooter",  desc: "Score 100% on a quiz",                unlocked: true,  earned: "Jun 28" },
-  { id: "b11", category: "Quizzes",     rarity: "epic",      icon: Zap,     name: "Quiz Whiz",      desc: "Complete 50 quizzes",                 unlocked: false, progress: 32, target: 50 },
-
-  { id: "b12", category: "Leaderboard", rarity: "rare",      icon: Trophy,  name: "Top 10 Finish",  desc: "End a week ranked in the top 10",     unlocked: true,  earned: "Jun 23" },
-  { id: "b13", category: "Leaderboard", rarity: "epic",      icon: Crown,   name: "League Champion",desc: "Finish #1 in your league",            unlocked: false, progress: 4,  target: 1 },
-  { id: "b14", category: "Leaderboard", rarity: "legendary", icon: Crown,   name: "Obsidian Rank",  desc: "Reach the Obsidian league",           unlocked: false, progress: 4,  target: 6 },
-
-  { id: "b15", category: "Milestones",  rarity: "common",    icon: BookOpen,name: "First Note",     desc: "Create your first note",              unlocked: true,  earned: "Jun 8" },
-  { id: "b16", category: "Milestones",  rarity: "rare",      icon: Brain,   name: "Card Collector", desc: "Review 100 flashcards",               unlocked: true,  earned: "Jun 25" },
-  { id: "b17", category: "Milestones",  rarity: "rare",      icon: Sunrise, name: "Early Bird",     desc: "Study before 7 AM",                   unlocked: false, progress: 0,  target: 1 },
-  { id: "b18", category: "Milestones",  rarity: "epic",      icon: Moon,    name: "Night Owl",      desc: "Study after midnight 5 times",        unlocked: false, progress: 2,  target: 5 },
-];
+// Icons are a purely visual, frontend-only concern — the backend catalog
+// only needs to know progress logic, not how each badge is drawn. Keyed
+// by the real badge id from utils/badgeCatalog.js.
+const ICON_MAP = {
+  "warming-up": Flame,
+  "on-fire": Flame,
+  "unstoppable": Flame,
+  "centurion": Crown,
+  "first-steps": BookOpen,
+  "subject-expert": Brain,
+  "polymath": Star,
+  "grandmaster": Sparkles,
+  "top-10-finish": Trophy,
+  "league-champion": Crown,
+  "obsidian-rank": Crown,
+  "first-note": BookOpen,
+  "prolific-writer": BookOpen,
+  "note-taking-pro": BookOpen,
+  "getting-started": Zap,
+  "card-collector": Brain,
+  "card-master": Brain,
+  "first-focus": Zap,
+  "four-hours-logged": Clock,
+  "twenty-hours-logged": Clock,
+  "hundred-hours-logged": Clock,
+  "early-bird": Sunrise,
+  "night-owl": Moon,
+};
 
 function BadgeCard({ badge, index }) {
-  const { icon: Icon, name, desc, unlocked, earned, progress, target, rarity } = badge;
+  const Icon = ICON_MAP[badge.id] || Target;
+  const { name, desc, unlocked, unlockedAt, progress, target, rarity } = badge;
   const r = RARITY[rarity];
   const pct = target ? Math.min(100, Math.round((progress / target) * 100)) : 0;
+  const earnedLabel = unlockedAt
+    ? new Date(unlockedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+    : null;
 
   return (
     <div
@@ -74,7 +76,6 @@ function BadgeCard({ badge, index }) {
         unlocked ? "bg-white/[0.04]" : "bg-white/[0.02]"
       }`}
     >
-      {/* rarity tag */}
       <span
         className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md"
         style={{ color: r.color, background: `${r.color}1a`, border: `1px solid ${r.color}40` }}
@@ -96,8 +97,10 @@ function BadgeCard({ badge, index }) {
       <p className="text-xs text-white/40 mt-1 leading-relaxed">{desc}</p>
 
       {unlocked ? (
-        <p className="text-[11px] text-white/30 mt-3">Earned {earned}</p>
-      ) : target ? (
+        <p className="text-[11px] text-white/30 mt-3">
+          {earnedLabel ? `Earned ${earnedLabel}` : "Earned"}
+        </p>
+      ) : (
         <div className="w-full mt-3.5">
           <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
             <div
@@ -107,8 +110,6 @@ function BadgeCard({ badge, index }) {
           </div>
           <p className="text-[11px] text-white/35 mt-1.5 tabular-nums">{progress} / {target}</p>
         </div>
-      ) : (
-        <p className="text-[11px] text-white/25 mt-3">Not started</p>
       )}
     </div>
   );
@@ -116,24 +117,66 @@ function BadgeCard({ badge, index }) {
 
 export default function Badges() {
   const [category, setCategory] = useState("All");
+  const [badges, setBadges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [unlockedToasts, setUnlockedToasts] = useState([]); // badges to celebrate on load
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const { data } = await api.get("/badges");
+        if (cancelled) return;
+        setBadges(data.badges);
+
+        if (data.newlyUnlocked?.length) {
+          const justUnlocked = data.badges.filter((b) => data.newlyUnlocked.includes(b.id));
+          setUnlockedToasts(justUnlocked);
+        }
+      } catch (err) {
+        console.error("Failed to load badges:", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const categories = useMemo(() => {
+    const unique = [...new Set(badges.map((b) => b.category))];
+    return ["All", ...unique];
+  }, [badges]);
 
   const filtered = useMemo(
-    () => (category === "All" ? BADGES : BADGES.filter((b) => b.category === category)),
-    [category]
+    () => (category === "All" ? badges : badges.filter((b) => b.category === category)),
+    [category, badges]
   );
 
-  const unlockedCount = BADGES.filter((b) => b.unlocked).length;
+  const unlockedCount = badges.filter((b) => b.unlocked).length;
   const rarityCounts = useMemo(() => {
     const counts = { common: 0, rare: 0, epic: 0, legendary: 0 };
-    BADGES.filter((b) => b.unlocked).forEach((b) => counts[b.rarity]++);
+    badges.filter((b) => b.unlocked).forEach((b) => counts[b.rarity]++);
     return counts;
-  }, []);
+  }, [badges]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#09050e]">
+        <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[#09050e] text-white overflow-x-hidden">
       <style>{`
         @keyframes badgeFadeUp { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes toastSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
         .badge-fade-up { animation: badgeFadeUp 0.35s ease-out both; }
+        .toast-slide-in { animation: toastSlideIn 0.3s ease-out both; }
       `}</style>
 
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -141,17 +184,50 @@ export default function Badges() {
         <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-purple-500/10 blur-[150px]" />
       </div>
 
+      {/* Unlock celebration toasts */}
+      {unlockedToasts.length > 0 && (
+        <div className="fixed top-6 right-6 z-[1200] flex flex-col gap-2.5 w-80">
+          {unlockedToasts.map((b) => {
+            const Icon = ICON_MAP[b.id] || Target;
+            const r = RARITY[b.rarity];
+            return (
+              <div
+                key={b.id}
+                className="toast-slide-in flex items-center gap-3 rounded-2xl border p-4 bg-[#15111c] shadow-2xl shadow-black/60"
+                style={{ borderColor: `${r.color}55` }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${r.color}1f`, border: `1.5px solid ${r.color}` }}
+                >
+                  <Icon className="w-5 h-5" style={{ color: r.color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-white/50">Badge unlocked!</p>
+                  <p className="text-sm font-semibold text-white truncate">{b.name}</p>
+                </div>
+                <button
+                  onClick={() => setUnlockedToasts((prev) => prev.filter((x) => x.id !== b.id))}
+                  className="text-white/40 hover:text-white transition-colors flex-shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
         <h1 className="text-3xl font-black flex items-center gap-2">
           <Award className="w-7 h-7 text-amber-400" />
           Badges
         </h1>
-        <p className="text-white/40 mt-1 mb-6">Earned through streaks, mastery, quizzes, and league play.</p>
+        <p className="text-white/40 mt-1 mb-6">Earned through streaks, mastery, and study milestones.</p>
 
-        {/* stats */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-5 mb-6 flex flex-wrap items-center gap-6">
           <div>
-            <p className="text-2xl font-black">{unlockedCount}<span className="text-white/30 text-lg">/{BADGES.length}</span></p>
+            <p className="text-2xl font-black">{unlockedCount}<span className="text-white/30 text-lg">/{badges.length}</span></p>
             <p className="text-xs text-white/40">Badges unlocked</p>
           </div>
           <div className="h-10 w-px bg-white/10 hidden sm:block" />
@@ -163,9 +239,8 @@ export default function Badges() {
           ))}
         </div>
 
-        {/* category tabs */}
         <div className="inline-flex flex-wrap rounded-xl bg-white/5 border border-white/10 p-1 gap-1 mb-6">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
@@ -178,7 +253,6 @@ export default function Badges() {
           ))}
         </div>
 
-        {/* grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((b, i) => (
             <BadgeCard key={b.id} badge={b} index={i} />
