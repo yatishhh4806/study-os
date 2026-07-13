@@ -31,7 +31,22 @@ function getSpotifyConfig() {
 }
 
 export function getPrimaryClientUrl() {
-  return Array.isArray(env.CLIENT_URL) ? env.CLIENT_URL[0] : env.CLIENT_URL;
+  const urls = Array.isArray(env.CLIENT_URL) ? env.CLIENT_URL : [env.CLIENT_URL];
+
+  if (env.NODE_ENV === "production") {
+    return (
+      urls.find((url) => {
+        try {
+          const hostname = new URL(url).hostname;
+          return hostname !== "localhost" && hostname !== "127.0.0.1";
+        } catch {
+          return false;
+        }
+      }) || urls[0]
+    );
+  }
+
+  return urls[0];
 }
 
 function spotifyTokenHeaders(clientId, clientSecret) {
