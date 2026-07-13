@@ -25,6 +25,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
+import spotifyRoutes from "./routes/spotifyRoutes.js";
 
 import * as Sentry from "@sentry/node";
 import { env } from "./config/env.js";
@@ -80,6 +81,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/account", accountRoutes);
 app.use("/api/resources", resourceRoutes);
+app.use("/api/spotify", spotifyRoutes);
 
 app.get("/api/debug-sentry", () => {
   throw new Error("Testing Sentry error reporting");

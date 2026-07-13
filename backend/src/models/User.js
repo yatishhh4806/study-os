@@ -15,7 +15,16 @@ const subscriptionSchema = new mongoose.Schema(
     // full cycle count), none (never subscribed)
     status: {
       type: String,
-      enum: ["created", "authenticated", "active", "pending", "halted", "cancelled", "completed", "none"],
+      enum: [
+        "created",
+        "authenticated",
+        "active",
+        "pending",
+        "halted",
+        "cancelled",
+        "completed",
+        "none",
+      ],
       default: "none",
     },
     razorpaySubscriptionId: { type: String, default: null },
@@ -23,7 +32,7 @@ const subscriptionSchema = new mongoose.Schema(
     currentPeriodEnd: { type: Date, default: null },
     cancelAtPeriodEnd: { type: Boolean, default: false },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // denormalized gamification fields — kept on User for fast dashboard/leaderboard
@@ -49,12 +58,16 @@ const statsSchema = new mongoose.Schema(
     topTenFinishes: { type: Number, default: 0 },
     leagueChampionWins: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const academicProfileSchema = new mongoose.Schema(
   {
-    institutionType: { type: String, enum: ["College / University", "School", null], default: null },
+    institutionType: {
+      type: String,
+      enum: ["College / University", "School", null],
+      default: null,
+    },
     institutionName: { type: String, default: "", maxlength: 120 },
     course: { type: String, default: "" },
     branch: { type: String, default: "", maxlength: 80 },
@@ -66,7 +79,7 @@ const academicProfileSchema = new mongoose.Schema(
     enrollmentNo: { type: String, default: "", maxlength: 40 },
     expectedGraduation: { type: String, default: "", maxlength: 40 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const userSchema = new mongoose.Schema(
@@ -121,6 +134,60 @@ const userSchema = new mongoose.Schema(
 
     refreshTokenHash: { type: String, select: false, default: null },
 
+    spotify: {
+      connected: {
+        type: Boolean,
+        default: false,
+      },
+
+      spotifyUserId: {
+        type: String,
+        default: null,
+      },
+
+      displayName: {
+        type: String,
+        default: null,
+      },
+
+      email: {
+        type: String,
+        default: null,
+      },
+
+      accessToken: {
+        type: String,
+        default: null,
+        select: false,
+      },
+
+      refreshToken: {
+        type: String,
+        default: null,
+        select: false,
+      },
+
+      expiresAt: {
+        type: Date,
+        default: null,
+      },
+
+      avatar: {
+        type: String,
+        default: null,
+      },
+
+      selectedPlaylistId: {
+        type: String,
+        default: null,
+      },
+
+      selectedPlaylistName: {
+        type: String,
+        default: null,
+      },
+    },
+
     subscription: { type: subscriptionSchema, default: () => ({}) },
     stats: { type: statsSchema, default: () => ({}) },
     aiUsage: {
@@ -128,9 +195,17 @@ const userSchema = new mongoose.Schema(
       lastResetDate: { type: Date, default: null },
     },
     preferences: {
-      theme: { type: String, enum: ["dark", "light", "system"], default: "dark" },
+      theme: {
+        type: String,
+        enum: ["dark", "light", "system"],
+        default: "dark",
+      },
       accentColor: { type: String, default: "#a855f7" },
-      density: { type: String, enum: ["comfortable", "compact"], default: "comfortable" },
+      density: {
+        type: String,
+        enum: ["comfortable", "compact"],
+        default: "comfortable",
+      },
       dailyStudyGoalHours: { type: Number, default: 4 },
       cardsPerSession: { type: Number, default: 20 },
       weeklyStudyGoalHours: { type: Number, default: 30 },
@@ -146,7 +221,7 @@ const userSchema = new mongoose.Schema(
       },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.pre("save", async function hashPassword(next) {
@@ -171,6 +246,10 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
   delete obj.passwordResetExpires;
   delete obj.googleId;
   delete obj.githubId;
+  if (obj.spotify) {
+    delete obj.spotify.accessToken;
+    delete obj.spotify.refreshToken;
+  }
   return obj;
 };
 

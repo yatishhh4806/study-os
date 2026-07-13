@@ -16,7 +16,9 @@ function Focus() {
 
   const loadSessions = useCallback(async () => {
     try {
-      const { data } = await api.get("/focus-sessions", { params: { days: 30 } });
+      const { data } = await api.get("/focus-sessions", {
+        params: { days: 30 },
+      });
       setSessions(data.sessions);
     } catch (err) {
       console.error("Failed to load focus sessions:", err);
@@ -41,7 +43,7 @@ function Focus() {
       <div className="mx-auto max-w-7xl px-8 py-12">
         <div className="grid items-start gap-8 xl:grid-cols-[340px_1fr_320px]">
           {!loading && (
-            <FocusAnalytics sessions={sessions} liveMinutes={liveSeconds / 60} />
+            <FocusAnalytics sessions={sessions} liveMinutes={liveSeconds} />
           )}
           <div className="flex flex-col gap-8">
             <PomodoroTimer
