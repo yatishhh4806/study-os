@@ -26,7 +26,12 @@ const SOUNDS = [
   { key: "rain", label: "Rain", icon: CloudRain, file: "/audio/rain.mp3" },
   { key: "cafe", label: "Cafe", icon: Coffee, file: "/audio/cafe.mp3" },
   { key: "forest", label: "Forest", icon: Trees, file: "/audio/forest.mp3" },
-  { key: "fireplace", label: "Fireplace", icon: Flame, file: "/audio/fireplace.mp3" },
+  {
+    key: "fireplace",
+    label: "Fireplace",
+    icon: Flame,
+    file: "/audio/fireplace.mp3",
+  },
   { key: "lofi", label: "Lofi", icon: Music2, file: "/audio/lofi.mp3" },
 ];
 
@@ -40,7 +45,8 @@ function safeLocalStorageGet(key, fallback = null) {
 
 function safeLocalStorageSet(key, value) {
   try {
-    if (value === null || value === undefined || value === "") window.localStorage.removeItem(key);
+    if (value === null || value === undefined || value === "")
+      window.localStorage.removeItem(key);
     else window.localStorage.setItem(key, String(value));
   } catch {
     // localStorage can be unavailable in strict privacy modes.
@@ -86,9 +92,15 @@ export default function AmbientPanel() {
   const toastTimerRef = useRef(null);
 
   const savedVolume = Number(safeLocalStorageGet(STORAGE_KEYS.volume, "55"));
-  const [activeSound, setActiveSound] = useState(() => safeLocalStorageGet(STORAGE_KEYS.sound, null));
-  const [activeSource, setActiveSource] = useState(activeSound ? "ambient" : null);
-  const [volume, setVolume] = useState(Number.isFinite(savedVolume) ? savedVolume : 55);
+  const [activeSound, setActiveSound] = useState(() =>
+    safeLocalStorageGet(STORAGE_KEYS.sound, null),
+  );
+  const [activeSource, setActiveSource] = useState(
+    activeSound ? "ambient" : null,
+  );
+  const [volume, setVolume] = useState(
+    Number.isFinite(savedVolume) ? savedVolume : 55,
+  );
   const [spotify, setSpotify] = useState({ connected: false });
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(() => {
@@ -145,7 +157,10 @@ export default function AmbientPanel() {
       }
     } catch (err) {
       console.error("Failed to load Spotify playlists:", err);
-      showToast(err.response?.data?.error || "Could not load Spotify playlists", "error");
+      showToast(
+        err.response?.data?.error || "Could not load Spotify playlists",
+        "error",
+      );
     } finally {
       setPlaylistLoading(false);
     }
@@ -153,29 +168,26 @@ export default function AmbientPanel() {
 
   const loadSpotify = useCallback(async () => {
     setSpotifyLoading(true);
+
     try {
-      const { data } = await api.get("/spotify/me");
-      setSpotify(data.spotify);
+      const [{ data: me }, { data: playlists }] = await Promise.all([
+        api.get("/spotify/me"),
+        api.get("/spotify/playlists"),
+      ]);
 
-      if (data.spotify?.selectedPlaylistId) {
+      setSpotify(me.spotify);
+      setPlaylists(playlists.playlists ?? []);
+
+      if (me.spotify?.selectedPlaylistId) {
         setSelectedPlaylist({
-          id: data.spotify.selectedPlaylistId,
-          name: data.spotify.selectedPlaylistName,
+          id: me.spotify.selectedPlaylistId,
+          name: me.spotify.selectedPlaylistName,
         });
-        safeLocalStorageSet(STORAGE_KEYS.playlistId, data.spotify.selectedPlaylistId);
-        safeLocalStorageSet(STORAGE_KEYS.playlistName, data.spotify.selectedPlaylistName);
       }
-
-      if (data.spotify?.connected) {
-        await loadPlaylists();
-      }
-    } catch (err) {
-      console.error("Failed to load Spotify profile:", err);
-      showToast(err.response?.data?.error || "Could not load Spotify", "error");
     } finally {
       setSpotifyLoading(false);
     }
-  }, [loadPlaylists, showToast]);
+  }, []);
 
   useEffect(() => {
     loadSpotify();
@@ -276,7 +288,10 @@ export default function AmbientPanel() {
       window.location.assign(data.authorizationUrl);
     } catch (err) {
       console.error("Spotify login failed:", err);
-      showToast(err.response?.data?.error || "Could not start Spotify login", "error");
+      showToast(
+        err.response?.data?.error || "Could not start Spotify login",
+        "error",
+      );
       setConnecting(false);
     }
   };
@@ -295,7 +310,10 @@ export default function AmbientPanel() {
       showToast("Spotify disconnected");
     } catch (err) {
       console.error("Spotify disconnect failed:", err);
-      showToast(err.response?.data?.error || "Could not disconnect Spotify", "error");
+      showToast(
+        err.response?.data?.error || "Could not disconnect Spotify",
+        "error",
+      );
     } finally {
       setDisconnecting(false);
     }
@@ -316,7 +334,10 @@ export default function AmbientPanel() {
       showToast("Playlist selected");
     } catch (err) {
       console.error("Spotify playlist select failed:", err);
-      showToast(err.response?.data?.error || "Could not select playlist", "error");
+      showToast(
+        err.response?.data?.error || "Could not select playlist",
+        "error",
+      );
     } finally {
       setSelectingId(null);
     }
@@ -368,7 +389,7 @@ export default function AmbientPanel() {
       `}</style>
 
       <div
-        className="ambient-card rounded-[24px] border border-purple-500/20 bg-linear-to-b from-[#140e1c]/85 to-[#08060c]/95 p-6 pb-8 shadow-2xl shadow-black/60 backdrop-blur-2xl"
+        className="ambient-card rounded-[24px] border border-purple-500/20 bg-gradient-to-b from-[#140e1c]/85 to-[#08060c]/95 p-6 pb-8 shadow-2xl shadow-black/60 backdrop-blur-2xl"
         style={{
           borderLeft: `2px solid ${accent}`,
           boxShadow: `0 30px 60px -25px rgba(0,0,0,0.65), -10px 0 40px -20px ${glow}`,
@@ -378,7 +399,11 @@ export default function AmbientPanel() {
           <div>
             <h2 className="text-2xl font-extrabold text-white">Ambient</h2>
             <p className="mt-1 text-xs font-medium text-white/40">
-              {activeSource === "spotify" ? "Spotify focus stream" : activeSound ? "Ambient sound active" : "Choose a focus layer"}
+              {activeSource === "spotify"
+                ? "Spotify focus stream"
+                : activeSound
+                  ? "Ambient sound active"
+                  : "Choose a focus layer"}
             </p>
           </div>
           <Sparkles size={18} color={accent} />
@@ -394,12 +419,19 @@ export default function AmbientPanel() {
                 onClick={() => toggleSound(key)}
                 style={{
                   borderColor: isActive ? accent : "rgba(255,255,255,0.08)",
-                  background: isActive ? "rgba(168,85,247,0.13)" : "rgba(255,255,255,0.025)",
+                  background: isActive
+                    ? "rgba(168,85,247,0.13)"
+                    : "rgba(255,255,255,0.025)",
                   boxShadow: isActive ? `0 0 22px -8px ${glow}` : "none",
                 }}
               >
-                <Icon size={17} color={isActive ? accent : "rgba(255,255,255,0.5)"} />
-                <span className={`min-w-0 flex-1 text-[15px] font-medium ${isActive ? "text-white" : "text-white/80"}`}>
+                <Icon
+                  size={17}
+                  color={isActive ? accent : "rgba(255,255,255,0.5)"}
+                />
+                <span
+                  className={`min-w-0 flex-1 text-[15px] font-medium ${isActive ? "text-white" : "text-white/80"}`}
+                >
                   {label}
                 </span>
                 {isActive && (
@@ -408,7 +440,10 @@ export default function AmbientPanel() {
                       <span
                         key={bar}
                         className="ambient-eq block h-3.5 w-[3px] rounded-full"
-                        style={{ background: accent, animationDelay: `${bar * 0.15}s` }}
+                        style={{
+                          background: accent,
+                          animationDelay: `${bar * 0.15}s`,
+                        }}
                       />
                     ))}
                   </span>
@@ -441,154 +476,178 @@ export default function AmbientPanel() {
 
         <div className="mb-5 flex items-center gap-3">
           <div className="h-px flex-1 bg-white/10" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Spotify</span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">
+            Spotify
+          </span>
           <div className="h-px flex-1 bg-white/10" />
         </div>
-
-        {spotifyLoading ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="flex animate-pulse items-center gap-3">
-              <div className="h-11 w-11 rounded-full bg-white/10" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="h-3 w-2/3 rounded-full bg-white/10" />
-                <div className="h-3 w-1/3 rounded-full bg-white/10" />
+        <div className="min-h-[760px]">
+          {spotifyLoading ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex animate-pulse items-center gap-3">
+                <div className="h-11 w-11 rounded-full bg-white/10" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-3 w-2/3 rounded-full bg-white/10" />
+                  <div className="h-3 w-1/3 rounded-full bg-white/10" />
+                </div>
               </div>
             </div>
-          </div>
-        ) : !spotify.connected ? (
-          <button
-            onClick={connectSpotify}
-            disabled={connecting}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-purple-400/30 bg-purple-500/15 px-4 py-4 text-sm font-bold text-white shadow-lg shadow-purple-500/10 transition hover:border-purple-400/60 hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {connecting ? <Loader2 size={17} className="animate-spin" /> : <Music2 size={17} />}
-            Connect Spotify
-          </button>
-        ) : (
-          <div className="space-y-5">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-              <div className="flex items-center gap-3">
-                {spotify.avatar ? (
-                  <img
-                    src={spotify.avatar}
-                    alt=""
-                    className="h-12 w-12 rounded-full border border-white/10 object-cover"
-                  />
+          ) : !spotify.connected ? (
+            <button
+              onClick={connectSpotify}
+              disabled={connecting}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-purple-400/30 bg-purple-500/15 px-4 py-4 text-sm font-bold text-white shadow-lg shadow-purple-500/10 transition hover:border-purple-400/60 hover:bg-purple-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {connecting ? (
+                <Loader2 size={17} className="animate-spin" />
+              ) : (
+                <Music2 size={17} />
+              )}
+              Connect Spotify
+            </button>
+          ) : (
+            <div className="space-y-5">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <div className="flex items-center gap-3">
+                  {spotify.avatar ? (
+                    <img
+                      src={spotify.avatar}
+                      alt=""
+                      className="h-12 w-12 rounded-full border border-white/10 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-purple-400/30 bg-purple-500/20">
+                      <Music2 size={19} color={accent} />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-white">
+                      {spotify.displayName || "Spotify"}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-emerald-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                      Connected
+                    </p>
+                  </div>
+                  <button
+                    onClick={disconnectSpotify}
+                    disabled={disconnecting}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/60 transition hover:border-rose-400/40 hover:bg-rose-500/10 hover:text-rose-200 disabled:opacity-50"
+                    title="Disconnect Spotify"
+                  >
+                    {disconnecting ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : (
+                      <LogOut size={15} />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-white">My Playlists</h3>
+                  <button
+                    onClick={loadPlaylists}
+                    className="text-xs font-semibold text-purple-300 transition hover:text-purple-200"
+                  >
+                    Refresh
+                  </button>
+                </div>
+
+                {playlistLoading ? (
+                  <PlaylistSkeleton />
+                ) : playlists.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-white/45">
+                    No playlists found.
+                  </div>
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-purple-400/30 bg-purple-500/20">
-                    <Music2 size={19} color={accent} />
+                  <div className="max-h-[330px] space-y-3 overflow-y-auto pr-1">
+                    {playlists.map((playlist) => {
+                      const isSelected = selectedPlaylist?.id === playlist.id;
+                      const isSelecting = selectingId === playlist.id;
+                      return (
+                        <button
+                          key={playlist.id}
+                          onClick={() => selectPlaylist(playlist.id)}
+                          className="ambient-row flex w-full items-center gap-3 rounded-2xl border p-3 text-left"
+                          style={{
+                            borderColor: isSelected
+                              ? accent
+                              : "rgba(255,255,255,0.08)",
+                            background: isSelected
+                              ? "rgba(168,85,247,0.13)"
+                              : "rgba(255,255,255,0.03)",
+                            boxShadow: isSelected
+                              ? `0 0 24px -10px ${glow}`
+                              : "none",
+                          }}
+                        >
+                          {playlist.image ? (
+                            <img
+                              src={playlist.image}
+                              alt=""
+                              className="h-14 w-14 rounded-xl object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10">
+                              <Music2 size={18} className="text-white/45" />
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-white">
+                              {playlist.name}
+                            </p>
+                            <p className="mt-1 truncate text-xs text-white/45">
+                              {playlist.trackCount} tracks - {playlist.owner}
+                            </p>
+                          </div>
+                          {isSelecting ? (
+                            <Loader2
+                              size={16}
+                              className="animate-spin text-purple-300"
+                            />
+                          ) : isSelected ? (
+                            <CheckCircle2 size={17} color={accent} />
+                          ) : null}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-white">{spotify.displayName || "Spotify"}</p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-emerald-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                    Connected
-                  </p>
-                </div>
-                <button
-                  onClick={disconnectSpotify}
-                  disabled={disconnecting}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-white/60 transition hover:border-rose-400/40 hover:bg-rose-500/10 hover:text-rose-200 disabled:opacity-50"
-                  title="Disconnect Spotify"
-                >
-                  {disconnecting ? <Loader2 size={15} className="animate-spin" /> : <LogOut size={15} />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-white">My Playlists</h3>
-                <button
-                  onClick={loadPlaylists}
-                  className="text-xs font-semibold text-purple-300 transition hover:text-purple-200"
-                >
-                  Refresh
-                </button>
               </div>
 
-              {playlistLoading ? (
-                <PlaylistSkeleton />
-              ) : playlists.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-sm text-white/45">
-                  No playlists found.
-                </div>
-              ) : (
-                <div className="max-h-[330px] space-y-3 overflow-y-auto pr-1">
-                  {playlists.map((playlist) => {
-                    const isSelected = selectedPlaylist?.id === playlist.id;
-                    const isSelecting = selectingId === playlist.id;
-                    return (
-                      <button
-                        key={playlist.id}
-                        onClick={() => selectPlaylist(playlist.id)}
-                        className="ambient-row flex w-full items-center gap-3 rounded-2xl border p-3 text-left"
-                        style={{
-                          borderColor: isSelected ? accent : "rgba(255,255,255,0.08)",
-                          background: isSelected ? "rgba(168,85,247,0.13)" : "rgba(255,255,255,0.03)",
-                          boxShadow: isSelected ? `0 0 24px -10px ${glow}` : "none",
-                        }}
-                      >
-                        {playlist.image ? (
-                          <img
-                            src={playlist.image}
-                            alt=""
-                            className="h-14 w-14 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10">
-                            <Music2 size={18} className="text-white/45" />
-                          </div>
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-white">{playlist.name}</p>
-                          <p className="mt-1 truncate text-xs text-white/45">
-                            {playlist.trackCount} tracks - {playlist.owner}
-                          </p>
-                        </div>
-                        {isSelecting ? (
-                          <Loader2 size={16} className="animate-spin text-purple-300" />
-                        ) : isSelected ? (
-                          <CheckCircle2 size={17} color={accent} />
-                        ) : null}
-                      </button>
-                    );
-                  })}
+              {embedUrl && (
+                <div>
+                  <div className="mb-3">
+                    <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-white/35">
+                      {selectedPlaylistName}
+                    </p>
+                  </div>
+                  <div
+                    onMouseDown={() => {
+                      setActiveSource("spotify");
+                      stopAmbient();
+                    }}
+                    className="overflow-hidden rounded-2xl border border-purple-400/20 bg-black/30 shadow-xl shadow-purple-950/20"
+                  >
+                    <iframe
+                      key={`${selectedPlaylist.id}-${spotifyPlayerKey}`}
+                      title="Spotify playlist player"
+                      src={embedUrl}
+                      width="100%"
+                      height="352"
+                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                      loading="lazy"
+                      className="block"
+                      style={{ border: 0 }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
-
-            {embedUrl && (
-              <div>
-                <div className="mb-3">
-                  <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-white/35">
-                    {selectedPlaylistName}
-                  </p>
-                </div>
-                <div
-                  onMouseDown={() => {
-                    setActiveSource("spotify");
-                    stopAmbient();
-                  }}
-                  className="overflow-hidden rounded-2xl border border-purple-400/20 bg-black/30 shadow-xl shadow-purple-950/20"
-                >
-                  <iframe
-                    key={`${selectedPlaylist.id}-${spotifyPlayerKey}`}
-                    title="Spotify playlist player"
-                    src={embedUrl}
-                    width="100%"
-                    height="352"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                    className="block"
-                    style={{ border: 0 }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <Toast toast={toast} />

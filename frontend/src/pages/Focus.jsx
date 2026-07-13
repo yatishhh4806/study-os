@@ -42,9 +42,11 @@ function Focus() {
     >
       <div className="mx-auto max-w-7xl px-8 py-12">
         <div className="grid items-start gap-8 xl:grid-cols-[340px_1fr_320px]">
-          {!loading && (
-            <FocusAnalytics sessions={sessions} liveMinutes={liveSeconds} />
-          )}
+          <FocusAnalytics
+            loading={loading}
+            sessions={sessions}
+            liveMinutes={liveSeconds}
+          />
           <div className="flex flex-col gap-8">
             <PomodoroTimer
               onTick={setLiveSeconds}

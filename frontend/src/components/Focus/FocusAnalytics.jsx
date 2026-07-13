@@ -129,7 +129,7 @@ function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
@@ -277,7 +277,8 @@ function generateInsights(stats, sessions) {
 }
 
 export default function FocusAnalytics({
-  sessions = SAMPLE_SESSIONS,
+  loading = false,
+  sessions = [],
   liveMinutes = 0,
 }) {
   const stats = useMemo(
@@ -327,6 +328,40 @@ export default function FocusAnalytics({
 
   const accent = "#a855f7";
   const glow = "rgba(168,85,247,0.5)";
+  if (loading) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          fontFamily:
+            "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        }}
+      >
+        <div
+          className="fa-card animate-pulse"
+          style={{
+            width: "100%",
+            background:
+              "linear-gradient(180deg, rgba(20,14,28,0.85), rgba(8,6,12,0.92))",
+            border: "1px solid rgba(168,85,247,0.18)",
+            borderRight: `2px solid ${accent}`,
+            borderRadius: 24,
+            padding: "28px 24px 32px",
+          }}
+        >
+          <div className="mb-6 h-8 w-44 rounded bg-white/10" />
+
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="mb-4 h-20 rounded-2xl bg-white/5" />
+          ))}
+
+          <div className="mt-6 h-36 rounded-2xl bg-white/5" />
+
+          <div className="mt-6 h-44 rounded-2xl bg-white/5" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
