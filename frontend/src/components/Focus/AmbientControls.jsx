@@ -481,7 +481,7 @@ export default function AmbientPanel() {
           </span>
           <div className="h-px flex-1 bg-white/10" />
         </div>
-        <div className="min-h-[760px]">
+        <div>
           {spotifyLoading ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <div className="flex animate-pulse items-center gap-3">
