@@ -7,23 +7,27 @@ export default function PlaybackControls({
   playlistId,
 }) {
   async function play() {
-    try {
-      await api.put("/spotify/player/play", {
-        device_id: deviceId,
-        context_uri: `spotify:playlist:${playlistId}`,
-      });
-    } catch (err) {
-      console.error(err);
-    }
+  console.time("play");
+
+  try {
+    await api.put("/spotify/player/play", {
+      device_id: deviceId,
+      context_uri: `spotify:playlist:${playlistId}`,
+    });
+  } finally {
+    console.timeEnd("play");
   }
+}
 
   async function pause() {
-    try {
-      await api.put("/spotify/player/pause");
-    } catch (err) {
-      console.error(err);
-    }
+  console.time("pause");
+
+  try {
+    await api.put("/spotify/player/pause");
+  } finally {
+    console.timeEnd("pause");
   }
+}
 
   async function next() {
     try {
