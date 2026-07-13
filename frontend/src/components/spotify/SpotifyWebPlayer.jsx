@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Music2 } from "lucide-react";
 import { api } from "../../lib/api";
 
 import useSpotifyPlayer from "../../hooks/useSpotifyPlayer";
@@ -18,24 +18,21 @@ export default function SpotifyWebPlayer({ playlistId }) {
     duration,
   } = useSpotifyPlayer();
 
-  const startedPlaylistRef = useRef(null);
+  const startedPlaylist = useRef(null);
 
   useEffect(() => {
     if (!ready || !deviceId || !playlistId) return;
 
-    // Prevent restarting same playlist repeatedly
-    if (startedPlaylistRef.current === playlistId) return;
+    if (startedPlaylist.current === playlistId) return;
 
-    startedPlaylistRef.current = playlistId;
+    startedPlaylist.current = playlistId;
 
     async function startPlayback() {
       try {
-        // Transfer playback to StudyOS player
         await api.put("/spotify/player/transfer", {
           device_id: deviceId,
         });
 
-        // Start playlist
         await api.put("/spotify/player/play", {
           device_id: deviceId,
           context_uri: `spotify:playlist:${playlistId}`,
@@ -50,46 +47,112 @@ export default function SpotifyWebPlayer({ playlistId }) {
 
   if (!ready) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-2xl border border-white/10 bg-[#111]">
-        <Loader2 className="h-7 w-7 animate-spin text-violet-400" />
+      <div className="flex h-[620px] items-center justify-center rounded-[32px] border border-white/10 bg-[#13131a]">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#111] p-5">
+    <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-b from-[#1A1625] via-[#13111B] to-[#0B0A10] p-8 shadow-[0_20px_70px_rgba(139,92,246,0.18)] backdrop-blur-xl">
+
+      {/* Ambient Glow */}
+      <div className="absolute left-1/2 top-10 h-72 w-72 -translate-x-1/2 rounded-full bg-violet-500/20 blur-[110px]" />
+
       {currentTrack ? (
         <>
-          <img
-            src={currentTrack.album.images?.[0]?.url}
-            alt={currentTrack.album.name}
-            className="mb-5 aspect-square w-full rounded-xl object-cover"
-          />
+          {/* Album Art */}
+          <div className="relative z-10 flex justify-center">
 
-          <h3 className="truncate text-xl font-semibold text-white">
-            {currentTrack.name}
-          </h3>
+            <div className="absolute h-64 w-64 rounded-full bg-violet-500/20 blur-3xl" />
 
-          <p className="truncate text-sm text-white/60">
-            {currentTrack.artists.map((a) => a.name).join(", ")}
-          </p>
+            <img
+              src={currentTrack.album.images?.[0]?.url}
+              alt={currentTrack.album.name}
+              className={`relative h-64 w-64 rounded-[28px] object-cover shadow-2xl transition-all duration-700 ${
+                paused
+                  ? "scale-100"
+                  : "scale-[1.03] shadow-violet-500/40"
+              }`}
+            />
 
-          <ProgressBar
-            position={position}
-            duration={duration}
-          />
+          </div>
 
-          <PlaybackControls
-            paused={paused}
-            deviceId={deviceId}
-            playlistId={playlistId}
-          />
+          {/* Song */}
+          <div className="relative z-10 mt-8 text-center">
 
-          <VolumeControl />
+            <h2 className="truncate text-3xl font-bold tracking-tight text-white">
+
+              {currentTrack.name}
+
+            </h2>
+
+            <p className="mt-2 truncate text-base text-white/60">
+
+              {currentTrack.artists.map((a) => a.name).join(", ")}
+
+            </p>
+
+          </div>
+
+          {/* Progress */}
+          <div className="relative z-10 mt-8">
+
+            <ProgressBar
+              position={position}
+              duration={duration}
+            />
+
+          </div>
+
+          {/* Controls */}
+          <div className="relative z-10 mt-7">
+
+            <PlaybackControls
+              paused={paused}
+            />
+
+          </div>
+
+          {/* Volume */}
+          <div className="relative z-10 mt-8">
+
+            <VolumeControl />
+
+          </div>
+
+          {/* Divider */}
+          <div className="relative z-10 mt-8 border-t border-white/10" />
+
+          {/* Footer */}
+          <div className="relative z-10 mt-5 flex items-center justify-center gap-2 text-sm text-white/50">
+
+            <span className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
+
+            Spotify Premium Connected
+
+          </div>
         </>
       ) : (
-        <div className="flex h-56 items-center justify-center text-white/50">
-          Waiting for playback...
+        <div className="relative z-10 flex h-[520px] flex-col items-center justify-center text-center">
+
+          <Music2
+            className="mb-5 text-violet-400"
+            size={60}
+          />
+
+          <h3 className="text-xl font-semibold text-white">
+
+            Waiting for Playback
+
+          </h3>
+
+          <p className="mt-2 text-sm text-white/50">
+
+            Start a playlist to begin listening.
+
+          </p>
+
         </div>
       )}
     </div>

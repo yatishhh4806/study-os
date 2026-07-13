@@ -7,100 +7,78 @@ import {
 } from "lucide-react";
 import { api } from "../../lib/api";
 
-export default function PlaybackControls({
-  paused,
-  deviceId,
-  playlistId,
-}) {
+export default function PlaybackControls({ paused }) {
   const [loading, setLoading] = useState(false);
 
-  async function play() {
+  async function request(fn) {
     if (loading) return;
 
     setLoading(true);
 
     try {
-      await api.put("/spotify/player/play");
+      await fn();
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
-    }
-  }
-
-  async function pause() {
-    if (loading) return;
-
-    setLoading(true);
-
-    try {
-      await api.put("/spotify/player/pause");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function next() {
-    if (loading) return;
-
-    setLoading(true);
-
-    try {
-      await api.post("/spotify/player/next");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function previous() {
-    if (loading) return;
-
-    setLoading(true);
-
-    try {
-      await api.post("/spotify/player/previous");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 200);
     }
   }
 
   return (
-    <div className="mt-6 flex items-center justify-center gap-6">
+    <div className="flex items-center justify-center gap-7">
+      {/* Previous */}
       <button
         disabled={loading}
-        onClick={previous}
-        className="rounded-full p-2 text-white/70 transition-all hover:scale-110 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        onClick={() =>
+          request(() => api.post("/spotify/player/previous"))
+        }
+        className="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all duration-300 hover:scale-110 hover:border-violet-500/40 hover:bg-violet-500/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <SkipBack size={24} />
+        <SkipBack
+          size={22}
+          className="text-white/70 transition group-hover:text-white"
+        />
       </button>
 
+      {/* Play / Pause */}
       <button
         disabled={loading}
-        onClick={paused ? play : pause}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-500 text-white transition-all hover:scale-105 hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
+        onClick={() =>
+          request(() =>
+            paused
+              ? api.put("/spotify/player/play")
+              : api.put("/spotify/player/pause")
+          )
+        }
+        className={`group flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_30px_rgba(139,92,246,0.45)] transition-all duration-300 ${
+          loading
+            ? "scale-95"
+            : "hover:scale-110 hover:shadow-[0_0_40px_rgba(139,92,246,0.7)]"
+        }`}
       >
         {paused ? (
           <Play
-            size={22}
+            size={26}
             fill="currentColor"
+            className="ml-1"
           />
         ) : (
-          <Pause size={22} />
+          <Pause size={26} />
         )}
       </button>
 
+      {/* Next */}
       <button
         disabled={loading}
-        onClick={next}
-        className="rounded-full p-2 text-white/70 transition-all hover:scale-110 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+        onClick={() =>
+          request(() => api.post("/spotify/player/next"))
+        }
+        className="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all duration-300 hover:scale-110 hover:border-violet-500/40 hover:bg-violet-500/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <SkipForward size={24} />
+        <SkipForward
+          size={22}
+          className="text-white/70 transition group-hover:text-white"
+        />
       </button>
     </div>
   );

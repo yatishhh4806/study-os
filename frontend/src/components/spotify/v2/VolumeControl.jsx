@@ -1,11 +1,12 @@
 import { useState } from "react";
 import {
   Volume2,
-  VolumeX,
   Volume1,
+  VolumeX,
 } from "lucide-react";
-import { api } from "../../lib/api";
-import Slider from "./Slider";
+
+import { api } from "../../../lib/api";
+import Slider from "../Slider";
 
 export default function VolumeControl() {
   const [volume, setVolume] = useState(60);
@@ -23,7 +24,7 @@ export default function VolumeControl() {
     } catch (err) {
       console.error(err);
     } finally {
-      setTimeout(() => setLoading(false), 150);
+      setTimeout(() => setLoading(false), 120);
     }
   }
 
@@ -35,26 +36,14 @@ export default function VolumeControl() {
       : Volume2;
 
   return (
-    <div className="mt-6">
+    <div className="flex items-center gap-5">
 
-      <div className="mb-3 flex items-center justify-between">
+      <Icon
+        size={20}
+        className="text-white/55 shrink-0"
+      />
 
-        <span className="text-xs font-medium uppercase tracking-[0.25em] text-white/40">
-          Volume
-        </span>
-
-        <span className="text-sm font-semibold text-violet-300">
-          {Math.round(volume)}%
-        </span>
-
-      </div>
-
-      <div className="flex items-center gap-4">
-
-        <Icon
-          size={20}
-          className="text-white/60 transition-colors"
-        />
+      <div className="flex-1">
 
         <Slider
           value={volume}
@@ -64,6 +53,10 @@ export default function VolumeControl() {
         />
 
       </div>
+
+      <span className="w-10 text-right text-xs font-semibold tabular-nums text-violet-300">
+        {Math.round(volume)}%
+      </span>
 
     </div>
   );
