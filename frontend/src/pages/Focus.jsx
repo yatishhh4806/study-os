@@ -8,6 +8,11 @@ import { api } from "../lib/api";
 function Focus() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Live elapsed seconds of the currently-running focus session (0 when
+  // paused/reset/on a break) — fed by PomodoroTimer's onTick, so
+  // FocusAnalytics can reflect an in-progress session in real time
+  // instead of only updating once it's saved to the backend.
+  const [liveSeconds, setLiveSeconds] = useState(0);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -35,12 +40,14 @@ function Focus() {
     >
       <div className="mx-auto max-w-7xl px-8 py-12">
         <div className="grid items-start gap-8 xl:grid-cols-[340px_1fr_320px]">
-          {/* FocusAnalytics is unchanged from its original mock version —
-              it's already a pure component driven entirely by `sessions`,
-              so passing real data in is the only thing that changed here. */}
-          {!loading && <FocusAnalytics sessions={sessions} />}
+          {!loading && (
+            <FocusAnalytics sessions={sessions} liveMinutes={liveSeconds / 60} />
+          )}
           <div className="flex flex-col gap-8">
-            <PomodoroTimer onSessionLogged={loadSessions} />
+            <PomodoroTimer
+              onTick={setLiveSeconds}
+              onSessionLogged={loadSessions}
+            />
             <MotivationStrip />
           </div>
           <AmbientPanel />
