@@ -598,9 +598,6 @@ export default function AmbientPanel() {
                             <p className="truncate text-sm font-semibold text-white">
                               {playlist.name}
                             </p>
-                            <p className="mt-1 truncate text-xs text-white/45">
-                              {playlist.trackCount} tracks - {playlist.owner}
-                            </p>
                           </div>
                           {isSelecting ? (
                             <Loader2
