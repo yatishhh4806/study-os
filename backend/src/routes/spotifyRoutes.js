@@ -16,6 +16,7 @@ import {
   transferPlayback,
   seekTrack,
   setVolume,
+  getAccessToken,
 } from "../controllers/spotifyController.js";
 
 const router = Router();
@@ -49,6 +50,8 @@ router.put("/player/seek", requireAuth, seekTrack);
 router.put("/player/volume", requireAuth, setVolume);
 
 router.delete("/disconnect", requireAuth, disconnect);
+
+router.get("/token", requireAuth, getAccessToken);
 
 
 export default router;

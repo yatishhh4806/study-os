@@ -157,6 +157,21 @@ export async function getPlaylists(req, res, next) {
   }
 }
 
+export async function getAccessToken(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    // This automatically refreshes the token if expired
+    await spotifyRequest(user, "/me");
+
+    res.json({
+      accessToken: user.spotify.accessToken,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getPlaylist(req, res, next) {
   try {
     const parsed = playlistParamsSchema.safeParse(req.params);
@@ -237,7 +252,6 @@ export async function disconnect(req, res, next) {
     next(err);
   }
 }
-
 
 export async function getPlayer(req, res, next) {
   try {
@@ -356,13 +370,9 @@ export async function seekTrack(req, res, next) {
 
     const { position_ms } = req.body;
 
-    await spotifyRequest(
-      user,
-      `/me/player/seek?position_ms=${position_ms}`,
-      {
-        method: "PUT",
-      }
-    );
+    await spotifyRequest(user, `/me/player/seek?position_ms=${position_ms}`, {
+      method: "PUT",
+    });
 
     res.sendStatus(204);
   } catch (err) {
@@ -381,7 +391,7 @@ export async function setVolume(req, res, next) {
       `/me/player/volume?volume_percent=${volume_percent}`,
       {
         method: "PUT",
-      }
+      },
     );
 
     res.sendStatus(204);

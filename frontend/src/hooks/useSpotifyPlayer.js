@@ -50,15 +50,15 @@ export default function useSpotifyPlayer() {
 
       if (!data.spotify.connected) return;
 
-      const tokenRes = await api.post("/auth/refresh");
+      const tokenRes = await api.get("/spotify/token");
 
-      const accessToken = tokenRes.data.accessToken;
+      const spotifyAccessToken = tokenRes.data.accessToken;
 
       const player = new window.Spotify.Player({
         name: "StudyOS Player",
 
         getOAuthToken: (cb) => {
-          cb(accessToken);
+          cb(spotifyAccessToken);
         },
 
         volume: 0.6,
