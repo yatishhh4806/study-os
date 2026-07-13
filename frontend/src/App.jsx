@@ -15,7 +15,6 @@ import Settings from "./pages/Settings";
 import CommandPalette from "./components/CommandPalette";
 import Leaderboard from "./pages/LeaderBoard";
 import Badges from "./pages/Badges";
-import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -24,7 +23,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 
 function App() {
   return (
-    <AuthProvider>
+    <>
       <CommandPalette></CommandPalette>
       <Routes>
         <Route
@@ -157,7 +156,7 @@ function App() {
         />
 
       </Routes>
-    </AuthProvider>
+    </>
   );
 }
 

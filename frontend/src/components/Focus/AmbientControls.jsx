@@ -12,7 +12,7 @@ import {
   Trees,
   Volume2,
 } from "lucide-react";
-import { api } from "../../lib/api";
+import { api, setAccessToken } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
 const STORAGE_KEYS = {
@@ -270,6 +270,8 @@ export default function AmbientPanel() {
   const connectSpotify = async () => {
     setConnecting(true);
     try {
+      const session = await api.post("/auth/refresh");
+      setAccessToken(session.data.accessToken);
       const { data } = await api.get("/spotify/login");
       window.location.assign(data.authorizationUrl);
     } catch (err) {
