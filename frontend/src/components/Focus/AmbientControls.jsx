@@ -15,6 +15,8 @@ import {
 import { api, setAccessToken } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
+import SpotifyWebPlayer from "../../components/spotify/SpotifyWebPlayer";
+
 const STORAGE_KEYS = {
   sound: "studyos:ambient:sound",
   volume: "studyos:ambient:volume",
@@ -610,7 +612,7 @@ export default function AmbientPanel() {
                 )}
               </div>
 
-              {embedUrl && (
+              {selectedPlaylist && (
                 <div>
                   <div className="mb-3">
                     <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-white/35">
