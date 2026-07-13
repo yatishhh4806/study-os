@@ -28,7 +28,9 @@ function spotifyRedirect(path, status, message) {
 }
 
 async function findUserWithSpotifyTokens(userId) {
-  const user = await User.findById(userId).select("+spotify.accessToken +spotify.refreshToken");
+  const user = await User.findById(userId).select(
+    "+spotify.accessToken +spotify.refreshToken",
+  );
 
   if (!user) {
     throw new AppError("User not found", 404, "USER_NOT_FOUND");
@@ -52,11 +54,23 @@ export async function callback(req, res) {
     const { code, state, error } = req.query;
 
     if (error) {
-      return res.redirect(spotifyRedirect("/dashboard/focus", "error", "Spotify authorization was cancelled"));
+      return res.redirect(
+        spotifyRedirect(
+          "/dashboard/focus",
+          "error",
+          "Spotify authorization was cancelled",
+        ),
+      );
     }
 
     if (!code || !state) {
-      return res.redirect(spotifyRedirect("/dashboard/focus", "error", "Spotify authorization was incomplete"));
+      return res.redirect(
+        spotifyRedirect(
+          "/dashboard/focus",
+          "error",
+          "Spotify authorization was incomplete",
+        ),
+      );
     }
 
     const payload = verifySpotifyState(state);
@@ -71,7 +85,8 @@ export async function callback(req, res) {
       email: profile.email || null,
       avatar: profile.images?.[0]?.url || null,
       accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token || user.spotify?.refreshToken || null,
+      refreshToken:
+        tokenData.refresh_token || user.spotify?.refreshToken || null,
       expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
       selectedPlaylistId: user.spotify?.selectedPlaylistId || null,
       selectedPlaylistName: user.spotify?.selectedPlaylistName || null,
@@ -81,7 +96,9 @@ export async function callback(req, res) {
     return res.redirect(spotifyRedirect("/dashboard/focus", "connected"));
   } catch (err) {
     console.error("Spotify OAuth callback failed:", err);
-    return res.redirect(spotifyRedirect("/dashboard/focus", "error", "Spotify connection failed"));
+    return res.redirect(
+      spotifyRedirect("/dashboard/focus", "error", "Spotify connection failed"),
+    );
   }
 }
 
@@ -107,13 +124,29 @@ export async function getProfile(req, res, next) {
 export async function getPlaylists(req, res, next) {
   try {
     const user = await findUserWithSpotifyTokens(req.user._id);
-    const data = await spotifyRequest(
-      user,
-      "/me/playlists?limit=30&offset=0",
+
+    // Fetch user's playlists
+    const data = await spotifyRequest(user, "/me/playlists?limit=30&offset=0");
+
+    // Fetch full details for each playlist in parallel
+    const playlists = await Promise.all(
+      (data.items || []).map(async (playlist) => {
+        try {
+          const fullPlaylist = await spotifyRequest(
+            user,
+            `/playlists/${playlist.id}`,
+          );
+
+          return mapPlaylist(fullPlaylist);
+        } catch (err) {
+          // Fallback to simplified playlist if one request fails
+          return mapPlaylist(playlist);
+        }
+      }),
     );
 
     res.json({
-      playlists: (data.items || []).filter(Boolean).map(mapPlaylist),
+      playlists,
       selectedPlaylistId: user.spotify?.selectedPlaylistId || null,
       selectedPlaylistName: user.spotify?.selectedPlaylistName || null,
     });
@@ -130,7 +163,10 @@ export async function getPlaylist(req, res, next) {
     }
 
     const user = await findUserWithSpotifyTokens(req.user._id);
-    const playlist = await spotifyRequest(user, `/playlists/${encodeURIComponent(parsed.data.id)}`);
+    const playlist = await spotifyRequest(
+      user,
+      `/playlists/${encodeURIComponent(parsed.data.id)}`,
+    );
     const mappedPlaylist = mapPlaylist(playlist);
 
     user.spotify.selectedPlaylistId = mappedPlaylist.id;
@@ -150,7 +186,11 @@ export async function search(req, res, next) {
   try {
     const parsed = searchQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      throw new AppError(parsed.error.issues[0].message, 422, "VALIDATION_ERROR");
+      throw new AppError(
+        parsed.error.issues[0].message,
+        422,
+        "VALIDATION_ERROR",
+      );
     }
 
     const user = await findUserWithSpotifyTokens(req.user._id);
