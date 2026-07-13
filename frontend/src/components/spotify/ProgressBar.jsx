@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../lib/api";
+import Slider from "./Slider";
 
 function format(ms) {
   const totalSeconds = Math.floor(ms / 1000);
@@ -33,17 +34,19 @@ export default function ProgressBar({ position, duration }) {
 
   return (
     <div className="mt-5">
-      <input
-        type="range"
-        min={0}
-        max={duration || 0}
+      <Slider
         value={localPosition}
-        onMouseDown={() => setDragging(true)}
-        onTouchStart={() => setDragging(true)}
-        onChange={(e) => setLocalPosition(Number(e.target.value))}
-        onMouseUp={handleSeek}
-        onTouchEnd={handleSeek}
-        className="w-full cursor-pointer accent-[#8b5cf6]"
+        max={duration || 0}
+        onValueChange={setLocalPosition}
+        onValueCommit={async (value) => {
+          try {
+            await api.put("/spotify/player/seek", {
+              position_ms: value,
+            });
+          } catch (err) {
+            console.error(err);
+          }
+        }}
       />
 
       <div className="mt-2 flex justify-between text-xs text-white/50">
