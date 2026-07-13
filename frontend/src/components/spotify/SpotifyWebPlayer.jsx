@@ -3,9 +3,11 @@ import { Loader2 } from "lucide-react";
 import PlaybackControls from "./PlaybackControls";
 import { api } from "../../lib/api";
 import useSpotifyPlayer from "../../hooks/useSpotifyPlayer";
+import ProgressBar from "./ProgressBar";
 
 export default function SpotifyWebPlayer({ playlistId }) {
-  const { ready, deviceId, currentTrack, paused } = useSpotifyPlayer();
+  const { ready, deviceId, currentTrack, paused, position, duration } =
+    useSpotifyPlayer();
 
   useEffect(() => {
     if (!ready || !deviceId || !playlistId) return;
@@ -63,6 +65,8 @@ export default function SpotifyWebPlayer({ playlistId }) {
           <p className="truncate text-sm text-white/60">
             {currentTrack.artists.map((a) => a.name).join(", ")}
           </p>
+
+          <ProgressBar position={position} duration={duration} />
 
           <PlaybackControls
             paused={paused}
