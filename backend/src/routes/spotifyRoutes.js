@@ -8,6 +8,14 @@ import {
   getPlaylist,
   search,
   disconnect,
+  getPlayer,
+  play,
+  pause,
+  nextTrack,
+  previousTrack,
+  transferPlayback,
+  seekTrack,
+  setVolume,
 } from "../controllers/spotifyController.js";
 
 const router = Router();
@@ -24,6 +32,23 @@ router.get("/playlists/:id", requireAuth, getPlaylist);
 
 router.get("/search", requireAuth, search);
 
+router.get("/player", requireAuth, getPlayer);
+
+router.put("/player/play", requireAuth, play);
+
+router.put("/player/pause", requireAuth, pause);
+
+router.post("/player/next", requireAuth, nextTrack);
+
+router.post("/player/previous", requireAuth, previousTrack);
+
+router.put("/player/transfer", requireAuth, transferPlayback);
+
+router.put("/player/seek", requireAuth, seekTrack);
+
+router.put("/player/volume", requireAuth, setVolume);
+
 router.delete("/disconnect", requireAuth, disconnect);
+
 
 export default router;

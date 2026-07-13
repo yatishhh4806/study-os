@@ -12,6 +12,10 @@ const SCOPES = [
   "user-read-private",
   "playlist-read-private",
   "playlist-read-collaborative",
+  "streaming",
+  "user-read-playback-state",
+  "user-modify-playback-state",
+  "user-read-currently-playing",
 ];
 
 function getSpotifyConfig() {
@@ -31,7 +35,9 @@ function getSpotifyConfig() {
 }
 
 export function getPrimaryClientUrl() {
-  const urls = Array.isArray(env.CLIENT_URL) ? env.CLIENT_URL : [env.CLIENT_URL];
+  const urls = Array.isArray(env.CLIENT_URL)
+    ? env.CLIENT_URL
+    : [env.CLIENT_URL];
 
   if (env.NODE_ENV === "production") {
     return (
@@ -60,7 +66,8 @@ async function parseSpotifyResponse(response, fallbackMessage) {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const message = body?.error?.message || body?.error_description || fallbackMessage;
+    const message =
+      body?.error?.message || body?.error_description || fallbackMessage;
     throw new AppError(message, response.status, "SPOTIFY_API_ERROR");
   }
 
@@ -89,7 +96,11 @@ export function verifySpotifyState(state) {
 
     return payload;
   } catch {
-    throw new AppError("Spotify authorization state is invalid or expired", 400, "INVALID_SPOTIFY_STATE");
+    throw new AppError(
+      "Spotify authorization state is invalid or expired",
+      400,
+      "INVALID_SPOTIFY_STATE",
+    );
   }
 }
 
@@ -138,14 +149,22 @@ export async function refreshSpotifyAccessToken(refreshToken) {
 
 export async function spotifyRequest(user, path, options = {}) {
   if (!user.spotify?.connected || !user.spotify?.refreshToken) {
-    throw new AppError("Spotify is not connected", 409, "SPOTIFY_NOT_CONNECTED");
+    throw new AppError(
+      "Spotify is not connected",
+      409,
+      "SPOTIFY_NOT_CONNECTED",
+    );
   }
 
   let accessToken = user.spotify.accessToken;
-  const expiresAt = user.spotify.expiresAt ? new Date(user.spotify.expiresAt).getTime() : 0;
+  const expiresAt = user.spotify.expiresAt
+    ? new Date(user.spotify.expiresAt).getTime()
+    : 0;
 
   if (!accessToken || expiresAt - TOKEN_REFRESH_BUFFER_MS <= Date.now()) {
-    const refreshed = await refreshSpotifyAccessToken(user.spotify.refreshToken);
+    const refreshed = await refreshSpotifyAccessToken(
+      user.spotify.refreshToken,
+    );
     accessToken = refreshed.access_token;
     user.spotify.accessToken = accessToken;
     user.spotify.expiresAt = new Date(Date.now() + refreshed.expires_in * 1000);
@@ -164,6 +183,10 @@ export async function spotifyRequest(user, path, options = {}) {
       Authorization: `Bearer ${accessToken}`,
     },
   });
+
+  if (response.status === 204) {
+    return null;
+  }
 
   return parseSpotifyResponse(response, "Spotify request failed");
 }

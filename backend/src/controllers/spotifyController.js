@@ -237,3 +237,155 @@ export async function disconnect(req, res, next) {
     next(err);
   }
 }
+
+
+export async function getPlayer(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    const playback = await spotifyRequest(user, "/me/player");
+
+    res.json(playback);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function play(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    const { device_id, context_uri, uris, offset } = req.body;
+
+    let endpoint = "/me/player/play";
+
+    if (device_id) {
+      endpoint += `?device_id=${device_id}`;
+    }
+
+    await spotifyRequest(user, endpoint, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        context_uri,
+        uris,
+        offset,
+      }),
+    });
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function pause(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    await spotifyRequest(user, "/me/player/pause", {
+      method: "PUT",
+    });
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function nextTrack(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    await spotifyRequest(user, "/me/player/next", {
+      method: "POST",
+    });
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function previousTrack(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    await spotifyRequest(user, "/me/player/previous", {
+      method: "POST",
+    });
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function transferPlayback(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    const { device_id } = req.body;
+
+    if (!device_id) {
+      throw new AppError("device_id is required", 400, "VALIDATION_ERROR");
+    }
+
+    await spotifyRequest(user, "/me/player", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        device_ids: [device_id],
+        play: false,
+      }),
+    });
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function seekTrack(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    const { position_ms } = req.body;
+
+    await spotifyRequest(
+      user,
+      `/me/player/seek?position_ms=${position_ms}`,
+      {
+        method: "PUT",
+      }
+    );
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function setVolume(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    const { volume_percent } = req.body;
+
+    await spotifyRequest(
+      user,
+      `/me/player/volume?volume_percent=${volume_percent}`,
+      {
+        method: "PUT",
+      }
+    );
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
