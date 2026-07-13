@@ -348,10 +348,6 @@ export default function AmbientPanel() {
     playlists.find((playlist) => playlist.id === selectedPlaylist?.id)?.name ||
     "Selected playlist";
 
-  const embedUrl = selectedPlaylist?.id
-    ? `https://open.spotify.com/embed/playlist/${encodeURIComponent(selectedPlaylist.id)}?utm_source=generator`
-    : null;
-
   return (
     <div className="w-full font-sans">
       <style>{`
@@ -628,17 +624,7 @@ export default function AmbientPanel() {
                     }}
                     className="overflow-hidden rounded-2xl border border-purple-400/20 bg-black/30 shadow-xl shadow-purple-950/20"
                   >
-                    <iframe
-                      key={`${selectedPlaylist.id}-${spotifyPlayerKey}`}
-                      title="Spotify playlist player"
-                      src={embedUrl}
-                      width="100%"
-                      height="352"
-                      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                      loading="lazy"
-                      className="block"
-                      style={{ border: 0 }}
-                    />
+                    <SpotifyWebPlayer playlistId={selectedPlaylist?.id} />
                   </div>
                 </div>
               )}
