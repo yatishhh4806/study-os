@@ -1,22 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
 
-let sdkLoadingPromise = null;
+let sdkPromise = null;
 
 function loadSpotifySDK() {
-  if (window.Spotify) {
-    return Promise.resolve();
-  }
+  if (window.Spotify) return Promise.resolve();
 
-  if (sdkLoadingPromise) {
-    return sdkLoadingPromise;
-  }
+  if (sdkPromise) return sdkPromise;
 
-  sdkLoadingPromise = new Promise((resolve, reject) => {
-    // Register callback BEFORE loading the SDK
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      resolve();
-    };
+  sdkPromise = new Promise((resolve, reject) => {
+    window.onSpotifyWebPlaybackSDKReady = resolve;
 
     const script = document.createElement("script");
     script.src = "https://sdk.scdn.co/spotify-player.js";
@@ -26,107 +19,108 @@ function loadSpotifySDK() {
     document.body.appendChild(script);
   });
 
-  return sdkLoadingPromise;
+  return sdkPromise;
 }
 
 export default function useSpotifyPlayer() {
   const playerRef = useRef(null);
-  const animationFrameRef = useRef(null);
-  const lastTimestampRef = useRef(0);
+  const animationRef = useRef(null);
+  const lastFrameRef = useRef(performance.now());
 
   const [ready, setReady] = useState(false);
   const [deviceId, setDeviceId] = useState(null);
 
   const [currentTrack, setCurrentTrack] = useState(null);
   const [paused, setPaused] = useState(true);
+
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
     let mounted = true;
 
-    async function initialize() {
-      await loadSpotifySDK();
+    async function init() {
+      try {
+        await loadSpotifySDK();
 
-      const { data } = await api.get("/spotify/me");
+        const profile = await api.get("/spotify/me");
 
-      if (!data.spotify.connected) return;
+        if (!profile.data.spotify.connected) return;
 
-      const tokenRes = await api.get("/spotify/token");
+        const token = await api.get("/spotify/token");
 
-      const spotifyAccessToken = tokenRes.data.accessToken;
+        const player = new window.Spotify.Player({
+          name: "StudyOS Player",
 
-      const player = new window.Spotify.Player({
-        name: "StudyOS Player",
+          getOAuthToken: (cb) => {
+            cb(token.data.accessToken);
+          },
 
-        getOAuthToken: (cb) => {
-          cb(spotifyAccessToken);
-        },
+          volume: 0.6,
+        });
 
-        volume: 0.6,
-      });
+        playerRef.current = player;
 
-      playerRef.current = player;
+        player.addListener("ready", ({ device_id }) => {
+          if (!mounted) return;
 
-      player.addListener("ready", ({ device_id }) => {
-        if (!mounted) return;
+          console.log("Spotify Device:", device_id);
 
-        setReady(true);
-        setDeviceId(device_id);
+          setReady(true);
+          setDeviceId(device_id);
+        });
 
-        console.log("Spotify Device:", device_id);
-      });
+        player.addListener("not_ready", ({ device_id }) => {
+          console.log("Device Offline:", device_id);
+        });
 
-      player.addListener("not_ready", ({ device_id }) => {
-        console.log("Device Offline:", device_id);
-      });
+        player.addListener("player_state_changed", (state) => {
+          if (!state) return;
 
-      player.addListener("player_state_changed", (state) => {
-        if (!state) return;
+          setPaused(state.paused);
 
-        setPaused(state.paused);
+          setPosition(state.position);
 
-        setPosition(state.position);
+          setDuration(state.duration);
 
-        setDuration(state.duration);
+          setCurrentTrack(state.track_window.current_track);
 
-        setCurrentTrack(state.track_window.current_track);
+          lastFrameRef.current = performance.now();
+        });
 
-        lastTimestampRef.current = performance.now();
-      });
+        player.addListener("initialization_error", console.error);
+        player.addListener("authentication_error", console.error);
+        player.addListener("account_error", console.error);
+        player.addListener("playback_error", console.error);
 
-      player.addListener("initialization_error", console.error);
-
-      player.addListener("authentication_error", console.error);
-
-      player.addListener("account_error", console.error);
-
-      player.addListener("playback_error", console.error);
-
-      await player.connect();
+        await player.connect();
+      } catch (err) {
+        console.error(err);
+      }
     }
 
-    initialize();
-    function animate(now) {
+    init();
+
+    const animate = (time) => {
       setPosition((prev) => {
         if (paused) return prev;
 
-        const delta = now - lastTimestampRef.current;
+        const delta = time - lastFrameRef.current;
 
-        lastTimestampRef.current = now;
+        lastFrameRef.current = time;
 
         return Math.min(prev + delta, duration);
       });
 
-      animationFrameRef.current = requestAnimationFrame(animate);
-    }
+      animationRef.current = requestAnimationFrame(animate);
+    };
 
-    animationFrameRef.current = requestAnimationFrame(animate);
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
       mounted = false;
 
-      cancelAnimationFrame(animationFrameRef.current);
+      cancelAnimationFrame(animationRef.current);
 
       if (playerRef.current) {
         playerRef.current.disconnect();
@@ -135,12 +129,18 @@ export default function useSpotifyPlayer() {
   }, []);
 
   return {
-  player: playerRef.current,
-  ready,
-  deviceId,
-  currentTrack,
-  paused,
-  position,
-  duration,
-}
+    player: playerRef.current,
+
+    ready,
+
+    deviceId,
+
+    currentTrack,
+
+    paused,
+
+    position,
+
+    duration,
+  };
 }

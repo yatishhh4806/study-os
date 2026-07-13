@@ -1,4 +1,10 @@
-import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
+import { useState } from "react";
+import {
+  Pause,
+  Play,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 import { api } from "../../lib/api";
 
 export default function PlaybackControls({
@@ -6,64 +12,93 @@ export default function PlaybackControls({
   deviceId,
   playlistId,
 }) {
-  async function play() {
-  console.time("play");
+  const [loading, setLoading] = useState(false);
 
-  try {
-    await api.put("/spotify/player/play", {
-      device_id: deviceId,
-      context_uri: `spotify:playlist:${playlistId}`,
-    });
-  } finally {
-    console.timeEnd("play");
+  async function play() {
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+      await api.put("/spotify/player/play");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   async function pause() {
-  console.time("pause");
+    if (loading) return;
 
-  try {
-    await api.put("/spotify/player/pause");
-  } finally {
-    console.timeEnd("pause");
+    setLoading(true);
+
+    try {
+      await api.put("/spotify/player/pause");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   async function next() {
+    if (loading) return;
+
+    setLoading(true);
+
     try {
       await api.post("/spotify/player/next");
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }
 
   async function previous() {
+    if (loading) return;
+
+    setLoading(true);
+
     try {
       await api.post("/spotify/player/previous");
     } catch (err) {
       console.error(err);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <div className="mt-6 flex items-center justify-center gap-6">
       <button
+        disabled={loading}
         onClick={previous}
-        className="text-white/70 transition hover:scale-110 hover:text-white"
+        className="rounded-full p-2 text-white/70 transition-all hover:scale-110 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
       >
         <SkipBack size={24} />
       </button>
 
       <button
+        disabled={loading}
         onClick={paused ? play : pause}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#8b5cf6] transition hover:scale-105"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-500 text-white transition-all hover:scale-105 hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {paused ? <Play fill="white" /> : <Pause />}
+        {paused ? (
+          <Play
+            size={22}
+            fill="currentColor"
+          />
+        ) : (
+          <Pause size={22} />
+        )}
       </button>
 
       <button
+        disabled={loading}
         onClick={next}
-        className="text-white/70 transition hover:scale-110 hover:text-white"
+        className="rounded-full p-2 text-white/70 transition-all hover:scale-110 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
       >
         <SkipForward size={24} />
       </button>
