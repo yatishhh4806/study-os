@@ -135,19 +135,12 @@ export default function useSpotifyPlayer() {
   }, []);
 
   return {
-    player,
-    ready,
-    deviceId,
-    currentTrack,
-    paused,
-    position,
-    duration,
-
-    play,
-    pause,
-    next,
-    previous,
-    seek,
-    setVolume,
-  };
+  player: playerRef.current,
+  ready,
+  deviceId,
+  currentTrack,
+  paused,
+  position,
+  duration,
+}
 }
