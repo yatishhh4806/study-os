@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../../../../../lib/api";
 import { loadSpotifySDK } from "../services/loadSpotifySDK";
 
@@ -7,7 +7,18 @@ export default function useSpotifyPlayer() {
   const [deviceId, setDeviceId] = useState(null);
   const [ready, setReady] = useState(false);
 
+  // Guards against React StrictMode's double-invoke of effects in dev.
+  // Without this, two Spotify.Player instances get created back-to-back,
+  // and a late "ready" event from the *first* (already-disconnected)
+  // instance can overwrite deviceId with a dead device id.
+  const initializedRef = useRef(false);
+  const activePlayerRef = useRef(null);
+
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    let cancelled = false;
     let spotifyPlayer;
 
     async function initialize() {
@@ -18,22 +29,29 @@ export default function useSpotifyPlayer() {
 
         spotifyPlayer = new window.Spotify.Player({
           name: "StudyOS Player",
-
-          getOAuthToken: (cb) => {
-            cb(data.accessToken);
-          },
-
+          getOAuthToken: (cb) => cb(data.accessToken),
           volume: 0.5,
         });
 
+        activePlayerRef.current = spotifyPlayer;
+
         spotifyPlayer.addListener("ready", async ({ device_id }) => {
+          // Ignore stale events from a player instance that's no longer current
+          if (cancelled || activePlayerRef.current !== spotifyPlayer) {
+            console.log("Ignoring stale ready event:", device_id);
+            return;
+          }
+
           console.log("✅ Spotify Player Ready:", device_id);
+          window.studyPlayerDevice = device_id;
 
           setDeviceId(device_id);
           setReady(true);
 
-          // Give Spotify a moment to register the device
           await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          if (cancelled || activePlayerRef.current !== spotifyPlayer) return;
+
           try {
             const { data } = await api.get("/spotify/player");
             console.log("🎵 Current Player:", data);
@@ -42,10 +60,7 @@ export default function useSpotifyPlayer() {
           }
 
           try {
-            await api.put("/spotify/player/transfer", {
-              device_id,
-            });
-
+            await api.put("/spotify/player/transfer", { device_id });
             console.log("✅ Playback transferred");
           } catch (err) {
             console.error("Transfer failed", err);
@@ -54,8 +69,9 @@ export default function useSpotifyPlayer() {
 
         spotifyPlayer.addListener("not_ready", ({ device_id }) => {
           console.log("❌ Player Offline:", device_id);
-
-          setReady(false);
+          if (activePlayerRef.current === spotifyPlayer) {
+            setReady(false);
+          }
         });
 
         spotifyPlayer.addListener("initialization_error", console.error);
@@ -64,7 +80,9 @@ export default function useSpotifyPlayer() {
 
         await spotifyPlayer.connect();
 
-        setPlayer(spotifyPlayer);
+        if (!cancelled) {
+          setPlayer(spotifyPlayer);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -73,13 +91,13 @@ export default function useSpotifyPlayer() {
     initialize();
 
     return () => {
-      spotifyPlayer?.disconnect();
+      // Note: intentionally NOT disconnecting here on the StrictMode
+      // phantom cleanup, since initializedRef prevents a second real
+      // init anyway. If you need real unmount cleanup (e.g. navigating
+      // away from the page), that's a separate concern — see note below.
+      cancelled = true;
     };
   }, []);
 
-  return {
-    player,
-    deviceId,
-    ready,
-  };
+  return { player, deviceId, ready };
 }

@@ -5,6 +5,7 @@ import Footer from "../FocusMusic/Spotify/components/Footer";
 
 import useAmbient from "./Spotify/hooks/useAmbient";
 import useSpotifyPlayer from "./Spotify/hooks/useSpotifyPlayer";
+import usePlayback from "./Spotify/hooks/usePlayback";
 
 import useSpotify from "./Spotify/hooks/useSpotify";
 import SpotifyConnection from "./Spotify/components/SpotifyConnection";
@@ -18,7 +19,17 @@ export default function FocusMusicContainer() {
 
   const player = useSpotifyPlayer();
 
-  console.log(player);
+  const playback = usePlayback(player.deviceId);
+
+  async function handlePlaylistSelect(playlist) {
+    try {
+      await spotify.selectPlaylist(playlist.id);
+
+      await playback.play(playlist);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   return (
     <FocusMusic
@@ -43,7 +54,7 @@ export default function FocusMusicContainer() {
           playlists={spotify.playlists}
           selectedPlaylist={spotify.selectedPlaylist}
           selectingId={spotify.selectingId}
-          onSelect={spotify.selectPlaylist}
+          onSelect={handlePlaylistSelect}
         />
       }
       ambient={
@@ -53,7 +64,11 @@ export default function FocusMusicContainer() {
           onToggle={ambient.toggleSound}
         />
       }
-      footer={<Footer spotifyConnected={spotify.spotify.connected} />}
+      footer={
+        <Footer
+          spotifyConnected={spotify.spotify.connected}
+        />
+      }
     />
   );
 }

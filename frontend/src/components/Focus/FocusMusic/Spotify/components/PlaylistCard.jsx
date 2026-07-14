@@ -10,7 +10,7 @@ export default function PlaylistCard({
     <button
       type="button"
       disabled={selecting}
-      onClick={() => onSelect(playlist.id)}
+      onClick={() => onSelect(playlist)}
       className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 ${
         selected
           ? "border-violet-500 bg-violet-500/10"
