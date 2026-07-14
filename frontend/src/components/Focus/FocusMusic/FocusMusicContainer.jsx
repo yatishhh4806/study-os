@@ -20,6 +20,8 @@ export default function FocusMusicContainer() {
 
   const player = useSpotifyPlayer();
 
+  window.spotifyTest = player;
+
   const playback = usePlayback(player.deviceId);
 
   async function handlePlaylistSelect(playlist) {
