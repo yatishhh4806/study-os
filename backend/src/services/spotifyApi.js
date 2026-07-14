@@ -72,33 +72,48 @@ export async function getDevices(user) {
   return spotifyRequest(user, "/me/player/devices");
 }
 
-export async function transferPlayback(user, deviceId) {
-  return spotifyRequest(user, "/me/player", {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      device_ids: [deviceId],
-      play: false,
-    }),
-  });
+export async function transferPlayback(user, deviceId, attempt = 1) {
+  try {
+    return await spotifyRequest(user, "/me/player", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_ids: [deviceId], play: false }),
+    });
+  } catch (err) {
+    // Spotify's transfer endpoint sometimes 500s transiently right after
+    // a device registers — retry a couple times with backoff before giving up.
+    if (err.statusCode >= 500 && attempt < 3) {
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+      return transferPlayback(user, deviceId, attempt + 1);
+    }
+    throw err;
+  }
 }
 
-export async function play(user, body, deviceId) {
+export async function play(user, body, deviceId, attempt = 1) {
   let endpoint = "/me/player/play";
 
   if (deviceId) {
     endpoint += `?device_id=${deviceId}`;
   }
 
-  return spotifyRequest(user, endpoint, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  try {
+    return await spotifyRequest(user, endpoint, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    // Same transient-5xx flakiness as transferPlayback — retry a couple
+    // times before giving up, since Spotify's device activation can lag.
+    if (err.statusCode >= 500 && attempt < 3) {
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+      return play(user, body, deviceId, attempt + 1);
+    }
+    throw err;
+  }
 }
 
 export async function pause(user) {
