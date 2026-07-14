@@ -11,6 +11,7 @@ import useSpotify from "./Spotify/hooks/useSpotify";
 import SpotifyConnection from "./Spotify/components/SpotifyConnection";
 
 import PlaylistCarousel from "./Spotify/components/PlaylistCarousel";
+import SpotifyPlayer from "./Spotify/components/SpotifyPlayer";
 
 export default function FocusMusicContainer() {
   const spotify = useSpotify();
@@ -43,11 +44,7 @@ export default function FocusMusicContainer() {
           onDisconnect={spotify.disconnectSpotify}
         />
       }
-      player={
-        <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center text-white/40">
-          Spotify Player (Coming Soon)
-        </div>
-      }
+      player={<SpotifyPlayer player={player} spotify={spotify} />}
       playlists={
         <PlaylistCarousel
           loading={spotify.loading}
@@ -64,11 +61,7 @@ export default function FocusMusicContainer() {
           onToggle={ambient.toggleSound}
         />
       }
-      footer={
-        <Footer
-          spotifyConnected={spotify.spotify.connected}
-        />
-      }
+      footer={<Footer spotifyConnected={spotify.spotify.connected} />}
     />
   );
 }
