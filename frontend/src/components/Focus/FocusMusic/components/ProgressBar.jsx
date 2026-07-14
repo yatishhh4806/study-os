@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
-import Slider from "./Slider";
+import Slider from "../../../spotify/Slider";
 
 function format(ms = 0) {
   const totalSeconds = Math.floor(ms / 1000);
 
   const minutes = Math.floor(totalSeconds / 60);
+
   const seconds = totalSeconds % 60;
 
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
@@ -14,20 +14,22 @@ function format(ms = 0) {
 export default function ProgressBar({
   position,
   duration,
+  onSeek,
 }) {
   const [value, setValue] = useState(position);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
-    setValue(position);
-  }, [position]);
+    if (!dragging) {
+      setValue(position);
+    }
+  }, [position, dragging]);
 
-  async function seek(positionMs) {
-    try {
-      await api.put("/spotify/player/seek", {
-        position_ms: Math.floor(positionMs),
-      });
-    } catch (err) {
-      console.error(err);
+  function handleCommit(value) {
+    setDragging(false);
+
+    if (onSeek) {
+      onSeek(Math.floor(value));
     }
   }
 
@@ -37,17 +39,20 @@ export default function ProgressBar({
       <Slider
         value={value}
         max={duration || 1}
-        onValueChange={setValue}
-        onValueCommit={seek}
+        onValueChange={(value) => {
+          setDragging(true);
+          setValue(value);
+        }}
+        onValueCommit={handleCommit}
       />
 
       <div className="flex items-center justify-between">
 
-        <span className="text-sm font-medium text-white/70">
+        <span className="text-xs font-medium tabular-nums text-white/55">
           {format(value)}
         </span>
 
-        <span className="text-sm font-medium text-white/70">
+        <span className="text-xs font-medium tabular-nums text-white/55">
           {format(duration)}
         </span>
 

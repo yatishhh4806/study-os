@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Loader2, Music2 } from "lucide-react";
 
 import { api } from "../../../lib/api";
-import useSpotifyPlayer from "../../../hooks/useSpotifyPlayer";
+import useSpotifyPlayer from "../../Focus/FocusMusic/hooks/useSpotifyPlayer";
 
 import AlbumArt from "./AlbumArt";
 import TrackInfo from "./TrackInfo";

@@ -66,8 +66,11 @@ async function parseSpotifyResponse(response, fallbackMessage) {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    console.log("Spotify error body:", body);
+
     const message =
       body?.error?.message || body?.error_description || fallbackMessage;
+
     throw new AppError(message, response.status, "SPOTIFY_API_ERROR");
   }
 
@@ -176,6 +179,8 @@ export async function spotifyRequest(user, path, options = {}) {
     await user.save();
   }
 
+  console.log("➡️ Spotify API:", path);
+
   const response = await fetch(`${SPOTIFY_API_URL}${path}`, {
     ...options,
     headers: {
@@ -184,6 +189,7 @@ export async function spotifyRequest(user, path, options = {}) {
     },
   });
 
+  console.log("⬅️ Spotify Status:", response.status);
   if (response.status === 204) {
     return null;
   }

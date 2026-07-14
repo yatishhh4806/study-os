@@ -121,42 +121,6 @@ export async function getProfile(req, res, next) {
   }
 }
 
-export async function getPlaylists(req, res, next) {
-  try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
-
-    // Fetch user's playlists
-    const data = await spotifyRequest(user, "/me/playlists?limit=30&offset=0");
-
-    // Fetch full details for each playlist in parallel
-    const playlists = await Promise.all(
-      (data.items || []).map(async (playlist) => {
-        try {
-          const fullPlaylist = await spotifyRequest(
-            user,
-            `/playlists/${playlist.id}`,
-          );
-
-          console.log(fullPlaylist.name, fullPlaylist.tracks?.total);
-
-          return mapPlaylist(fullPlaylist);
-        } catch (err) {
-          console.error(err);
-          return mapPlaylist(playlist);
-        }
-      }),
-    );
-
-    res.json({
-      playlists,
-      selectedPlaylistId: user.spotify?.selectedPlaylistId || null,
-      selectedPlaylistName: user.spotify?.selectedPlaylistName || null,
-    });
-  } catch (err) {
-    next(err);
-  }
-}
-
 export async function getAccessToken(req, res, next) {
   try {
     const user = await findUserWithSpotifyTokens(req.user._id);
@@ -172,22 +136,44 @@ export async function getAccessToken(req, res, next) {
   }
 }
 
+export async function getPlaylists(req, res, next) {
+  try {
+    const user = await findUserWithSpotifyTokens(req.user._id);
+
+    const data = await spotifyRequest(user, "/me/playlists?limit=30&offset=0");
+
+    res.json({
+      playlists: (data.items || []).map(mapPlaylist),
+
+      selectedPlaylistId: user.spotify?.selectedPlaylistId || null,
+
+      selectedPlaylistName: user.spotify?.selectedPlaylistName || null,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getPlaylist(req, res, next) {
   try {
     const parsed = playlistParamsSchema.safeParse(req.params);
+
     if (!parsed.success) {
       throw new AppError("Playlist id is required", 422, "VALIDATION_ERROR");
     }
 
     const user = await findUserWithSpotifyTokens(req.user._id);
+
     const playlist = await spotifyRequest(
       user,
       `/playlists/${encodeURIComponent(parsed.data.id)}`,
     );
+
     const mappedPlaylist = mapPlaylist(playlist);
 
     user.spotify.selectedPlaylistId = mappedPlaylist.id;
     user.spotify.selectedPlaylistName = mappedPlaylist.name;
+
     await user.save();
 
     res.json({

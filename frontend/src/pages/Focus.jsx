@@ -1,17 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import FocusAnalytics from "../components/Focus/FocusAnalytics";
 import PomodoroTimer from "../components/Focus/PomodoroTimer";
-import AmbientPanel from "../components/Focus/AmbientControls";
 import MotivationStrip from "../components/Focus/Motivational";
 import { api } from "../lib/api";
+import FocusMusicContainer from "../components/Focus/FocusMusic/FocusMusicContainer";
 
 function Focus() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Live elapsed seconds of the currently-running focus session (0 when
-  // paused/reset/on a break) — fed by PomodoroTimer's onTick, so
-  // FocusAnalytics can reflect an in-progress session in real time
-  // instead of only updating once it's saved to the backend.
   const [liveSeconds, setLiveSeconds] = useState(0);
 
   const loadSessions = useCallback(async () => {
@@ -19,6 +15,7 @@ function Focus() {
       const { data } = await api.get("/focus-sessions", {
         params: { days: 30 },
       });
+
       setSessions(data.sessions);
     } catch (err) {
       console.error("Failed to load focus sessions:", err);
@@ -33,29 +30,52 @@ function Focus() {
 
   return (
     <div
+      className="min-h-screen w-full"
       style={{
-        minHeight: "100vh",
-        width: "100%",
-        background:
-          "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(168,85,247,0.16), transparent 60%), radial-gradient(ellipse 60% 50% at 100% 100%, rgba(34,211,238,0.07), transparent 60%), #050308",
+        background: `
+          radial-gradient(circle at top,
+          rgba(139,92,246,.18),
+          transparent 42%),
+
+          radial-gradient(circle at bottom right,
+          rgba(34,211,238,.06),
+          transparent 38%),
+
+          #050308
+        `,
       }}
     >
-      <div className="mx-auto max-w-7xl px-8 py-12">
-        <div className="grid items-start gap-8 xl:grid-cols-[340px_1fr_320px]">
+      <div className="mx-auto w-full max-w-[1700px] px-6 py-10 xl:px-10">
+
+        <div className="grid gap-8 xl:grid-cols-[340px_minmax(650px,1fr)_420px]">
+
+          {/* Analytics */}
+
           <FocusAnalytics
             loading={loading}
             sessions={sessions}
             liveMinutes={liveSeconds}
           />
+
+          {/* Pomodoro */}
+
           <div className="flex flex-col gap-8">
+
             <PomodoroTimer
               onTick={setLiveSeconds}
               onSessionLogged={loadSessions}
             />
+
             <MotivationStrip />
+
           </div>
-          <AmbientPanel />
+
+          {/* Focus Music */}
+
+          <FocusMusicContainer />
+
         </div>
+
       </div>
     </div>
   );

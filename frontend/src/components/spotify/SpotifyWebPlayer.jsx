@@ -2,11 +2,11 @@ import { useEffect, useRef } from "react";
 import { Loader2, Music2 } from "lucide-react";
 import { api } from "../../lib/api";
 
-import useSpotifyPlayer from "../../hooks/useSpotifyPlayer";
+import useSpotifyPlayer from "../Focus/FocusMusic/hooks/useSpotifyPlayer";
 
-import PlaybackControls from "./PlaybackControls";
-import ProgressBar from "./ProgressBar";
-import VolumeControl from "./VolumeControl";
+import PlaybackControls from "../Focus/FocusMusic/components/PlaybackControls";
+import ProgressBar from "../Focus/FocusMusic/components/ProgressBar";
+import VolumeControl from "../Focus/FocusMusic/components/VolumeControl";
 
 export default function SpotifyWebPlayer({ playlistId }) {
   const {
