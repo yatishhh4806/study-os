@@ -1,48 +1,88 @@
-export default function SpotifyPlayer({
-  player,
-}) {
-
-  const {
-    ready,
-    deviceId,
-  } = player;
-
+export default function SpotifyPlayer({ player }) {
+  const { ready, track, paused } = player;
 
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
-
-      <h3 className="text-lg font-semibold text-white">
+    <div
+      className="
+rounded-3xl
+border
+border-white/10
+bg-white/[0.03]
+p-6
+"
+    >
+      <h3
+        className="
+text-lg
+font-semibold
+text-white
+"
+      >
         Spotify Player
       </h3>
 
+      <div
+        className="
+mt-5
+rounded-2xl
+bg-black/20
+p-5
+"
+      >
+        {track ? (
+          <div>
+            <img
+              src={track.image}
+              className="
+mx-auto
+h-40
+w-40
+rounded-xl
+object-cover
+"
+            />
 
-      <div className="mt-4 rounded-2xl bg-black/20 p-6 text-center">
+            <h2
+              className="
+mt-4
+text-center
+text-white
+font-semibold
+"
+            >
+              {track.name}
+            </h2>
 
-        {
-          ready ? (
-            <>
-              <p className="text-green-400">
-                Player Connected
-              </p>
-
-              <p className="mt-2 text-sm text-white/40">
-                Device ID:
-              </p>
-
-              <p className="break-all text-xs text-white/30">
-                {deviceId}
-              </p>
-            </>
-          ) : (
-            <p className="text-white/40">
-              Connecting Spotify Player...
+            <p
+              className="
+text-center
+text-white/50
+"
+            >
+              {track.artist}
             </p>
-          )
 
-        }
-
+            <p
+              className="
+mt-3
+text-center
+text-violet-400
+"
+            >
+              {paused ? "Paused" : "Playing"}
+            </p>
+          </div>
+        ) : (
+          <p
+            className="
+text-center
+text-white/40
+"
+          >
+            Play a playlist to see track
+          </p>
+        )}
       </div>
-
     </div>
   );
 }
