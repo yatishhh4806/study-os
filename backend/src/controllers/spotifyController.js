@@ -17,6 +17,7 @@ import {
   searchPlaylists,
   getPlayback,
   getDevices,
+  waitForDevice,
   play as spotifyPlay,
   pause as spotifyPause,
   nextTrack as spotifyNext,
@@ -57,9 +58,7 @@ function redirect(status, message = "") {
 export async function login(req, res, next) {
   try {
     res.json({
-      authorizationUrl: buildSpotifyAuthorizationUrl(
-        req.user._id.toString()
-      ),
+      authorizationUrl: buildSpotifyAuthorizationUrl(req.user._id.toString()),
     });
   } catch (err) {
     next(err);
@@ -71,214 +70,138 @@ export async function callback(req, res) {
     const { code, state, error } = req.query;
 
     if (error) {
-      return res.redirect(
-        redirect(
-          "error",
-          "Spotify authorization cancelled"
-        )
-      );
+      return res.redirect(redirect("error", "Spotify authorization cancelled"));
     }
 
     if (!code || !state) {
-      return res.redirect(
-        redirect(
-          "error",
-          "Spotify authorization failed"
-        )
-      );
+      return res.redirect(redirect("error", "Spotify authorization failed"));
     }
 
     const payload = verifySpotifyState(state);
 
     const user = await findSpotifyUser(payload.sub);
 
-    const tokenData =
-      await exchangeCodeForTokens(code);
+    const tokenData = await exchangeCodeForTokens(code);
 
-    const profile =
-      await getSpotifyProfile(tokenData.access_token);
+    const profile = await getSpotifyProfile(tokenData.access_token);
 
     user.spotify = {
       connected: true,
       spotifyUserId: profile.id,
-      displayName:
-        profile.display_name || profile.id,
+      displayName: profile.display_name || profile.id,
       email: profile.email || null,
-      avatar:
-        profile.images?.[0]?.url || null,
-      accessToken:
-        tokenData.access_token,
+      avatar: profile.images?.[0]?.url || null,
+      accessToken: tokenData.access_token,
       refreshToken:
-        tokenData.refresh_token ||
-        user.spotify?.refreshToken ||
-        null,
-      expiresAt: new Date(
-        Date.now() +
-          tokenData.expires_in * 1000
-      ),
-      selectedPlaylistId:
-        user.spotify?.selectedPlaylistId || null,
-      selectedPlaylistName:
-        user.spotify?.selectedPlaylistName || null,
+        tokenData.refresh_token || user.spotify?.refreshToken || null,
+      expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+      selectedPlaylistId: user.spotify?.selectedPlaylistId || null,
+      selectedPlaylistName: user.spotify?.selectedPlaylistName || null,
     };
 
     await user.save();
 
-    res.redirect(
-      redirect("connected")
-    );
+    res.redirect(redirect("connected"));
   } catch (err) {
     console.error(err);
 
-    res.redirect(
-      redirect(
-        "error",
-        "Spotify connection failed"
-      )
-    );
+    res.redirect(redirect("error", "Spotify connection failed"));
   }
 }
 
-export async function getProfile(
-  req,
-  res,
-  next
-) {
+export async function getProfile(req, res, next) {
   try {
     const user = await findSpotifyUser(req.user._id);
 
     if (user.spotify.connected) {
-      const profile =
-        await getCurrentUser(user);
+      const profile = await getCurrentUser(user);
 
-      user.spotify.spotifyUserId =
-        profile.id;
+      user.spotify.spotifyUserId = profile.id;
 
-      user.spotify.displayName =
-        profile.display_name || profile.id;
+      user.spotify.displayName = profile.display_name || profile.id;
 
-      user.spotify.email =
-        profile.email || null;
+      user.spotify.email = profile.email || null;
 
-      user.spotify.avatar =
-        profile.images?.[0]?.url || null;
+      user.spotify.avatar = profile.images?.[0]?.url || null;
 
       await user.save();
     }
 
     res.json({
-      spotify:
-        mapSpotifyConnection(user.spotify),
+      spotify: mapSpotifyConnection(user.spotify),
     });
   } catch (err) {
     next(err);
   }
 }
 
-export async function getPlaylists(
-  req,
-  res,
-  next
-) {
+export async function getPlaylists(req, res, next) {
   try {
-    const user =
-      await findSpotifyUser(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    const playlists =
-      await getUserPlaylists(user);
+    const playlists = await getUserPlaylists(user);
 
     res.json({
-      playlists:
-        playlists.map(mapPlaylist),
-      selectedPlaylistId:
-        user.spotify.selectedPlaylistId,
-      selectedPlaylistName:
-        user.spotify.selectedPlaylistName,
+      playlists: playlists.map(mapPlaylist),
+      selectedPlaylistId: user.spotify.selectedPlaylistId,
+      selectedPlaylistName: user.spotify.selectedPlaylistName,
     });
   } catch (err) {
     next(err);
   }
 }
 
-export async function selectPlaylist(
-  req,
-  res,
-  next
-) {
+export async function selectPlaylist(req, res, next) {
   try {
-    const parsed =
-      playlistSchema.safeParse(req.params);
+    const parsed = playlistSchema.safeParse(req.params);
 
     if (!parsed.success) {
-      throw new AppError(
-        "Playlist id required",
-        422,
-        "VALIDATION_ERROR"
-      );
+      throw new AppError("Playlist id required", 422, "VALIDATION_ERROR");
     }
 
-    const user =
-      await findSpotifyUser(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    const playlist =
-      await getPlaylist(
-        user,
-        parsed.data.id
-      );
+    const playlist = await getPlaylist(user, parsed.data.id);
 
-    const mapped =
-      mapPlaylist(playlist);
+    const mapped = mapPlaylist(playlist);
 
-    user.spotify.selectedPlaylistId =
-      mapped.id;
+    user.spotify.selectedPlaylistId = mapped.id;
 
-    user.spotify.selectedPlaylistName =
-      mapped.name;
+    user.spotify.selectedPlaylistName = mapped.name;
 
     await user.save();
 
     res.json({
       playlist: mapped,
-      spotify:
-        mapSpotifyConnection(user.spotify),
+      spotify: mapSpotifyConnection(user.spotify),
     });
   } catch (err) {
     next(err);
   }
 }
 
-export async function search(
-  req,
-  res,
-  next
-) {
+export async function search(req, res, next) {
   try {
-    const parsed =
-      searchSchema.safeParse(req.query);
+    const parsed = searchSchema.safeParse(req.query);
 
     if (!parsed.success) {
       throw new AppError(
         parsed.error.issues[0].message,
         422,
-        "VALIDATION_ERROR"
+        "VALIDATION_ERROR",
       );
     }
 
-    const user =
-      await findSpotifyUser(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    const result =
-      await searchPlaylists(
-        user,
-        parsed.data.q,
-        parsed.data.limit
-      );
+    const result = await searchPlaylists(
+      user,
+      parsed.data.q,
+      parsed.data.limit,
+    );
 
     res.json({
-      playlists:
-        (result.playlists?.items || []).map(
-          mapPlaylist
-        ),
+      playlists: (result.playlists?.items || []).map(mapPlaylist),
     });
   } catch (err) {
     next(err);
@@ -290,11 +213,7 @@ export async function disconnect(req, res, next) {
     const user = await User.findById(req.user._id);
 
     if (!user) {
-      throw new AppError(
-        "User not found",
-        404,
-        "USER_NOT_FOUND"
-      );
+      throw new AppError("User not found", 404, "USER_NOT_FOUND");
     }
 
     user.spotify = {
@@ -345,18 +264,11 @@ export async function getPlayer(req, res, next) {
   }
 }
 
-export async function getAvailableDevices(
-  req,
-  res,
-  next
-) {
+export async function getAvailableDevices(req, res, next) {
   try {
-    const user = await findSpotifyUser(
-      req.user._id
-    );
+    const user = await findSpotifyUser(req.user._id);
 
-    const devices =
-      await getDevices(user);
+    const devices = await getDevices(user);
 
     res.json(devices);
   } catch (err) {
@@ -368,12 +280,7 @@ export async function play(req, res, next) {
   try {
     const user = await findSpotifyUser(req.user._id);
 
-    const {
-      device_id,
-      context_uri,
-      uris,
-      offset,
-    } = req.body;
+    const { device_id, context_uri, uris, offset } = req.body;
 
     await spotifyPlay(
       user,
@@ -382,7 +289,7 @@ export async function play(req, res, next) {
         uris,
         offset,
       },
-      device_id
+      device_id,
     );
 
     res.sendStatus(204);
@@ -426,7 +333,6 @@ export async function previousTrack(req, res, next) {
     next(err);
   }
 }
-
 export async function transferPlayback(req, res, next) {
   try {
     const user = await findSpotifyUser(req.user._id);
@@ -434,17 +340,20 @@ export async function transferPlayback(req, res, next) {
     const { device_id } = req.body;
 
     if (!device_id) {
+      throw new AppError("device_id required", 400, "VALIDATION_ERROR");
+    }
+
+    const deviceFound = await waitForDevice(user, device_id);
+
+    if (!deviceFound) {
       throw new AppError(
-        "device_id required",
-        400,
-        "VALIDATION_ERROR"
+        "Spotify device not registered yet — try again",
+        409,
+        "DEVICE_NOT_READY",
       );
     }
 
-    await spotifyTransferPlayback(
-      user,
-      device_id
-    );
+    await spotifyTransferPlayback(user, device_id);
 
     res.sendStatus(204);
   } catch (err) {
@@ -456,10 +365,7 @@ export async function seekTrack(req, res, next) {
   try {
     const user = await findSpotifyUser(req.user._id);
 
-    await spotifySeek(
-      user,
-      req.body.position_ms
-    );
+    await spotifySeek(user, req.body.position_ms);
 
     res.sendStatus(204);
   } catch (err) {
@@ -471,10 +377,7 @@ export async function setVolume(req, res, next) {
   try {
     const user = await findSpotifyUser(req.user._id);
 
-    await spotifySetVolume(
-      user,
-      req.body.volume_percent
-    );
+    await spotifySetVolume(user, req.body.volume_percent);
 
     res.sendStatus(204);
   } catch (err) {

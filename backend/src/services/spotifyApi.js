@@ -72,6 +72,40 @@ export async function getDevices(user) {
   return spotifyRequest(user, "/me/player/devices");
 }
 
+// Polls Spotify until the given device_id actually shows up in the
+// user's device list. The Web Playback SDK's "ready" event can fire
+// before Spotify's backend has fully registered the device — calling
+// transfer too early causes intermittent 500s. Polling here is more
+// reliable than a fixed delay.
+export async function waitForDevice(
+  user,
+  deviceId,
+  maxAttempts = 8,
+  delayMs = 1000,
+) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const data = await getDevices(user);
+    const devices = data?.devices || [];
+
+    console.log(
+      "WAIT FOR DEVICE attempt",
+      i + 1,
+      "looking for",
+      deviceId,
+      "found:",
+      devices.map((d) => d.id),
+    );
+
+    if (devices.some((d) => d.id === deviceId)) {
+      return true;
+    }
+
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+
+  return false;
+}
+
 export async function transferPlayback(user, deviceId, attempt = 1) {
   try {
     return await spotifyRequest(user, "/me/player", {
