@@ -46,7 +46,7 @@ export default function FocusMusicContainer() {
           onDisconnect={spotify.disconnectSpotify}
         />
       }
-      player={<SpotifyPlayer player={player} spotify={spotify} />}
+      player={<SpotifyPlayer player={player} spotify={spotify} playback={playback} />}
       playlists={
         <PlaylistCarousel
           loading={spotify.loading}
