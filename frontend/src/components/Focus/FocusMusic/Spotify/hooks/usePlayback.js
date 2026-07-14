@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { api } from "../../../../../lib/api";
 
 import {
   playPlaylist,
@@ -12,21 +13,10 @@ export default function usePlayback(deviceId) {
 
   const play = useCallback(
     async (playlist) => {
-      if (!deviceId) {
-        console.log("No device id");
-        return;
-      }
-
-      console.log("====================");
-      console.log("PLAY CALLED");
-      console.log("deviceId:", deviceId);
-      console.log("playlist:", playlist);
-      console.log("playlist.uri:", playlist.uri);
-      console.log("====================");
+      if (!deviceId) return;
 
       try {
         setLoading(true);
-
         await playPlaylist(deviceId, playlist.uri);
       } catch (err) {
         console.error(err);
@@ -61,11 +51,29 @@ export default function usePlayback(deviceId) {
     }
   }, []);
 
+  const seek = useCallback(async (positionMs) => {
+    try {
+      await api.put(`/spotify/player/seek?position_ms=${Math.round(positionMs)}`);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  const setVolume = useCallback(async (percent) => {
+    try {
+      await api.put(`/spotify/player/volume?volume_percent=${Math.round(percent)}`);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
   return {
     play,
     pause,
     next,
     previous,
+    seek,
+    setVolume,
     loading,
   };
 }
