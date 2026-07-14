@@ -1,12 +1,15 @@
 import FocusMusic from "./FocusMusic";
-import SpotifyConnection from "./components/SpotifyConnection";
-import PlaylistCarousel from "./components/PlaylistCarousel";
-import AmbientSounds from "./components/AmbientSounds";
-import Footer from "./components/Footer";
-import useSpotifyPlayer from "./hooks/useSpotifyPlayer";
 
-import useSpotify from "./hooks/useSpotify";
-import useAmbient from "./hooks/useAmbient";
+import AmbientSounds from "../FocusMusic/Spotify/components/AmbientSounds";
+import Footer from "../FocusMusic/Spotify/components/Footer";
+
+import useAmbient from "./Spotify/hooks/useAmbient";
+import useSpotifyPlayer from "./Spotify/hooks/useSpotifyPlayer";
+
+import useSpotify from "./Spotify/hooks/useSpotify";
+import SpotifyConnection from "./Spotify/components/SpotifyConnection";
+
+import PlaylistCarousel from "./Spotify/components/PlaylistCarousel";
 
 export default function FocusMusicContainer() {
   const spotify = useSpotify();
@@ -15,12 +18,14 @@ export default function FocusMusicContainer() {
 
   const player = useSpotifyPlayer();
 
+  console.log(player);
+
   return (
     <FocusMusic
       connection={
         <SpotifyConnection
           spotify={spotify.spotify}
-          spotifyLoading={spotify.spotifyLoading}
+          loading={spotify.loading}
           connecting={spotify.connecting}
           disconnecting={spotify.disconnecting}
           onConnect={spotify.connectSpotify}
@@ -29,15 +34,15 @@ export default function FocusMusicContainer() {
       }
       player={
         <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center text-white/40">
-          Spotify Player (Next Step)
+          Spotify Player (Coming Soon)
         </div>
       }
       playlists={
         <PlaylistCarousel
+          loading={spotify.loading}
           playlists={spotify.playlists}
           selectedPlaylist={spotify.selectedPlaylist}
           selectingId={spotify.selectingId}
-          loading={spotify.playlistLoading}
           onSelect={spotify.selectPlaylist}
         />
       }

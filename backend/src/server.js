@@ -25,7 +25,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import accountRoutes from "./routes/accountRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
-import spotifyRoutes from "./routes/spotifyRoutes.js";
+import spotifyRoutes from "./routes/spotifyRoutes.js";  
 
 import * as Sentry from "@sentry/node";
 import { env } from "./config/env.js";

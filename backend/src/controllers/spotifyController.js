@@ -1,48 +1,65 @@
 import { z } from "zod";
 import { User } from "../models/User.js";
 import { AppError } from "../middleware/errorHandler.js";
-import {
-  buildAuthorizationUrl,
-  exchangeCodeForTokens,
-  getPrimaryClientUrl,
-  getSpotifyProfile,
-  mapPlaylist,
-  mapSpotifyConnection,
-  spotifyRequest,
-  verifySpotifyState,
-} from "../services/spotifyService.js";
 
-const playlistParamsSchema = z.object({
+import {
+  buildSpotifyAuthorizationUrl,
+  verifySpotifyState,
+  exchangeCodeForTokens,
+  findSpotifyUser,
+} from "../services/spotifyAuth.js";
+
+import {
+  getSpotifyProfile,
+  getCurrentUser,
+  getUserPlaylists,
+  getPlaylist,
+  searchPlaylists,
+  getPlayback,
+  getDevices,
+  play as spotifyPlay,
+  pause as spotifyPause,
+  nextTrack as spotifyNext,
+  previousTrack as spotifyPrevious,
+  transferPlayback as spotifyTransferPlayback,
+  seek as spotifySeek,
+  setVolume as spotifySetVolume,
+} from "../services/spotifyApi.js";
+
+import {
+  mapSpotifyConnection,
+  mapPlaylist,
+} from "../services/spotifyHelpers.js";
+
+const playlistSchema = z.object({
   id: z.string().trim().min(1),
 });
 
-const searchQuerySchema = z.object({
+const searchSchema = z.object({
   q: z.string().trim().min(1).max(80),
   limit: z.coerce.number().int().min(1).max(20).default(10),
 });
 
-function spotifyRedirect(path, status, message) {
-  const params = new URLSearchParams({ spotify: status });
-  if (message) params.set("message", message);
-  return `${getPrimaryClientUrl()}${path}?${params.toString()}`;
-}
+const clientUrl = () => process.env.CLIENT_URL;
 
-async function findUserWithSpotifyTokens(userId) {
-  const user = await User.findById(userId).select(
-    "+spotify.accessToken +spotify.refreshToken",
-  );
+function redirect(status, message = "") {
+  const params = new URLSearchParams({
+    spotify: status,
+  });
 
-  if (!user) {
-    throw new AppError("User not found", 404, "USER_NOT_FOUND");
+  if (message) {
+    params.set("message", message);
   }
 
-  return user;
+  return `${clientUrl()}/dashboard/focus?${params.toString()}`;
 }
 
 export async function login(req, res, next) {
   try {
     res.json({
-      authorizationUrl: buildAuthorizationUrl(req.user._id.toString()),
+      authorizationUrl: buildSpotifyAuthorizationUrl(
+        req.user._id.toString()
+      ),
     });
   } catch (err) {
     next(err);
@@ -55,157 +72,213 @@ export async function callback(req, res) {
 
     if (error) {
       return res.redirect(
-        spotifyRedirect(
-          "/dashboard/focus",
+        redirect(
           "error",
-          "Spotify authorization was cancelled",
-        ),
+          "Spotify authorization cancelled"
+        )
       );
     }
 
     if (!code || !state) {
       return res.redirect(
-        spotifyRedirect(
-          "/dashboard/focus",
+        redirect(
           "error",
-          "Spotify authorization was incomplete",
-        ),
+          "Spotify authorization failed"
+        )
       );
     }
 
     const payload = verifySpotifyState(state);
-    const user = await findUserWithSpotifyTokens(payload.sub);
-    const tokenData = await exchangeCodeForTokens(code);
-    const profile = await getSpotifyProfile(tokenData.access_token);
+
+    const user = await findSpotifyUser(payload.sub);
+
+    const tokenData =
+      await exchangeCodeForTokens(code);
+
+    const profile =
+      await getSpotifyProfile(tokenData.access_token);
 
     user.spotify = {
       connected: true,
       spotifyUserId: profile.id,
-      displayName: profile.display_name || profile.id,
+      displayName:
+        profile.display_name || profile.id,
       email: profile.email || null,
-      avatar: profile.images?.[0]?.url || null,
-      accessToken: tokenData.access_token,
+      avatar:
+        profile.images?.[0]?.url || null,
+      accessToken:
+        tokenData.access_token,
       refreshToken:
-        tokenData.refresh_token || user.spotify?.refreshToken || null,
-      expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
-      selectedPlaylistId: user.spotify?.selectedPlaylistId || null,
-      selectedPlaylistName: user.spotify?.selectedPlaylistName || null,
+        tokenData.refresh_token ||
+        user.spotify?.refreshToken ||
+        null,
+      expiresAt: new Date(
+        Date.now() +
+          tokenData.expires_in * 1000
+      ),
+      selectedPlaylistId:
+        user.spotify?.selectedPlaylistId || null,
+      selectedPlaylistName:
+        user.spotify?.selectedPlaylistName || null,
     };
 
     await user.save();
-    return res.redirect(spotifyRedirect("/dashboard/focus", "connected"));
+
+    res.redirect(
+      redirect("connected")
+    );
   } catch (err) {
-    console.error("Spotify OAuth callback failed:", err);
-    return res.redirect(
-      spotifyRedirect("/dashboard/focus", "error", "Spotify connection failed"),
+    console.error(err);
+
+    res.redirect(
+      redirect(
+        "error",
+        "Spotify connection failed"
+      )
     );
   }
 }
 
-export async function getProfile(req, res, next) {
+export async function getProfile(
+  req,
+  res,
+  next
+) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    if (user.spotify?.connected) {
-      const profile = await spotifyRequest(user, "/me");
-      user.spotify.spotifyUserId = profile.id;
-      user.spotify.displayName = profile.display_name || profile.id;
-      user.spotify.email = profile.email || null;
-      user.spotify.avatar = profile.images?.[0]?.url || null;
+    if (user.spotify.connected) {
+      const profile =
+        await getCurrentUser(user);
+
+      user.spotify.spotifyUserId =
+        profile.id;
+
+      user.spotify.displayName =
+        profile.display_name || profile.id;
+
+      user.spotify.email =
+        profile.email || null;
+
+      user.spotify.avatar =
+        profile.images?.[0]?.url || null;
+
       await user.save();
     }
 
-    res.json({ spotify: mapSpotifyConnection(user.spotify) });
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function getAccessToken(req, res, next) {
-  try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
-
-    // This automatically refreshes the token if expired
-    await spotifyRequest(user, "/me");
-
     res.json({
-      accessToken: user.spotify.accessToken,
+      spotify:
+        mapSpotifyConnection(user.spotify),
     });
   } catch (err) {
     next(err);
   }
 }
 
-export async function getPlaylists(req, res, next) {
+export async function getPlaylists(
+  req,
+  res,
+  next
+) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user =
+      await findSpotifyUser(req.user._id);
 
-    const data = await spotifyRequest(user, "/me/playlists?limit=30&offset=0");
+    const playlists =
+      await getUserPlaylists(user);
 
     res.json({
-      playlists: (data.items || []).map(mapPlaylist),
-
-      selectedPlaylistId: user.spotify?.selectedPlaylistId || null,
-
-      selectedPlaylistName: user.spotify?.selectedPlaylistName || null,
+      playlists:
+        playlists.map(mapPlaylist),
+      selectedPlaylistId:
+        user.spotify.selectedPlaylistId,
+      selectedPlaylistName:
+        user.spotify.selectedPlaylistName,
     });
   } catch (err) {
     next(err);
   }
 }
 
-export async function getPlaylist(req, res, next) {
+export async function selectPlaylist(
+  req,
+  res,
+  next
+) {
   try {
-    const parsed = playlistParamsSchema.safeParse(req.params);
+    const parsed =
+      playlistSchema.safeParse(req.params);
 
     if (!parsed.success) {
-      throw new AppError("Playlist id is required", 422, "VALIDATION_ERROR");
+      throw new AppError(
+        "Playlist id required",
+        422,
+        "VALIDATION_ERROR"
+      );
     }
 
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user =
+      await findSpotifyUser(req.user._id);
 
-    const playlist = await spotifyRequest(
-      user,
-      `/playlists/${encodeURIComponent(parsed.data.id)}`,
-    );
+    const playlist =
+      await getPlaylist(
+        user,
+        parsed.data.id
+      );
 
-    const mappedPlaylist = mapPlaylist(playlist);
+    const mapped =
+      mapPlaylist(playlist);
 
-    user.spotify.selectedPlaylistId = mappedPlaylist.id;
-    user.spotify.selectedPlaylistName = mappedPlaylist.name;
+    user.spotify.selectedPlaylistId =
+      mapped.id;
+
+    user.spotify.selectedPlaylistName =
+      mapped.name;
 
     await user.save();
 
     res.json({
-      playlist: mappedPlaylist,
-      spotify: mapSpotifyConnection(user.spotify),
+      playlist: mapped,
+      spotify:
+        mapSpotifyConnection(user.spotify),
     });
   } catch (err) {
     next(err);
   }
 }
 
-export async function search(req, res, next) {
+export async function search(
+  req,
+  res,
+  next
+) {
   try {
-    const parsed = searchQuerySchema.safeParse(req.query);
+    const parsed =
+      searchSchema.safeParse(req.query);
+
     if (!parsed.success) {
       throw new AppError(
         parsed.error.issues[0].message,
         422,
-        "VALIDATION_ERROR",
+        "VALIDATION_ERROR"
       );
     }
 
-    const user = await findUserWithSpotifyTokens(req.user._id);
-    const params = new URLSearchParams({
-      q: parsed.data.q,
-      type: "playlist",
-      limit: String(parsed.data.limit),
-    });
-    const data = await spotifyRequest(user, `/search?${params.toString()}`);
+    const user =
+      await findSpotifyUser(req.user._id);
+
+    const result =
+      await searchPlaylists(
+        user,
+        parsed.data.q,
+        parsed.data.limit
+      );
 
     res.json({
-      playlists: (data.playlists?.items || []).filter(Boolean).map(mapPlaylist),
+      playlists:
+        (result.playlists?.items || []).map(
+          mapPlaylist
+        ),
     });
   } catch (err) {
     next(err);
@@ -215,8 +288,13 @@ export async function search(req, res, next) {
 export async function disconnect(req, res, next) {
   try {
     const user = await User.findById(req.user._id);
+
     if (!user) {
-      throw new AppError("User not found", 404, "USER_NOT_FOUND");
+      throw new AppError(
+        "User not found",
+        404,
+        "USER_NOT_FOUND"
+      );
     }
 
     user.spotify = {
@@ -233,7 +311,23 @@ export async function disconnect(req, res, next) {
     };
 
     await user.save();
-    res.status(204).send();
+
+    res.sendStatus(204);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getAccessToken(req, res, next) {
+  try {
+    const user = await findSpotifyUser(req.user._id);
+
+    // Force a refresh if needed by calling Spotify once
+    await getCurrentUser(user);
+
+    res.json({
+      accessToken: user.spotify.accessToken,
+    });
   } catch (err) {
     next(err);
   }
@@ -241,9 +335,9 @@ export async function disconnect(req, res, next) {
 
 export async function getPlayer(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    const playback = await spotifyRequest(user, "/me/player");
+    const playback = await getPlayback(user);
 
     res.json(playback);
   } catch (err) {
@@ -251,29 +345,45 @@ export async function getPlayer(req, res, next) {
   }
 }
 
+export async function getAvailableDevices(
+  req,
+  res,
+  next
+) {
+  try {
+    const user = await findSpotifyUser(
+      req.user._id
+    );
+
+    const devices =
+      await getDevices(user);
+
+    res.json(devices);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function play(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    const { device_id, context_uri, uris, offset } = req.body;
+    const {
+      device_id,
+      context_uri,
+      uris,
+      offset,
+    } = req.body;
 
-    let endpoint = "/me/player/play";
-
-    if (device_id) {
-      endpoint += `?device_id=${device_id}`;
-    }
-
-    await spotifyRequest(user, endpoint, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    await spotifyPlay(
+      user,
+      {
         context_uri,
         uris,
         offset,
-      }),
-    });
+      },
+      device_id
+    );
 
     res.sendStatus(204);
   } catch (err) {
@@ -283,11 +393,9 @@ export async function play(req, res, next) {
 
 export async function pause(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    await spotifyRequest(user, "/me/player/pause", {
-      method: "PUT",
-    });
+    await spotifyPause(user);
 
     res.sendStatus(204);
   } catch (err) {
@@ -297,11 +405,9 @@ export async function pause(req, res, next) {
 
 export async function nextTrack(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    await spotifyRequest(user, "/me/player/next", {
-      method: "POST",
-    });
+    await spotifyNext(user);
 
     res.sendStatus(204);
   } catch (err) {
@@ -311,11 +417,9 @@ export async function nextTrack(req, res, next) {
 
 export async function previousTrack(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    await spotifyRequest(user, "/me/player/previous", {
-      method: "POST",
-    });
+    await spotifyPrevious(user);
 
     res.sendStatus(204);
   } catch (err) {
@@ -325,24 +429,22 @@ export async function previousTrack(req, res, next) {
 
 export async function transferPlayback(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
     const { device_id } = req.body;
 
     if (!device_id) {
-      throw new AppError("device_id is required", 400, "VALIDATION_ERROR");
+      throw new AppError(
+        "device_id required",
+        400,
+        "VALIDATION_ERROR"
+      );
     }
 
-    await spotifyRequest(user, "/me/player", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        device_ids: [device_id],
-        play: false,
-      }),
-    });
+    await spotifyTransferPlayback(
+      user,
+      device_id
+    );
 
     res.sendStatus(204);
   } catch (err) {
@@ -352,13 +454,12 @@ export async function transferPlayback(req, res, next) {
 
 export async function seekTrack(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    const { position_ms } = req.body;
-
-    await spotifyRequest(user, `/me/player/seek?position_ms=${position_ms}`, {
-      method: "PUT",
-    });
+    await spotifySeek(
+      user,
+      req.body.position_ms
+    );
 
     res.sendStatus(204);
   } catch (err) {
@@ -368,16 +469,11 @@ export async function seekTrack(req, res, next) {
 
 export async function setVolume(req, res, next) {
   try {
-    const user = await findUserWithSpotifyTokens(req.user._id);
+    const user = await findSpotifyUser(req.user._id);
 
-    const { volume_percent } = req.body;
-
-    await spotifyRequest(
+    await spotifySetVolume(
       user,
-      `/me/player/volume?volume_percent=${volume_percent}`,
-      {
-        method: "PUT",
-      },
+      req.body.volume_percent
     );
 
     res.sendStatus(204);
