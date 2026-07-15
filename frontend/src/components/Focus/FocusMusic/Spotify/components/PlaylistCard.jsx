@@ -42,10 +42,6 @@ export default function PlaylistCard({
         <p className="mt-1 truncate text-sm text-white/50">
           {playlist.owner}
         </p>
-
-        <p className="mt-2 text-xs text-white/40">
-          {playlist.trackCount} Tracks
-        </p>
       </div>
 
       {selected && (
