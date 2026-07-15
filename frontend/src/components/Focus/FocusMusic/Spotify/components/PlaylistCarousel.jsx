@@ -1,3 +1,4 @@
+import { RefreshCw } from "lucide-react";
 import PlaylistCard from "./PlaylistCard";
 import PlaylistSkeleton from "./PlaylistSkeleton";
 
@@ -7,6 +8,7 @@ export default function PlaylistCarousel({
   selectedPlaylist,
   selectingId,
   onSelect,
+  onRefresh,
 }) {
   if (loading) {
     return (
@@ -33,16 +35,32 @@ export default function PlaylistCarousel({
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      {playlists.map((playlist) => (
-        <PlaylistCard
-          key={playlist.id}
-          playlist={playlist}
-          selected={selectedPlaylist?.id === playlist.id}
-          selecting={selectingId === playlist.id}
-          onSelect={onSelect}
-        />
-      ))}
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold tracking-widest text-white/40 uppercase">Playlists</span>
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/50 transition hover:bg-white/[0.06] hover:text-white/80 active:scale-95 cursor-pointer disabled:opacity-40"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        {playlists.map((playlist) => (
+          <PlaylistCard
+            key={playlist.id}
+            playlist={playlist}
+            selected={selectedPlaylist?.id === playlist.id}
+            selecting={selectingId === playlist.id}
+            onSelect={onSelect}
+          />
+        ))}
+      </div>
     </div>
   );
 }

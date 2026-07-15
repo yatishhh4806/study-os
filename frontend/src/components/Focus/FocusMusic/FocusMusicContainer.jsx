@@ -58,6 +58,7 @@ export default function FocusMusicContainer() {
           selectedPlaylist={spotify.selectedPlaylist}
           selectingId={spotify.selectingId}
           onSelect={handlePlaylistSelect}
+          onRefresh={spotify.loadSpotify}
         />
       }
       ambient={
