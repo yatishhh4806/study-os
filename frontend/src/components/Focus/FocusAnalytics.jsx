@@ -133,9 +133,6 @@ function todayStr() {
   )}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// liveMinutes: an in-progress, not-yet-saved focus session's elapsed
-// minutes. Added on top of today's saved totals so the panel reflects
-// the session actually happening right now, not just past ones.
 function computeStats(sessions, liveMinutes = 0) {
   const today = todayStr();
   const todays = sessions.filter((s) => s.type === "focus" && s.date === today);
@@ -156,13 +153,11 @@ function computeStats(sessions, liveMinutes = 0) {
   );
   const longestSession = Math.max(longestSavedSession, liveMinutes);
 
-  // Consistency: how much of planned time was actually completed today
   const plannedTotal = todays.reduce((sum, s) => sum + (s.plannedMin || 0), 0);
   const consistency =
     plannedTotal > 0 ? Math.round((savedFocusMinutes / plannedTotal) * 100) : 0;
 
-  // Peak focus period: 2-hour bucket with the most accumulated focus minutes (all-time)
-  const buckets = new Array(12).fill(0); // 12 buckets of 2 hours
+  const buckets = new Array(12).fill(0);
   sessions
     .filter((s) => s.type === "focus" && s.startTime)
     .forEach((s) => {
@@ -327,11 +322,11 @@ export default function FocusAnalytics({
   };
 
   const accent = "#a855f7";
-  const glow = "rgba(168,85,247,0.5)";
+
   if (loading) {
     return (
       <div className="w-full select-none">
-        <div className="fa-card animate-pulse w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-purple-500/15 border-r-2 border-r-purple-500 rounded-3xl p-6 md:p-8">
+        <div className="fa-card animate-pulse w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-white/10 rounded-3xl p-6 md:p-8">
           <div className="mb-6 h-7 w-36 rounded-lg bg-white/10" />
           <div className="mb-6 h-24 rounded-2xl bg-white/5" />
           <div className="grid grid-cols-1 gap-4">
@@ -360,15 +355,7 @@ export default function FocusAnalytics({
         .fa-live-dot { animation: faLivePulse 1.4s ease-in-out infinite; }
       `}</style>
 
-      <div
-        className="fa-card w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border rounded-3xl p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative"
-        style={{
-          borderColor: `${accent}25`,
-          borderRightWidth: "2.5px",
-          borderRightColor: accent,
-          boxShadow: `0 30px 60px -25px rgba(0,0,0,0.65), 0 0 60px -30px ${glow}, 10px 0 40px -20px ${glow}`,
-        }}
-      >
+      <div className="fa-card w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative">
         {/* Title Bar */}
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -379,15 +366,14 @@ export default function FocusAnalytics({
             {stats.isLive && (
               <span
                 className="fa-live-dot shrink-0 w-2 h-2 rounded-full bg-cyan-400"
-                style={{ boxShadow: "0 0 8px #22d3ee" }}
                 title="Live session in progress"
               />
             )}
           </div>
-          
+
           <button
             onClick={openTargetModal}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs font-bold transition hover:border-purple-500/50 hover:bg-purple-500/15 cursor-pointer shrink-0"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-purple-400 text-xs font-bold transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer shrink-0"
           >
             <Target size={12} />
             <span>Target</span>
@@ -395,14 +381,7 @@ export default function FocusAnalytics({
         </div>
 
         {/* Daily Goal Progress Bar Card */}
-        <div
-          className="p-4 md:p-5 rounded-2xl border mb-5 transition-all duration-300"
-          style={{
-            borderColor: `${accent}2f`,
-            background: `${accent}0a`,
-            boxShadow: `0 0 30px -16px ${glow}`,
-          }}
-        >
+        <div className="p-4 md:p-5 rounded-2xl border border-white/10 bg-white/[0.02] mb-5 transition-all duration-300">
           <div className="flex justify-between items-baseline mb-2.5">
             <span className="text-sm font-semibold text-white/80">
               Daily Goal &middot; {targetHours}h
@@ -411,17 +390,14 @@ export default function FocusAnalytics({
               {Math.round(goalProgress)}%
             </span>
           </div>
-          
+
           <div className="h-2 rounded-full bg-white/5 overflow-hidden">
             <div
               className="fa-bar-fill h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300"
-              style={{
-                width: `${goalProgress}%`,
-                boxShadow: `0 0 10px -1px ${glow}`,
-              }}
+              style={{ width: `${goalProgress}%` }}
             />
           </div>
-          
+
           <div className="text-xs text-white/40 mt-2 font-medium">
             {stats.focusTimeLabel} of {targetHours}h &middot; {remainingLabel}
           </div>
@@ -429,7 +405,6 @@ export default function FocusAnalytics({
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1 gap-3 mb-6">
-          {/* Sessions Completed */}
           <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <Trophy size={16} className="shrink-0" style={{ color: accent }} />
@@ -440,7 +415,6 @@ export default function FocusAnalytics({
             </span>
           </div>
 
-          {/* Focus Time */}
           <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <Clock size={16} className="shrink-0" style={{ color: accent }} />
@@ -451,7 +425,6 @@ export default function FocusAnalytics({
             </span>
           </div>
 
-          {/* Longest Session */}
           <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <Flame size={16} className="shrink-0" style={{ color: accent }} />
@@ -462,7 +435,6 @@ export default function FocusAnalytics({
             </span>
           </div>
 
-          {/* Peak Focus Period */}
           <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <TrendingUp size={16} className="shrink-0" style={{ color: accent }} />
@@ -485,7 +457,7 @@ export default function FocusAnalytics({
               avg {Math.floor(weekAvgMin / 60)}h {weekAvgMin % 60}m/day
             </span>
           </div>
-          
+
           <div className="flex items-end gap-2.5 h-20 mb-3.5">
             {weeklyReport.map((d) => {
               const h = Math.max(
@@ -495,7 +467,6 @@ export default function FocusAnalytics({
               const metGoal = d.minutes >= targetMinutes && targetMinutes > 0;
               return (
                 <div key={d.date} className="flex-1 flex flex-col items-center group relative">
-                  {/* Tooltip */}
                   <div className="absolute -top-8 scale-0 group-hover:scale-100 transition-all duration-200 bg-black/80 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap z-30 pointer-events-none border border-white/10">
                     {Math.floor(d.minutes / 60)}h {d.minutes % 60}m
                   </div>
@@ -515,7 +486,7 @@ export default function FocusAnalytics({
               );
             })}
           </div>
-          
+
           <div className="text-xs text-white/40 font-medium">
             {Math.floor(weekTotalMin / 60)}h {weekTotalMin % 60}m focused this week
           </div>
@@ -550,11 +521,7 @@ export default function FocusAnalytics({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[320px] bg-gradient-to-b from-[#181020]/95 to-[#0a070f]/98 border rounded-3xl p-6 shadow-2xl relative"
-            style={{
-              borderColor: `${accent}35`,
-              boxShadow: `0 30px 60px -20px rgba(0,0,0,0.75), 0 0 60px -20px ${glow}`,
-            }}
+            className="w-full max-w-[320px] bg-gradient-to-b from-[#181020]/95 to-[#0a070f]/98 border border-white/10 rounded-3xl p-6 shadow-2xl relative"
           >
             <div className="flex items-center justify-between mb-4">
               <span className="flex items-center gap-2 text-base font-bold text-white tracking-tight">
@@ -611,7 +578,6 @@ export default function FocusAnalytics({
               className="w-full py-3 rounded-xl border-0 cursor-pointer text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98]"
               style={{
                 background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
-                boxShadow: `0 8px 24px -6px ${glow}`,
               }}
             >
               Save Target

@@ -25,7 +25,6 @@ export default function MotivationStrip() {
   const [fading, setFading] = useState(false);
 
   const accent = "#a855f7";
-  const glow = "rgba(168,85,247,0.45)";
 
   const refresh = () => {
     setFading(true);
@@ -43,12 +42,7 @@ export default function MotivationStrip() {
   const quote = QUOTES[index];
 
   return (
-    <div
-      className="w-full rounded-2xl border border-purple-500/15 border-t-2 border-t-purple-500 bg-gradient-to-r from-[#140e1c]/85 to-[#08060c]/90 backdrop-blur-2xl p-5 md:p-6 flex items-center gap-4 md:gap-5 select-none"
-      style={{
-        boxShadow: `0 20px 50px -30px rgba(0,0,0,0.6), 0 0 50px -28px ${glow}, 0 -10px 40px -20px ${glow}`,
-      }}
-    >
+    <div className="w-full rounded-2xl border border-white/10 bg-gradient-to-r from-[#140e1c]/85 to-[#08060c]/90 backdrop-blur-2xl p-5 md:p-6 flex items-center gap-4 md:gap-5 select-none">
       <style>{`
         @keyframes mq-fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .mq-text { animation: mq-fadeIn 0.3s ease both; }
@@ -71,7 +65,7 @@ export default function MotivationStrip() {
 
       <button
         onClick={refresh}
-        className="shrink-0 w-9 h-9 rounded-xl border border-white/10 bg-white/[0.03] text-white/60 flex items-center justify-center cursor-pointer transition hover:rotate-45 hover:border-purple-500/40 hover:text-white/80 active:scale-95 duration-200"
+        className="shrink-0 w-9 h-9 rounded-xl border border-white/10 bg-white/[0.03] text-white/60 flex items-center justify-center cursor-pointer transition hover:rotate-45 hover:border-white/20 hover:text-white/80 active:scale-95 duration-200"
         aria-label="Get another quote"
       >
         <RefreshCw size={14} />
