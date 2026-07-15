@@ -182,7 +182,7 @@ export default function DashboardHome() {
           style={{
             position: "absolute",
             inset: 0,
-            overflow: "scroll",
+            overflow: "hidden",
             borderRadius: "inherit",
             pointerEvents: "none",
           }}
@@ -406,7 +406,7 @@ export default function DashboardHome() {
               borderRadius: 999,
               background: "rgba(255,255,255,.07)",
               marginBottom: 14,
-              overflow: "scroll",
+              overflow: "hidden",
             }}
           >
             <div
@@ -807,7 +807,7 @@ export default function DashboardHome() {
                   height: 6,
                   borderRadius: 999,
                   background: "rgba(255,255,255,.07)",
-                  overflow: "scroll",
+                  overflow: "hidden",
                 }}
               >
                 <div
