@@ -330,501 +330,249 @@ export default function FocusAnalytics({
   const glow = "rgba(168,85,247,0.5)";
   if (loading) {
     return (
-      <div
-        style={{
-          width: "100%",
-          fontFamily:
-            "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        }}
-      >
-        <div
-          className="fa-card animate-pulse"
-          style={{
-            width: "100%",
-            background:
-              "linear-gradient(180deg, rgba(20,14,28,0.85), rgba(8,6,12,0.92))",
-            border: "1px solid rgba(168,85,247,0.18)",
-            borderRight: `2px solid ${accent}`,
-            borderRadius: 24,
-            padding: "28px 24px 32px",
-          }}
-        >
-          <div className="mb-6 h-8 w-44 rounded bg-white/10" />
-
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="mb-4 h-20 rounded-2xl bg-white/5" />
-          ))}
-
-          <div className="mt-6 h-36 rounded-2xl bg-white/5" />
-
-          <div className="mt-6 h-44 rounded-2xl bg-white/5" />
+      <div className="w-full select-none">
+        <div className="fa-card animate-pulse w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-purple-500/15 border-r-2 border-r-purple-500 rounded-3xl p-6 md:p-8">
+          <div className="mb-6 h-7 w-36 rounded-lg bg-white/10" />
+          <div className="mb-6 h-24 rounded-2xl bg-white/5" />
+          <div className="grid grid-cols-1 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-14 rounded-2xl bg-white/5" />
+            ))}
+          </div>
+          <div className="mt-6 h-28 rounded-2xl bg-white/5" />
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        fontFamily:
-          "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      }}
-    >
+    <div className="w-full text-white select-none">
       <style>{`
-        @keyframes fadeUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform: translateY(0);} }
-        @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .fa-card { animation: fadeUp 0.5s ease both; }
-        .fa-row { transition: all 0.2s ease; }
-        .fa-row:hover { border-color: rgba(168,85,247,0.35) !important; transform: translateY(-1px); }
-        .fa-insight { transition: all 0.2s ease; animation: fadeUp 0.4s ease both; }
-        .fa-insight:hover { border-color: rgba(168,85,247,0.35) !important; background: rgba(168,85,247,0.05) !important; }
-        @keyframes growBar { from { width: 0%; } }
-        .fa-bar-fill { animation: growBar 1s cubic-bezier(.4,0,.2,1) both; }
-        .fa-live-dot { animation: livePulse 1.4s ease-in-out infinite; }
+        @keyframes faFadeUp { from { opacity:0; transform: translateY(12px);} to { opacity:1; transform: translateY(0);} }
+        @keyframes faLivePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .fa-card { animation: faFadeUp 0.5s ease both; }
+        .fa-row { transition: all 0.25s ease; }
+        .fa-row:hover { border-color: rgba(168,85,247,0.3) !important; transform: translateY(-1.5px); }
+        .fa-insight { transition: all 0.2s ease; }
+        .fa-insight:hover { background: rgba(168,85,247,0.04) !important; }
+        @keyframes faGrowBar { from { width: 0%; } }
+        .fa-bar-fill { animation: faGrowBar 1s cubic-bezier(.4,0,.2,1) both; }
+        .fa-live-dot { animation: faLivePulse 1.4s ease-in-out infinite; }
       `}</style>
 
       <div
-        className="fa-card"
+        className="fa-card w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border rounded-3xl p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative"
         style={{
-          width: "100%",
-          background:
-            "linear-gradient(180deg, rgba(20,14,28,0.85), rgba(8,6,12,0.92))",
-          border: "1px solid rgba(168,85,247,0.18)",
-          borderRight: `2px solid ${accent}`,
-          borderRadius: 24,
-          padding: "28px 24px 32px",
-          backdropFilter: "blur(20px)",
+          borderColor: `${accent}25`,
+          borderRightWidth: "2.5px",
+          borderRightColor: accent,
           boxShadow: `0 30px 60px -25px rgba(0,0,0,0.65), 0 0 60px -30px ${glow}, 10px 0 40px -20px ${glow}`,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
-            marginBottom: 22,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              minWidth: 0,
-            }}
-          >
-            <Brain size={22} color={accent} style={{ flexShrink: 0 }} />
-            <h2
-              style={{
-                fontSize: 19,
-                fontWeight: 800,
-                color: "#fff",
-                lineHeight: 1.15,
-                letterSpacing: -0.2,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
+        {/* Title Bar */}
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Brain size={20} className="shrink-0" style={{ color: accent }} />
+            <h2 className="text-lg md:text-xl font-bold tracking-tight text-white truncate">
               Focus Analytics
             </h2>
             {stats.isLive && (
               <span
-                className="fa-live-dot"
+                className="fa-live-dot shrink-0 w-2 h-2 rounded-full bg-cyan-400"
+                style={{ boxShadow: "0 0 8px #22d3ee" }}
                 title="Live session in progress"
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#22d3ee",
-                  boxShadow: "0 0 8px #22d3ee",
-                  flexShrink: 0,
-                }}
               />
             )}
           </div>
+          
           <button
             onClick={openTargetModal}
-            className="fa-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "7px 10px",
-              borderRadius: 10,
-              border: "1px solid rgba(168,85,247,0.3)",
-              background: "rgba(168,85,247,0.1)",
-              color: accent,
-              fontSize: 11.5,
-              fontWeight: 700,
-              cursor: "pointer",
-              flexShrink: 0,
-              whiteSpace: "nowrap",
-            }}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 text-xs font-bold transition hover:border-purple-500/50 hover:bg-purple-500/15 cursor-pointer shrink-0"
           >
             <Target size={12} />
-            Set Target
+            <span>Target</span>
           </button>
         </div>
 
-        {/* Daily Goal Progress */}
+        {/* Daily Goal Progress Bar Card */}
         <div
+          className="p-4 md:p-5 rounded-2xl border mb-5 transition-all duration-300"
           style={{
-            padding: "16px 18px",
-            borderRadius: 16,
-            border: `1px solid ${accent}55`,
-            background: "rgba(168,85,247,0.1)",
-            marginBottom: 12,
+            borderColor: `${accent}2f`,
+            background: `${accent}0a`,
             boxShadow: `0 0 30px -16px ${glow}`,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 10,
-            }}
-          >
-            <span style={{ fontSize: 14.5, color: "rgba(255,255,255,0.85)" }}>
-              Daily Goal &middot; {targetHours}h target
+          <div className="flex justify-between items-baseline mb-2.5">
+            <span className="text-sm font-semibold text-white/80">
+              Daily Goal &middot; {targetHours}h
             </span>
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
+            <span className="text-lg font-black text-white">
               {Math.round(goalProgress)}%
             </span>
           </div>
-          <div
-            style={{
-              height: 8,
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.1)",
-              overflow: "hidden",
-            }}
-          >
+          
+          <div className="h-2 rounded-full bg-white/5 overflow-hidden">
             <div
-              className="fa-bar-fill"
+              className="fa-bar-fill h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300"
               style={{
-                height: "100%",
                 width: `${goalProgress}%`,
-                borderRadius: 999,
-                background: `linear-gradient(90deg, ${accent}, #22d3ee)`,
-                boxShadow: `0 0 12px -2px ${glow}`,
-                transition: "width .25s linear",
+                boxShadow: `0 0 10px -1px ${glow}`,
               }}
             />
           </div>
-          <div
-            style={{
-              fontSize: 12.5,
-              color: "rgba(255,255,255,0.5)",
-              marginTop: 8,
-            }}
-          >
+          
+          <div className="text-xs text-white/40 mt-2 font-medium">
             {stats.focusTimeLabel} of {targetHours}h &middot; {remainingLabel}
           </div>
         </div>
 
-        {/* Sessions Completed */}
-        <div
-          className="fa-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "16px 18px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.02)",
-            marginBottom: 12,
-          }}
-        >
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 14.5,
-              color: "rgba(255,255,255,0.8)",
-            }}
-          >
-            <Trophy size={17} color={accent} />
-            Sessions Completed
-          </span>
-          <span style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>
-            {stats.sessionsCompleted}
-          </span>
-        </div>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1 gap-3 mb-6">
+          {/* Sessions Completed */}
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
+            <span className="flex items-center gap-2.5 text-sm text-white/80">
+              <Trophy size={16} className="shrink-0" style={{ color: accent }} />
+              Sessions
+            </span>
+            <span className="text-lg font-extrabold text-white">
+              {stats.sessionsCompleted}
+            </span>
+          </div>
 
-        {/* Focus Time */}
-        <div
-          className="fa-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "16px 18px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.02)",
-            marginBottom: 12,
-          }}
-        >
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 14.5,
-              color: "rgba(255,255,255,0.8)",
-            }}
-          >
-            <Clock size={17} color={accent} />
-            Focus Time
-          </span>
-          <span style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>
-            {stats.focusTimeLabel}
-          </span>
-        </div>
+          {/* Focus Time */}
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
+            <span className="flex items-center gap-2.5 text-sm text-white/80">
+              <Clock size={16} className="shrink-0" style={{ color: accent }} />
+              Focus Time
+            </span>
+            <span className="text-lg font-extrabold text-white">
+              {stats.focusTimeLabel}
+            </span>
+          </div>
 
-        {/* Longest Session */}
-        <div
-          className="fa-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "16px 18px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.02)",
-            marginBottom: 12,
-          }}
-        >
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 14.5,
-              color: "rgba(255,255,255,0.8)",
-            }}
-          >
-            <Flame size={17} color={accent} />
-            Longest Session
-          </span>
-          <span style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>
-            {stats.longestSession}m
-          </span>
-        </div>
+          {/* Longest Session */}
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
+            <span className="flex items-center gap-2.5 text-sm text-white/80">
+              <Flame size={16} className="shrink-0" style={{ color: accent }} />
+              Longest
+            </span>
+            <span className="text-lg font-extrabold text-white">
+              {stats.longestSession}m
+            </span>
+          </div>
 
-        {/* Peak Focus Period */}
-        <div
-          className="fa-row"
-          style={{
-            padding: "16px 18px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.02)",
-            marginBottom: 24,
-          }}
-        >
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              fontSize: 13,
-              color: "rgba(255,255,255,0.5)",
-              marginBottom: 4,
-            }}
-          >
-            <TrendingUp size={15} color={accent} />
-            Peak Focus Period
-          </span>
-          <div style={{ fontSize: 19, fontWeight: 800, color: "#fff" }}>
-            {stats.peakPeriod}
+          {/* Peak Focus Period */}
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
+            <span className="flex items-center gap-2.5 text-sm text-white/80">
+              <TrendingUp size={16} className="shrink-0" style={{ color: accent }} />
+              Peak Period
+            </span>
+            <span className="text-sm font-bold text-white truncate max-w-[120px]" title={stats.peakPeriod}>
+              {stats.peakPeriod}
+            </span>
           </div>
         </div>
 
         {/* Weekly Progress Report */}
-        <div
-          style={{
-            padding: "16px 18px",
-            borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.02)",
-            marginBottom: 24,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 14,
-            }}
-          >
-            <span
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 13,
-                color: "rgba(255,255,255,0.6)",
-              }}
-            >
-              <CalendarRange size={15} color={accent} />
+        <div className="p-4 md:p-5 rounded-2xl border border-white/5 bg-white/[0.02] mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <span className="flex items-center gap-2 text-xs font-bold text-white/60 uppercase tracking-wider">
+              <CalendarRange size={14} style={{ color: accent }} />
               7-Day Report
             </span>
-            <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)" }}>
+            <span className="text-[11px] text-white/40 font-semibold">
               avg {Math.floor(weekAvgMin / 60)}h {weekAvgMin % 60}m/day
             </span>
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              gap: 8,
-              height: 84,
-            }}
-          >
+          
+          <div className="flex items-end gap-2.5 h-20 mb-3.5">
             {weeklyReport.map((d) => {
               const h = Math.max(
                 (d.minutes / maxDayMin) * 100,
-                d.minutes > 0 ? 6 : 2,
+                d.minutes > 0 ? 8 : 3,
               );
               const metGoal = d.minutes >= targetMinutes && targetMinutes > 0;
               return (
-                <div
-                  key={d.date}
-                  style={{
-                    flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
+                <div key={d.date} className="flex-1 flex flex-col items-center group relative">
+                  {/* Tooltip */}
+                  <div className="absolute -top-8 scale-0 group-hover:scale-100 transition-all duration-200 bg-black/80 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap z-30 pointer-events-none border border-white/10">
+                    {Math.floor(d.minutes / 60)}h {d.minutes % 60}m
+                  </div>
                   <div
+                    className="w-full rounded-t-md transition-all duration-500 ease-out"
                     style={{
-                      width: "100%",
                       height: `${h}%`,
-                      borderRadius: "6px 6px 3px 3px",
                       background: metGoal
                         ? `linear-gradient(180deg, #22d3ee, ${accent})`
-                        : `linear-gradient(180deg, ${accent}cc, ${accent}33)`,
-                      transition: "height 0.6s cubic-bezier(.4,0,.2,1)",
+                        : `linear-gradient(180deg, ${accent}cc, ${accent}22)`,
                     }}
-                    title={`${d.label}: ${Math.floor(d.minutes / 60)}h ${d.minutes % 60}m`}
                   />
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      color: "rgba(255,255,255,0.4)",
-                      marginTop: 6,
-                    }}
-                  >
+                  <span className="text-[10px] text-white/40 mt-1.5 font-bold uppercase">
                     {d.label[0]}
                   </span>
                 </div>
               );
             })}
           </div>
-          <div
-            style={{
-              fontSize: 12.5,
-              color: "rgba(255,255,255,0.45)",
-              marginTop: 10,
-            }}
-          >
-            {Math.floor(weekTotalMin / 60)}h {weekTotalMin % 60}m focused this
-            week
+          
+          <div className="text-xs text-white/40 font-medium">
+            {Math.floor(weekTotalMin / 60)}h {weekTotalMin % 60}m focused this week
           </div>
         </div>
+
+        {/* Insights Section */}
+        {insights.length > 0 && (
+          <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01]">
+            <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2.5">
+              Focus Insights
+            </h4>
+            <ul className="space-y-2 text-xs text-white/70">
+              {insights.map((insight, idx) => (
+                <li
+                  key={idx}
+                  className="fa-insight flex items-start gap-2 p-2 rounded-lg transition-all duration-200"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-purple-400 mt-1.5 shrink-0" />
+                  <span className="leading-relaxed">{insight}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Set Target Modal */}
       {showTargetModal && (
         <div
           onClick={() => setShowTargetModal(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-            animation: "fadeUp 0.2s ease both",
-          }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in"
         >
           <div
             onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-[320px] bg-gradient-to-b from-[#181020]/95 to-[#0a070f]/98 border rounded-3xl p-6 shadow-2xl relative"
             style={{
-              width: "100%",
-              maxWidth: 320,
-              background:
-                "linear-gradient(180deg, rgba(24,16,32,0.97), rgba(10,7,15,0.98))",
-              border: `1px solid ${accent}55`,
-              borderRadius: 20,
-              padding: 24,
-              boxShadow: `0 30px 60px -20px rgba(0,0,0,0.7), 0 0 60px -20px ${glow}`,
+              borderColor: `${accent}35`,
+              boxShadow: `0 30px 60px -20px rgba(0,0,0,0.75), 0 0 60px -20px ${glow}`,
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 18,
-              }}
-            >
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 17,
-                  fontWeight: 800,
-                  color: "#fff",
-                }}
-              >
-                <Target size={18} color={accent} />
+            <div className="flex items-center justify-between mb-4">
+              <span className="flex items-center gap-2 text-base font-bold text-white tracking-tight">
+                <Target size={16} style={{ color: accent }} />
                 Set Focus Target
               </span>
               <button
                 onClick={() => setShowTargetModal(false)}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "rgba(255,255,255,0.5)",
-                  cursor: "pointer",
-                  padding: 4,
-                }}
+                className="bg-transparent border-0 text-white/50 hover:text-white cursor-pointer p-1 transition-colors"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <label
-              style={{
-                fontSize: 13,
-                color: "rgba(255,255,255,0.55)",
-                marginBottom: 8,
-                display: "block",
-              }}
-            >
+            <label className="text-xs text-white/55 mb-2 block font-medium">
               Daily focus hours goal
             </label>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 18,
-              }}
-            >
+            <div className="flex items-center gap-2 mb-4">
               <input
                 type="number"
                 min="0.5"
@@ -832,67 +580,38 @@ export default function FocusAnalytics({
                 value={draftTarget}
                 onChange={(e) => setDraftTarget(e.target.value)}
                 autoFocus
-                style={{
-                  flex: 1,
-                  padding: "12px 14px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  background: "rgba(255,255,255,0.04)",
-                  color: "#fff",
-                  fontSize: 18,
-                  fontWeight: 700,
-                  outline: "none",
-                }}
+                className="flex-1 p-3 rounded-xl border border-white/10 bg-white/[0.04] text-white text-base font-bold text-center outline-none focus:border-purple-400 transition-colors"
               />
-              <span style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>
+              <span className="text-xs text-white/40 font-semibold shrink-0">
                 hours / day
               </span>
             </div>
 
-            <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-              {[2, 4, 6, 8].map((h) => (
-                <button
-                  key={h}
-                  onClick={() => setDraftTarget(String(h))}
-                  style={{
-                    flex: 1,
-                    padding: "8px 0",
-                    borderRadius: 10,
-                    border:
-                      draftTarget === String(h)
-                        ? `1px solid ${accent}`
-                        : "1px solid rgba(255,255,255,0.1)",
-                    background:
-                      draftTarget === String(h)
-                        ? "rgba(168,85,247,0.15)"
-                        : "transparent",
-                    color:
-                      draftTarget === String(h)
-                        ? "#fff"
-                        : "rgba(255,255,255,0.5)",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  {h}
-                </button>
-              ))}
+            <div className="flex gap-2 mb-5">
+              {[2, 4, 6, 8].map((h) => {
+                const active = draftTarget === String(h);
+                return (
+                  <button
+                    key={h}
+                    onClick={() => setDraftTarget(String(h))}
+                    className={`flex-1 py-2 rounded-lg border text-xs font-bold cursor-pointer transition-all duration-200 ${
+                      active
+                        ? "border-purple-500 bg-purple-500/20 text-white"
+                        : "border-white/10 bg-transparent text-white/50 hover:border-white/20 hover:text-white/80"
+                    }`}
+                  >
+                    {h}
+                  </button>
+                );
+              })}
             </div>
 
             <button
               onClick={saveTarget}
+              className="w-full py-3 rounded-xl border-0 cursor-pointer text-sm font-bold text-white transition hover:scale-[1.02] active:scale-[0.98]"
               style={{
-                width: "100%",
-                padding: "13px 0",
-                borderRadius: 12,
-                border: "none",
-                cursor: "pointer",
-                fontSize: 15,
-                fontWeight: 700,
-                color: "#fff",
-                background: `linear-gradient(135deg, ${accent}, ${accent}aa)`,
-                boxShadow: `0 10px 24px -8px ${glow}`,
+                background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+                boxShadow: `0 8px 24px -6px ${glow}`,
               }}
             >
               Save Target

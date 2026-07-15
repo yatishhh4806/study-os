@@ -4,9 +4,9 @@ import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
 const MODES = {
-  focus: { label: "Focus", sub: "Deep Work", color: "#a855f7", glow: "rgba(168,85,247,0.55)", defaultMin: 25 },
-  short: { label: "Short Break", sub: "Stretch & Breathe", color: "#22d3ee", glow: "rgba(34,211,238,0.5)", defaultMin: 5 },
-  long: { label: "Long Break", sub: "Recharge", color: "#f472b6", glow: "rgba(244,114,182,0.5)", defaultMin: 15 },
+  focus: { label: "Focus", sub: "Deep Work", color: "#a855f7", glow: "rgba(168,85,247,0.45)", defaultMin: 25 },
+  short: { label: "Short Break", sub: "Stretch & Breathe", color: "#22d3ee", glow: "rgba(34,211,238,0.4)", defaultMin: 5 },
+  long: { label: "Long Break", sub: "Recharge", color: "#f472b6", glow: "rgba(244,114,182,0.4)", defaultMin: 15 },
 };
 
 function format(s) {
@@ -15,15 +15,9 @@ function format(s) {
   return `${m}:${sec}`;
 }
 
-// Only "focus" mode sessions are ever sent to the backend — short/long
-// breaks are real UI features but aren't study time, so they never
-// touch the FocusSession API at all (no half-tracked, half-fake data).
 export default function PomodoroTimer({ onSessionLogged }) {
   const { user } = useAuth();
   const [mode, setMode] = useState("focus");
-  // seeded from the user's saved Settings preferences when available,
-  // so changing durations in Settings actually affects this timer
-  // instead of the two being disconnected from each other
   const [customMins, setCustomMins] = useState(() => ({
     focus: user?.preferences?.pomodoroMinutes ?? MODES.focus.defaultMin,
     short: user?.preferences?.shortBreakMinutes ?? MODES.short.defaultMin,
@@ -38,7 +32,6 @@ export default function PomodoroTimer({ onSessionLogged }) {
   const [sessions, setSessions] = useState(0);
   const intervalRef = useRef(null);
 
-  // backend session bookkeeping — only ever populated while mode==="focus"
   const sessionIdRef = useRef(null);
   const distractionsRef = useRef(0);
 
@@ -47,8 +40,6 @@ export default function PomodoroTimer({ onSessionLogged }) {
   const accent = MODES[mode].color;
   const glow = MODES[mode].glow;
 
-  // ── tab-visibility distraction tracking — only while an actual
-  // backend-tracked focus session is running ──
   useEffect(() => {
     if (!running || mode !== "focus" || !sessionIdRef.current) return;
     const onVisibilityChange = () => {
@@ -110,8 +101,6 @@ export default function PomodoroTimer({ onSessionLogged }) {
     clearInterval(intervalRef.current);
     setRunning(false);
     setEditingDuration(false);
-    // leaving an in-progress focus session to switch modes — treat it
-    // as abandoned rather than letting it linger open in the backend
     if (mode === "focus" && sessionIdRef.current) {
       await abandonBackendSession();
     }
@@ -121,9 +110,6 @@ export default function PomodoroTimer({ onSessionLogged }) {
 
   const handlePlayPause = useCallback(async () => {
     if (running) {
-      // pausing doesn't touch the backend at all — the session stays
-      // open, and its final duration will include this paused time
-      // when it's completed (server-authoritative wall-clock timing)
       setRunning(false);
       return;
     }
@@ -138,7 +124,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
         distractionsRef.current = 0;
       } catch (err) {
         console.error("Failed to start focus session:", err);
-        return; // don't start the local timer if we couldn't record it
+        return;
       }
     }
 
@@ -176,76 +162,43 @@ export default function PomodoroTimer({ onSessionLogged }) {
   const stateLabel = secondsLeft === 0 ? "Complete" : running ? "Working" : "Paused";
 
   return (
-    <div
-      style={{
-        width: "100%",
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        color: "#fff",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 32,
-        position: "relative",
-      }}
-    >
+    <div className="w-full text-white flex flex-col items-center gap-8 relative select-none">
       <style>{`
-        @keyframes pulseGlow { 0%,100% { opacity: 0.55; transform: scale(1);} 50% { opacity: 0.9; transform: scale(1.04);} }
-        @keyframes floatSlow { 0%,100% { transform: translateY(0px);} 50% { transform: translateY(-10px);} }
-        @keyframes shimmer { 0% { background-position: -200% center;} 100% { background-position: 200% center;} }
-        @keyframes fadeUp { from { opacity:0; transform: translateY(14px);} to { opacity:1; transform: translateY(0);} }
-        .pt-card { animation: fadeUp 0.6s ease both; }
+        @keyframes ptPulseGlow { 
+          0%, 100% { opacity: 0.45; transform: scale(1); filter: blur(24px); } 
+          50% { opacity: 0.75; transform: scale(1.05); filter: blur(32px); } 
+        }
+        @keyframes ptFadeUp { 
+          from { opacity: 0; transform: translateY(12px); } 
+          to { opacity: 1; transform: translateY(0); } 
+        }
+        .pt-card { animation: ptFadeUp 0.5s ease both; }
         .pt-tab { transition: all 0.25s cubic-bezier(.4,0,.2,1); }
         .pt-tab:hover { transform: translateY(-1px); }
         .pt-btn { transition: all 0.2s cubic-bezier(.4,0,.2,1); }
         .pt-btn:hover { transform: translateY(-2px) scale(1.02); }
         .pt-btn:active { transform: translateY(0) scale(0.98); }
-        .stat-card { transition: all 0.3s ease; }
-        .stat-card:hover { transform: translateY(-4px); border-color: rgba(168,85,247,0.45) !important; }
-        .bar { transition: height 0.6s cubic-bezier(.4,0,.2,1); }
+        .stat-box { transition: all 0.3s ease; }
+        .stat-box:hover { transform: translateY(-3px); }
       `}</style>
 
       <div
-        className="pt-card"
+        className="pt-card w-full max-w-[460px] bg-gradient-to-b from-[#140e1c]/90 to-[#0a070f]/95 border rounded-[32px] p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative z-10"
         style={{
-          width: "100%",
-          maxWidth: 460,
-          background: "linear-gradient(180deg, rgba(20,14,28,0.85), rgba(10,7,15,0.9))",
-          border: "1px solid rgba(168,85,247,0.18)",
-          borderRadius: 32,
-          padding: "32px 28px 36px",
-          backdropFilter: "blur(20px)",
-          boxShadow: `0 0 0 1px rgba(255,255,255,0.02), 0 30px 60px -20px rgba(0,0,0,0.6), 0 0 80px -20px ${glow}`,
-          position: "relative",
-          zIndex: 1,
+          borderColor: `${accent}25`,
+          boxShadow: `0 0 0 1px rgba(255,255,255,0.01), 0 30px 60px -20px rgba(0,0,0,0.65), 0 0 60px -25px ${glow}`,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            background: "rgba(255,255,255,0.03)",
-            padding: 6,
-            borderRadius: 16,
-            marginBottom: 36,
-            border: "1px solid rgba(255,255,255,0.05)",
-          }}
-        >
+        {/* Mode Selector Tab Bar */}
+        <div className="flex gap-1.5 bg-white/[0.03] p-1.5 rounded-2xl mb-8 border border-white/5">
           {Object.entries(MODES).map(([key, m]) => {
             const active = key === mode;
             return (
               <button
                 key={key}
-                className="pt-tab"
+                className="pt-tab flex-1 py-2.5 rounded-xl border-0 cursor-pointer text-xs md:text-sm font-semibold tracking-wide transition-all duration-300"
                 onClick={() => switchMode(key)}
                 style={{
-                  flex: 1,
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: 13.5,
-                  fontWeight: 600,
-                  letterSpacing: 0.2,
                   color: active ? "#fff" : "rgba(255,255,255,0.45)",
                   background: active
                     ? `linear-gradient(135deg, ${m.color}, ${m.color}cc)`
@@ -259,79 +212,53 @@ export default function PomodoroTimer({ onSessionLogged }) {
           })}
         </div>
 
-        <div
-          style={{
-            position: "relative",
-            width: 300,
-            height: 300,
-            margin: "0 auto",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+        {/* Circular Timer Visual */}
+        <div className="relative w-[280px] h-[280px] md:w-[300px] md:h-[300px] mx-auto flex items-center justify-center">
+          {/* Animated Ambient Color Sphere */}
           <div
+            className="absolute inset-0 rounded-full transition-all duration-700"
             style={{
-              position: "absolute",
-              width: "100%",
-              height: "100%",
-              borderRadius: "50%",
-              background: `radial-gradient(circle, ${glow}, transparent 65%)`,
-              filter: "blur(18px)",
+              background: `radial-gradient(circle, ${glow}, transparent 70%)`,
               opacity: running ? 0.8 : 0.35,
-              animation: running ? "pulseGlow 2.6s ease-in-out infinite" : "none",
-              transition: "opacity 0.4s ease",
+              animation: running ? "ptPulseGlow 3s ease-in-out infinite" : "none",
             }}
           />
-          <svg width="300" height="300" style={{ position: "relative", zIndex: 1, transform: "rotate(-90deg)" }}>
-            <circle cx="150" cy="150" r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+          
+          <svg className="relative z-10 w-full h-full max-w-[300px] max-h-[300px] -rotate-90">
+            <circle cx="150" cy="150" r={radius} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
             <circle
               cx="150"
               cy="150"
               r={radius}
               fill="none"
               stroke={accent}
-              strokeWidth="10"
+              strokeWidth="8"
               strokeLinecap="round"
               strokeDasharray={circumference}
               strokeDashoffset={dashoffset}
               style={{
                 transition: "stroke-dashoffset 1s linear, stroke 0.5s ease",
-                filter: `drop-shadow(0 0 10px ${glow})`,
+                filter: `drop-shadow(0 0 8px ${glow})`,
               }}
             />
           </svg>
-          <div
-            style={{
-              position: "absolute",
-              zIndex: 2,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 58,
-                fontWeight: 800,
-                letterSpacing: -1,
-                fontVariantNumeric: "tabular-nums",
-                background: "linear-gradient(135deg, #fff, #e5d9ff)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-                textShadow: `0 0 30px ${glow}`,
-              }}
-            >
+
+          {/* Core Timer Overlay Content */}
+          <div className="absolute z-10 flex flex-col items-center gap-1">
+            <div className="text-5xl md:text-6xl font-extrabold tracking-tighter tabular-nums bg-gradient-to-br from-white to-[#e5d9ff] bg-clip-text text-transparent drop-shadow-sm">
               {format(secondsLeft)}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: accent, letterSpacing: 0.5 }}>
+            
+            <div
+              className="text-xs md:text-sm font-bold tracking-widest uppercase transition-colors duration-500"
+              style={{ color: accent }}
+            >
               {MODES[mode].sub}
             </div>
+
             {!running && (
               editingDuration ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                <div className="flex items-center gap-2 mt-3 bg-white/[0.04] p-1 pl-3 pr-1 rounded-xl border border-white/10">
                   <input
                     type="number"
                     min="1"
@@ -340,135 +267,80 @@ export default function PomodoroTimer({ onSessionLogged }) {
                     onChange={(e) => setDraftMins(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && saveDuration()}
                     autoFocus
-                    style={{
-                      width: 54,
-                      padding: "4px 8px",
-                      borderRadius: 8,
-                      border: `1px solid ${accent}`,
-                      background: "rgba(168,85,247,0.12)",
-                      color: "#fff",
-                      fontSize: 13,
-                      fontWeight: 700,
-                      textAlign: "center",
-                      outline: "none",
-                    }}
+                    className="w-10 bg-transparent text-white text-sm font-bold text-center outline-none border-b border-transparent focus:border-violet-400"
                   />
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>min</span>
+                  <span className="text-xs text-white/40 font-medium">min</span>
                   <button
                     onClick={saveDuration}
-                    style={{
-                      background: accent,
-                      border: "none",
-                      borderRadius: 6,
-                      padding: "4px 6px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                    }}
+                    className="p-1.5 rounded-lg border-0 cursor-pointer flex items-center justify-center text-white"
+                    style={{ background: accent }}
                   >
-                    <Check size={12} color="#fff" />
+                    <Check size={12} strokeWidth={3} />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={startEditing}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    marginTop: 2,
-                    padding: "4px 10px",
-                    borderRadius: 8,
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    background: "rgba(255,255,255,0.04)",
-                    color: "rgba(255,255,255,0.45)",
-                    fontSize: 12,
-                    cursor: "pointer",
-                  }}
+                  className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-xl border border-white/15 bg-white/[0.03] text-white/50 text-xs font-semibold hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer"
                 >
                   <Pencil size={11} />
-                  {customMins[mode]}m
+                  <span>{customMins[mode]}m</span>
                 </button>
               )
             )}
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 32 }}>
+        {/* Play/Pause/Reset Control Buttons */}
+        <div className="flex gap-4 justify-center mt-8">
           <button
-            className="pt-btn"
+            className="pt-btn flex items-center gap-2 px-8 py-3.5 rounded-2xl border-0 cursor-pointer text-sm font-bold text-white shadow-lg"
             onClick={handlePlayPause}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "14px 30px",
-              borderRadius: 16,
-              border: "none",
-              cursor: "pointer",
-              fontSize: 15,
-              fontWeight: 700,
-              color: "#fff",
-              background: `linear-gradient(135deg, ${accent}, ${accent}aa)`,
-              boxShadow: `0 10px 30px -8px ${glow}`,
+              background: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+              boxShadow: `0 8px 24px -6px ${glow}`,
             }}
           >
-            {running ? <Pause size={18} /> : <Play size={18} fill="#fff" />}
-            {running ? "Pause" : "Start"}
+            {running ? <Pause size={16} strokeWidth={2.5} /> : <Play size={16} fill="#fff" />}
+            <span>{running ? "Pause" : "Start"}</span>
           </button>
+          
           <button
-            className="pt-btn"
+            className="pt-btn flex items-center gap-2 px-6 py-3.5 rounded-2xl border border-white/10 cursor-pointer text-sm font-bold text-white bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all duration-300"
             onClick={reset}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "14px 26px",
-              borderRadius: 16,
-              border: "1px solid rgba(255,255,255,0.1)",
-              cursor: "pointer",
-              fontSize: 15,
-              fontWeight: 700,
-              color: "#fff",
-              background: "rgba(255,255,255,0.04)",
-            }}
           >
-            <RotateCcw size={17} />
-            Reset
+            <RotateCcw size={15} strokeWidth={2.5} />
+            <span>Reset</span>
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 14, marginTop: 28 }}>
+        {/* Bottom State Statistics */}
+        <div className="flex gap-4 w-full mt-8">
           <div
+            className="stat-box flex-1 rounded-2xl p-4 text-center border transition-all duration-300"
             style={{
-              flex: 1,
-              background: "rgba(168,85,247,0.07)",
-              border: "1px solid rgba(168,85,247,0.18)",
-              borderRadius: 18,
-              padding: "18px 12px",
-              textAlign: "center",
+              background: `${accent}07`,
+              borderColor: `${accent}1e`,
             }}
           >
-            <Brain size={20} color={accent} style={{ marginBottom: 8 }} />
-            <div style={{ fontSize: 26, fontWeight: 800 }}>{sessions}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>
-              Sessions Completed
+            <Brain size={18} className="mx-auto mb-2 opacity-80" style={{ color: accent }} />
+            <div className="text-2xl font-extrabold text-white">{sessions}</div>
+            <div className="text-[11px] font-semibold text-white/45 tracking-wide uppercase mt-1">
+              Sessions
             </div>
           </div>
+          
           <div
+            className="stat-box flex-1 rounded-2xl p-4 text-center border transition-all duration-300"
             style={{
-              flex: 1,
-              background: "rgba(168,85,247,0.07)",
-              border: "1px solid rgba(168,85,247,0.18)",
-              borderRadius: 18,
-              padding: "18px 12px",
-              textAlign: "center",
+              background: `${accent}07`,
+              borderColor: `${accent}1e`,
             }}
           >
-            <Coffee size={20} color={accent} style={{ marginBottom: 8 }} />
-            <div style={{ fontSize: 22, fontWeight: 800 }}>{stateLabel}</div>
-            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>
-              Current State
+            <Coffee size={18} className="mx-auto mb-2 opacity-80" style={{ color: accent }} />
+            <div className="text-xl font-extrabold text-white truncate">{stateLabel}</div>
+            <div className="text-[11px] font-semibold text-white/45 tracking-wide uppercase mt-1">
+              State
             </div>
           </div>
         </div>

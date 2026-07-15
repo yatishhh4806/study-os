@@ -35,7 +35,6 @@ export default function MotivationStrip() {
     }, 220);
   };
 
-  // rotate automatically every 45s so it stays alive without needing a click
   useEffect(() => {
     const id = setInterval(refresh, 45000);
     return () => clearInterval(id);
@@ -45,73 +44,37 @@ export default function MotivationStrip() {
 
   return (
     <div
+      className="w-full rounded-2xl border border-purple-500/15 border-t-2 border-t-purple-500 bg-gradient-to-r from-[#140e1c]/85 to-[#08060c]/90 backdrop-blur-2xl p-5 md:p-6 flex items-center gap-4 md:gap-5 select-none"
       style={{
-        width: "100%",
-        borderRadius: 20,
-        border: "1px solid rgba(168,85,247,0.18)",
-        borderTop: `2px solid ${accent}`,
-        background: "linear-gradient(120deg, rgba(20,14,28,0.85), rgba(8,6,12,0.9))",
-        backdropFilter: "blur(20px)",
         boxShadow: `0 20px 50px -30px rgba(0,0,0,0.6), 0 0 50px -28px ${glow}, 0 -10px 40px -20px ${glow}`,
-        padding: "22px 28px",
-        display: "flex",
-        alignItems: "center",
-        gap: 20,
-        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
       <style>{`
         @keyframes mq-fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .mq-text { animation: mq-fadeIn 0.3s ease both; }
-        .mq-refresh { transition: all 0.2s ease; }
-        .mq-refresh:hover { transform: rotate(45deg); border-color: rgba(168,85,247,0.45) !important; }
       `}</style>
 
-      <Quote size={22} color={accent} style={{ flexShrink: 0, opacity: 0.8 }} />
+      <Quote size={20} color={accent} className="shrink-0 opacity-80" />
 
       <div
-        className="mq-text"
+        className="mq-text flex-1 min-w-0 transition-opacity duration-200"
         key={index}
         style={{
-          flex: 1,
-          minWidth: 0,
           opacity: fading ? 0 : 1,
-          transition: "opacity 0.2s ease",
         }}
       >
-        <p
-          style={{
-            fontSize: 15.5,
-            fontWeight: 600,
-            color: "rgba(255,255,255,0.9)",
-            lineHeight: 1.5,
-            margin: 0,
-          }}
-        >
+        <p className="text-sm md:text-[15px] font-semibold text-white/90 leading-relaxed m-0">
           {quote.text}
         </p>
-        <span style={{ fontSize: 13, color: accent, fontWeight: 600 }}>— {quote.author}</span>
+        <span className="text-xs font-bold text-purple-400 mt-1 block">— {quote.author}</span>
       </div>
 
       <button
         onClick={refresh}
-        className="mq-refresh"
+        className="shrink-0 w-9 h-9 rounded-xl border border-white/10 bg-white/[0.03] text-white/60 flex items-center justify-center cursor-pointer transition hover:rotate-45 hover:border-purple-500/40 hover:text-white/80 active:scale-95 duration-200"
         aria-label="Get another quote"
-        style={{
-          flexShrink: 0,
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          border: "1px solid rgba(255,255,255,0.1)",
-          background: "rgba(255,255,255,0.04)",
-          color: "rgba(255,255,255,0.6)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-        }}
       >
-        <RefreshCw size={15} />
+        <RefreshCw size={14} />
       </button>
     </div>
   );

@@ -36,6 +36,9 @@ export default function FocusMusicContainer() {
 
   return (
     <FocusMusic
+      spotifyActive={!!player.track && !player.paused}
+      ambientActive={!!ambient.activeSound}
+      spotifyConnected={!!spotify.spotify?.connected}
       connection={
         <SpotifyConnection
           spotify={spotify.spotify}

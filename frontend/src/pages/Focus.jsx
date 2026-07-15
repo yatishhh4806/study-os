@@ -30,53 +30,60 @@ function Focus() {
 
   return (
     <div
-      className="min-h-screen w-full"
-      style={{
-        background: `
-          radial-gradient(circle at top,
-          rgba(139,92,246,.18),
-          transparent 42%),
-
-          radial-gradient(circle at bottom right,
-          rgba(34,211,238,.06),
-          transparent 38%),
-
-          #050308
-        `,
-      }}
+      className="relative min-h-screen w-full overflow-hidden bg-[#050308]"
     >
-      <div className="mx-auto w-full max-w-[1700px] px-6 py-10 xl:px-10">
+      {/* Floating Background Ambient Glows */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-40 left-1/4 h-[500px] w-[500px] rounded-full bg-violet-600/10 blur-[120px] animate-float-slow" />
+        <div className="absolute bottom-10 right-1/4 h-[450px] w-[450px] rounded-full bg-cyan-600/5 blur-[100px] animate-pulse-slow" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-purple-900/5 blur-[150px]" />
+      </div>
 
-        <div className="grid gap-8 xl:grid-cols-[340px_minmax(650px,1fr)_420px]">
+      <div className="relative z-10 mx-auto w-full max-w-[1700px] px-4 py-8 md:px-6 md:py-10 xl:px-10">
+        <div className="grid grid-cols-12 gap-6 lg:gap-8">
+          
+          {/* Column 1: Analytics */}
+          <div className="col-span-12 lg:col-span-12 xl:col-span-3 order-3 xl:order-1">
+            <FocusAnalytics
+              loading={loading}
+              sessions={sessions}
+              liveMinutes={liveSeconds}
+            />
+          </div>
 
-          {/* Analytics */}
-
-          <FocusAnalytics
-            loading={loading}
-            sessions={sessions}
-            liveMinutes={liveSeconds}
-          />
-
-          {/* Pomodoro */}
-
-          <div className="flex flex-col gap-8">
-
+          {/* Column 2: Pomodoro Timer & Motivational Strip */}
+          <div className="col-span-12 lg:col-span-7 xl:col-span-5 order-1 xl:order-2 flex flex-col gap-6 lg:gap-8">
             <PomodoroTimer
               onTick={setLiveSeconds}
               onSessionLogged={loadSessions}
             />
-
             <MotivationStrip />
-
           </div>
 
-          {/* Focus Music */}
-
-          <FocusMusicContainer />
+          {/* Column 3: Focus Music Container */}
+          <div className="col-span-12 lg:col-span-5 xl:col-span-4 order-2 xl:order-3">
+            <FocusMusicContainer />
+          </div>
 
         </div>
-
       </div>
+
+      <style>{`
+        @keyframes floatSlow {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-20px) scale(1.05); }
+        }
+        @keyframes pulseSlow {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
+        }
+        .animate-float-slow {
+          animation: floatSlow 8s ease-in-out infinite;
+        }
+        .animate-pulse-slow {
+          animation: pulseSlow 12s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }
