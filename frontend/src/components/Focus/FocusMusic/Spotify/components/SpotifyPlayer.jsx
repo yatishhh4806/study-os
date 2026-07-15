@@ -7,6 +7,7 @@ import {
   Volume1,
   Volume2,
   VolumeX,
+  Music2,
 } from "lucide-react";
 
 function formatTime(ms) {
@@ -79,13 +80,7 @@ export default function SpotifyPlayer({ player, playback }) {
   }
 
   function handleTogglePlay() {
-    if (paused) {
-      // resume is handled by Spotify Connect once a playlist has played;
-      // pause/resume both route through the pause toggle server-side
-      playback.pause();
-    } else {
-      playback.pause();
-    }
+    playback.pause();
   }
 
   const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
@@ -98,157 +93,148 @@ export default function SpotifyPlayer({ player, playback }) {
         }`}
       />
 
-      <div className="relative flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Spotify player</h3>
-
-        {track && (
-          <div
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${
-              !paused ? "bg-violet-500/15" : "bg-white/5"
-            }`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                !paused ? "bg-violet-400" : "bg-white/30"
+      {track ? (
+        <div className="relative">
+          <div className="relative mx-auto h-56 w-56">
+            <div
+              className={`absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500/60 to-fuchsia-500/60 blur-2xl transition-opacity duration-700 ${
+                !paused ? "opacity-70" : "opacity-0"
               }`}
             />
-            <span
-              className={`text-xs font-medium ${
-                !paused ? "text-violet-300" : "text-white/40"
+            <img
+              src={track.image}
+              alt={track.name}
+              className="relative h-full w-full rounded-2xl object-cover shadow-2xl shadow-black/40 ring-1 ring-white/10"
+            />
+
+            {!paused && (
+              <div className="absolute bottom-3 right-3 flex h-7 items-end gap-[3px] rounded-full bg-black/50 px-2 py-1.5 backdrop-blur-sm">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="w-[2.5px] rounded-full bg-white"
+                    style={{
+                      height: "60%",
+                      animation: `eq-bar 0.9s ease-in-out ${i * 0.15}s infinite`,
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 text-center">
+            <h2 className="truncate text-lg font-semibold text-white">
+              {track.name}
+            </h2>
+            <div className="mt-1.5 flex items-center justify-center gap-2">
+              <p className="truncate text-sm text-white/50">{track.artist}</p>
+              <span className="text-white/20">·</span>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    !paused ? "bg-violet-400" : "bg-white/30"
+                  }`}
+                />
+                <span
+                  className={`text-xs font-medium ${
+                    !paused ? "text-violet-300" : "text-white/40"
+                  }`}
+                >
+                  {!paused ? "Playing" : "Paused"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="relative h-1.5 w-full rounded-full bg-white/10">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-100"
+                style={{ width: `${progressPct}%` }}
+              />
+              <input
+                type="range"
+                min={0}
+                max={duration || 0}
+                value={seeking ? seekValue : displayPosition}
+                onMouseDown={handleSeekStart}
+                onTouchStart={handleSeekStart}
+                onChange={handleSeekChange}
+                onMouseUp={handleSeekCommit}
+                onTouchEnd={handleSeekCommit}
+                className="absolute inset-0 h-1.5 w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-black/40"
+              />
+            </div>
+
+            <div className="mt-2 flex justify-between text-xs text-white/40">
+              <span>{formatTime(seeking ? seekValue : displayPosition)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-6">
+            <button
+              type="button"
+              onClick={playback.previous}
+              className="text-white/60 transition hover:scale-110 hover:text-white"
+            >
+              <SkipBack size={22} fill="currentColor" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-900/40 transition hover:scale-105 active:scale-95"
+            >
+              {paused ? (
+                <Play size={22} fill="currentColor" className="ml-0.5" />
+              ) : (
+                <Pause size={22} fill="currentColor" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={playback.next}
+              className="text-white/60 transition hover:scale-110 hover:text-white"
+            >
+              <SkipForward size={22} fill="currentColor" />
+            </button>
+          </div>
+
+          <div
+            className="relative mt-5 flex items-center justify-center gap-3"
+            onMouseEnter={() => setShowVolume(true)}
+            onMouseLeave={() => setShowVolume(false)}
+          >
+            <VolumeIcon size={16} className="text-white/40" />
+            <div
+              className={`overflow-hidden transition-all duration-300 ${
+                showVolume ? "w-24 opacity-100" : "w-0 opacity-0"
               }`}
             >
-              {!paused ? "Playing" : "Paused"}
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="relative mt-6 rounded-2xl border border-white/5 bg-black/20 p-6">
-        {track ? (
-          <div>
-            <div className="relative mx-auto h-52 w-52">
-              <div
-                className={`absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500/60 to-fuchsia-500/60 blur-2xl transition-opacity duration-700 ${
-                  !paused ? "opacity-70" : "opacity-0"
-                }`}
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={volume}
+                onChange={handleVolumeChange}
+                className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-white/10 accent-violet-400"
               />
-              <img
-                src={track.image}
-                alt={track.name}
-                className="relative h-full w-full rounded-2xl object-cover shadow-2xl shadow-black/40 ring-1 ring-white/10"
-              />
-
-              {!paused && (
-                <div className="absolute bottom-3 right-3 flex h-7 items-end gap-[3px] rounded-full bg-black/50 px-2 py-1.5 backdrop-blur-sm">
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      className="w-[2.5px] rounded-full bg-white"
-                      style={{
-                        height: "60%",
-                        animation: `eq-bar 0.9s ease-in-out ${i * 0.15}s infinite`,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 text-center">
-              <h2 className="truncate text-lg font-semibold text-white">
-                {track.name}
-              </h2>
-              <p className="mt-1 truncate text-sm text-white/50">
-                {track.artist}
-              </p>
-            </div>
-
-            <div className="mt-5">
-              <div className="relative h-1.5 w-full rounded-full bg-white/10">
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-400 transition-[width] duration-100"
-                  style={{ width: `${progressPct}%` }}
-                />
-                <input
-                  type="range"
-                  min={0}
-                  max={duration || 0}
-                  value={seeking ? seekValue : displayPosition}
-                  onMouseDown={handleSeekStart}
-                  onTouchStart={handleSeekStart}
-                  onChange={handleSeekChange}
-                  onMouseUp={handleSeekCommit}
-                  onTouchEnd={handleSeekCommit}
-                  className="absolute inset-0 h-1.5 w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-black/40"
-                />
-              </div>
-
-              <div className="mt-2 flex justify-between text-xs text-white/40">
-                <span>{formatTime(seeking ? seekValue : displayPosition)}</span>
-                <span>{formatTime(duration)}</span>
-              </div>
-            </div>
-
-            <div className="mt-5 flex items-center justify-center gap-6">
-              <button
-                type="button"
-                onClick={playback.previous}
-                className="text-white/60 transition hover:scale-110 hover:text-white"
-              >
-                <SkipBack size={22} fill="currentColor" />
-              </button>
-
-              <button
-                type="button"
-                onClick={handleTogglePlay}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-900/40 transition hover:scale-105 active:scale-95"
-              >
-                {paused ? (
-                  <Play size={20} fill="currentColor" className="ml-0.5" />
-                ) : (
-                  <Pause size={20} fill="currentColor" />
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={playback.next}
-                className="text-white/60 transition hover:scale-110 hover:text-white"
-              >
-                <SkipForward size={22} fill="currentColor" />
-              </button>
-            </div>
-
-            <div
-              className="relative mt-5 flex items-center justify-center gap-3"
-              onMouseEnter={() => setShowVolume(true)}
-              onMouseLeave={() => setShowVolume(false)}
-            >
-              <VolumeIcon size={16} className="text-white/40" />
-              <div
-                className={`overflow-hidden transition-all duration-300 ${
-                  showVolume ? "w-24 opacity-100" : "w-0 opacity-0"
-                }`}
-              >
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={volume}
-                  onChange={handleVolumeChange}
-                  className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-white/10 accent-violet-400"
-                />
-              </div>
             </div>
           </div>
-        ) : (
-          <p className="py-10 text-center text-white/40">
-            {ready
-              ? "Play a playlist to see track"
-              : "Connecting to Spotify..."}
+        </div>
+      ) : (
+        <div className="relative flex flex-col items-center py-10 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/[0.04]">
+            <Music2 size={24} className="text-white/30" />
+          </div>
+          <p className="mt-4 text-sm text-white/40">
+            {ready ? "Play a playlist to see track" : "Connecting to Spotify..."}
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes eq-bar {
