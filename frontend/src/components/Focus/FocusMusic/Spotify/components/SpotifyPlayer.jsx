@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume1, Volume2, VolumeX } from "lucide-react";
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Volume1,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 
 function formatTime(ms) {
   if (!ms || Number.isNaN(ms)) return "0:00";
@@ -31,7 +39,10 @@ export default function SpotifyPlayer({ player, playback }) {
     let raf;
     const tick = () => {
       const elapsed = Date.now() - anchorRef.current.timestamp;
-      const next = Math.min(anchorRef.current.position + elapsed, duration || 0);
+      const next = Math.min(
+        anchorRef.current.position + elapsed,
+        duration || 0,
+      );
       setDisplayPosition(next);
       raf = requestAnimationFrame(tick);
     };
@@ -40,7 +51,9 @@ export default function SpotifyPlayer({ player, playback }) {
     return () => cancelAnimationFrame(raf);
   }, [paused, seeking, duration]);
 
-  const progressPct = duration ? ((seeking ? seekValue : displayPosition) / duration) * 100 : 0;
+  const progressPct = duration
+    ? ((seeking ? seekValue : displayPosition) / duration) * 100
+    : 0;
 
   function handleSeekStart(e) {
     setSeeking(true);
@@ -80,8 +93,8 @@ export default function SpotifyPlayer({ player, playback }) {
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-2xl">
       <div
-        className={`pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-gradient-to-br from-violet-500/40 to-fuchsia-500/30 blur-3xl transition-opacity duration-1000 ${
-          !paused && track ? "opacity-100 animate-pulse" : "opacity-30"
+        className={`pointer-events-none absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 blur-[80px] transition-opacity duration-1000 ${
+          !paused && track ? "opacity-30 animate-pulse" : "opacity-10"
         }`}
       />
 
@@ -89,13 +102,21 @@ export default function SpotifyPlayer({ player, playback }) {
         <h3 className="text-lg font-semibold text-white">Spotify player</h3>
 
         {track && (
-          <div className="flex items-center gap-1.5">
+          <div
+            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${
+              !paused ? "bg-violet-500/15" : "bg-white/5"
+            }`}
+          >
             <span
-              className={`h-2 w-2 rounded-full ${
-                !paused ? "bg-violet-400" : "bg-white/20"
+              className={`h-1.5 w-1.5 rounded-full ${
+                !paused ? "bg-violet-400" : "bg-white/30"
               }`}
             />
-            <span className="text-xs font-medium text-white/40">
+            <span
+              className={`text-xs font-medium ${
+                !paused ? "text-violet-300" : "text-white/40"
+              }`}
+            >
               {!paused ? "Playing" : "Paused"}
             </span>
           </div>
@@ -105,20 +126,20 @@ export default function SpotifyPlayer({ player, playback }) {
       <div className="relative mt-6 rounded-2xl border border-white/5 bg-black/20 p-6">
         {track ? (
           <div>
-            <div className="relative mx-auto h-44 w-44">
+            <div className="relative mx-auto h-52 w-52">
               <div
-                className={`absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/50 to-fuchsia-500/50 blur-2xl transition-opacity duration-700 ${
-                  !paused ? "opacity-60" : "opacity-0"
+                className={`absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500/60 to-fuchsia-500/60 blur-2xl transition-opacity duration-700 ${
+                  !paused ? "opacity-70" : "opacity-0"
                 }`}
               />
               <img
                 src={track.image}
                 alt={track.name}
-                className="relative h-full w-full rounded-2xl object-cover shadow-2xl shadow-black/40"
+                className="relative h-full w-full rounded-2xl object-cover shadow-2xl shadow-black/40 ring-1 ring-white/10"
               />
 
               {!paused && (
-                <div className="absolute bottom-2 right-2 flex h-7 items-end gap-[3px] rounded-full bg-black/50 px-2 py-1.5 backdrop-blur-sm">
+                <div className="absolute bottom-3 right-3 flex h-7 items-end gap-[3px] rounded-full bg-black/50 px-2 py-1.5 backdrop-blur-sm">
                   {[0, 1, 2].map((i) => (
                     <span
                       key={i}
@@ -131,6 +152,15 @@ export default function SpotifyPlayer({ player, playback }) {
                   ))}
                 </div>
               )}
+            </div>
+
+            <div className="mt-6 text-center">
+              <h2 className="truncate text-lg font-semibold text-white">
+                {track.name}
+              </h2>
+              <p className="mt-1 truncate text-sm text-white/50">
+                {track.artist}
+              </p>
             </div>
 
             <div className="mt-5 text-center">
@@ -222,7 +252,9 @@ export default function SpotifyPlayer({ player, playback }) {
           </div>
         ) : (
           <p className="py-10 text-center text-white/40">
-            {ready ? "Play a playlist to see track" : "Connecting to Spotify..."}
+            {ready
+              ? "Play a playlist to see track"
+              : "Connecting to Spotify..."}
           </p>
         )}
       </div>
@@ -235,4 +267,4 @@ export default function SpotifyPlayer({ player, playback }) {
       `}</style>
     </div>
   );
-}   
+}
