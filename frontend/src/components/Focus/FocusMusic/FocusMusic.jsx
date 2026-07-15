@@ -102,8 +102,8 @@ export default function FocusMusic({
               className="flex flex-col gap-5 w-full"
             >
               {connection}
-              {player}
-              {playlists}
+              {spotifyConnected && player}
+              {spotifyConnected && playlists}
             </motion.div>
           ) : (
             <motion.div
