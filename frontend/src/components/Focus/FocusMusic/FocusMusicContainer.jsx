@@ -22,11 +22,12 @@ export default function FocusMusicContainer() {
 
   window.spotifyTest = player;
 
-  const playback = usePlayback(player.deviceId);
+  const playback = usePlayback(player.player, player.deviceId);
 
   async function handlePlaylistSelect(playlist) {
     try {
-      await spotify.selectPlaylist(playlist.id);
+      // Fire selectPlaylist in the background to update user settings without blocking play
+      spotify.selectPlaylist(playlist.id);
 
       await playback.play(playlist);
     } catch (err) {

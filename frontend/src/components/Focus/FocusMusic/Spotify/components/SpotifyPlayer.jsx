@@ -26,8 +26,16 @@ export default function SpotifyPlayer({ player, playback }) {
   const [seekValue, setSeekValue] = useState(0);
   const [volume, setVolumeState] = useState(50);
   const [showVolume, setShowVolume] = useState(false);
+  const [localPaused, setLocalPaused] = useState(null);
 
   const anchorRef = useRef({ position, timestamp: Date.now() });
+
+  // Sync optimistic state back to real state once SDK events fire
+  useEffect(() => {
+    setLocalPaused(null);
+  }, [paused]);
+
+  const isPaused = localPaused !== null ? localPaused : paused;
 
   useEffect(() => {
     anchorRef.current = { position, timestamp: Date.now() };
@@ -35,7 +43,7 @@ export default function SpotifyPlayer({ player, playback }) {
   }, [position, seeking]);
 
   useEffect(() => {
-    if (paused || seeking) return;
+    if (isPaused || seeking) return;
 
     let raf;
     const tick = () => {
@@ -50,7 +58,7 @@ export default function SpotifyPlayer({ player, playback }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [paused, seeking, duration]);
+  }, [isPaused, seeking, duration]);
 
   const progressPct = duration
     ? ((seeking ? seekValue : displayPosition) / duration) * 100
@@ -61,8 +69,12 @@ export default function SpotifyPlayer({ player, playback }) {
     setSeekValue(Number(e.target.value));
   }
 
+  // Optimistic seek updates
   function handleSeekChange(e) {
-    setSeekValue(Number(e.target.value));
+    const val = Number(e.target.value);
+    setSeekValue(val);
+    anchorRef.current = { position: val, timestamp: Date.now() };
+    setDisplayPosition(val);
   }
 
   async function handleSeekCommit(e) {
@@ -80,7 +92,13 @@ export default function SpotifyPlayer({ player, playback }) {
   }
 
   function handleTogglePlay() {
-    playback.pause();
+    if (isPaused) {
+      setLocalPaused(false);
+      playback.resume();
+    } else {
+      setLocalPaused(true);
+      playback.pause();
+    }
   }
 
   const VolumeIcon = volume === 0 ? VolumeX : volume < 50 ? Volume1 : Volume2;
@@ -89,7 +107,7 @@ export default function SpotifyPlayer({ player, playback }) {
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-2xl">
       <div
         className={`pointer-events-none absolute -top-10 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 blur-[70px] transition-opacity duration-1000 ${
-          !paused && track ? "opacity-40 animate-pulse" : "opacity-15"
+          !isPaused && track ? "opacity-40 animate-pulse" : "opacity-15"
         }`}
       />
 
@@ -98,7 +116,7 @@ export default function SpotifyPlayer({ player, playback }) {
           <div className="relative mx-auto h-56 w-56">
             <div
               className={`absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-500/60 to-fuchsia-500/60 blur-2xl transition-opacity duration-700 ${
-                !paused ? "opacity-70" : "opacity-0"
+                !isPaused ? "opacity-70" : "opacity-0"
               }`}
             />
             <img
@@ -107,7 +125,7 @@ export default function SpotifyPlayer({ player, playback }) {
               className="relative h-full w-full rounded-2xl object-cover shadow-2xl shadow-black/40 ring-1 ring-white/10"
             />
 
-            {!paused && (
+            {!isPaused && (
               <div className="absolute bottom-3 right-3 flex h-7 items-end gap-[3px] rounded-full bg-black/50 px-2 py-1.5 backdrop-blur-sm">
                 {[0, 1, 2].map((i) => (
                   <span
@@ -133,15 +151,15 @@ export default function SpotifyPlayer({ player, playback }) {
               <div className="flex items-center gap-1.5">
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
-                    !paused ? "bg-violet-400" : "bg-white/30"
+                    !isPaused ? "bg-violet-400" : "bg-white/30"
                   }`}
                 />
                 <span
                   className={`text-xs font-medium ${
-                    !paused ? "text-violet-300" : "text-white/40"
+                    !isPaused ? "text-violet-300" : "text-white/40"
                   }`}
                 >
-                  {!paused ? "Playing" : "Paused"}
+                  {!isPaused ? "Playing" : "Paused"}
                 </span>
               </div>
             </div>
@@ -185,9 +203,9 @@ export default function SpotifyPlayer({ player, playback }) {
             <button
               type="button"
               onClick={handleTogglePlay}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-900/40 transition hover:scale-105 active:scale-95"
+              className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-900/40 transition hover:scale-105 active:scale-95 cursor-pointer"
             >
-              {paused ? (
+              {isPaused ? (
                 <Play size={22} fill="currentColor" className="ml-0.5" />
               ) : (
                 <Pause size={22} fill="currentColor" />
