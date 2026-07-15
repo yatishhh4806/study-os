@@ -93,8 +93,8 @@ export default function SpotifyPlayer({ player, playback }) {
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-2xl">
       <div
-        className={`pointer-events-none absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 blur-[80px] transition-opacity duration-1000 ${
-          !paused && track ? "opacity-30 animate-pulse" : "opacity-10"
+        className={`pointer-events-none absolute -top-10 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 blur-[70px] transition-opacity duration-1000 ${
+          !paused && track ? "opacity-40 animate-pulse" : "opacity-15"
         }`}
       />
 
@@ -159,15 +159,6 @@ export default function SpotifyPlayer({ player, playback }) {
                 {track.name}
               </h2>
               <p className="mt-1 truncate text-sm text-white/50">
-                {track.artist}
-              </p>
-            </div>
-
-            <div className="mt-5 text-center">
-              <h2 className="truncate text-base font-semibold text-white">
-                {track.name}
-              </h2>
-              <p className="mt-0.5 truncate text-sm text-white/50">
                 {track.artist}
               </p>
             </div>
