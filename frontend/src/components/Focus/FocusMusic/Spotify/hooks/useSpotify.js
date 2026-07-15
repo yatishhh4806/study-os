@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   getSpotifyProfile,
   getPlaylists,
@@ -9,6 +9,8 @@ import {
 
 export default function useSpotify() {
   const [loading, setLoading] = useState(true);
+
+  const [refreshing, setRefreshing] = useState(false);
 
   const [spotify, setSpotify] = useState({
     connected: false,
@@ -23,6 +25,8 @@ export default function useSpotify() {
   const [disconnecting, setDisconnecting] = useState(false);
 
   const [selectingId, setSelectingId] = useState(null);
+
+  const initialLoadDone = useRef(false);
 
   const loadSpotify = useCallback(async () => {
     setLoading(true);
@@ -52,12 +56,26 @@ export default function useSpotify() {
       console.error(err);
     } finally {
       setLoading(false);
+      initialLoadDone.current = true;
     }
   }, []);
 
   useEffect(() => {
     loadSpotify();
   }, [loadSpotify]);
+
+  // Lightweight refresh — keeps existing playlists visible, only spins the icon
+  const refreshPlaylists = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const playlistList = await getPlaylists();
+      setPlaylists(playlistList);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   async function handleConnect() {
     try {
@@ -105,6 +123,8 @@ export default function useSpotify() {
   return {
     loading,
 
+    refreshing,
+
     spotify,
 
     playlists,
@@ -118,6 +138,8 @@ export default function useSpotify() {
     selectingId,
 
     loadSpotify,
+
+    refreshPlaylists,
 
     connectSpotify: handleConnect,
 

@@ -54,11 +54,12 @@ export default function FocusMusicContainer() {
       playlists={
         <PlaylistCarousel
           loading={spotify.loading}
+          refreshing={spotify.refreshing}
           playlists={spotify.playlists}
           selectedPlaylist={spotify.selectedPlaylist}
           selectingId={spotify.selectingId}
           onSelect={handlePlaylistSelect}
-          onRefresh={spotify.loadSpotify}
+          onRefresh={spotify.refreshPlaylists}
         />
       }
       ambient={

@@ -7,6 +7,7 @@ const COLLAPSED_COUNT = 4;
 
 export default function PlaylistCarousel({
   loading,
+  refreshing = false,
   playlists,
   selectedPlaylist,
   selectingId,
@@ -54,11 +55,11 @@ export default function PlaylistCarousel({
           <button
             type="button"
             onClick={onRefresh}
-            disabled={loading}
+            disabled={refreshing}
             className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/50 transition hover:bg-white/[0.06] hover:text-white/80 active:scale-95 cursor-pointer disabled:opacity-40"
           >
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-            Refresh
+            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing" : "Refresh"}
           </button>
         )}
       </div>
