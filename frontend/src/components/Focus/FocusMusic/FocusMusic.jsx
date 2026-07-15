@@ -120,10 +120,12 @@ export default function FocusMusic({
         </AnimatePresence>
       </div>
 
-      {/* Footer */}
-      <footer className="relative z-10 mt-auto pt-4 border-t border-white/5">
-        {footer}
-      </footer>
+      {/* Footer — only relevant for Spotify */}
+      {activeTab === "spotify" && (
+        <footer className="relative z-10 mt-auto pt-4 border-t border-white/5">
+          {footer}
+        </footer>
+      )}
     </section>
   );
 }
