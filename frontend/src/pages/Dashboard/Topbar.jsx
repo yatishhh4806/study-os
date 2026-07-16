@@ -36,8 +36,6 @@ function Topbar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
-  // Fallbacks only cover the brief window before /auth/me resolves on
-  // first load — once `user` is populated these are never used.
   const displayName = user?.name || "Student";
   const displaySubtitle =
     [user?.academicProfile?.course, user?.academicProfile?.branch]
@@ -46,7 +44,6 @@ function Topbar() {
   const avatarUrl =
     user?.avatarUrl || user?.avatarFromGoogle || user?.avatarFromGithub || null;
 
-  // Close profile dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -68,9 +65,12 @@ function Topbar() {
   }
 
   return (
-    <header className="sticky top-3 z-50 flex h-24 items-center justify-between border-b border-purple-500/10 bg-[#09050e]/80 px-8 backdrop-blur-xl">
-      {/* Search */}
-      <div className="group relative w-full max-w-275">
+    // top + height match Sidebar's logo block exactly (clamp(6px,1vh,12px) /
+    // clamp(64px,11vh,96px)) so the two rows never drift apart on any screen
+    <header className="sticky top-[clamp(6px,1vh,12px)] z-50 flex h-[clamp(64px,11vh,96px)] items-center border-b border-purple-500/10 bg-[#09050e]/80 px-[clamp(16px,2.5vw,32px)] backdrop-blur-xl">
+      {/* Search — flex-1 fills available space up to a sane ultrawide cap,
+          instead of a fixed max-w that leaves dead space on wide screens */}
+      <div className="group relative min-w-0 flex-1">
         {/* Glow */}
         <div
           className={`absolute -inset-px rounded-2xl bg-linear-to-r from-purple-500/30 via-purple-400/20 to-purple-500/30 blur-md transition-all duration-300 ${
@@ -91,7 +91,7 @@ function Topbar() {
           {/* Search Icon */}
           <Search
             size={18}
-            className={`ml-5 transition-all duration-300 ${
+            className={`ml-5 shrink-0 transition-all duration-300 ${
               focused
                 ? "text-purple-400"
                 : "text-gray-400 group-hover:text-purple-300"
@@ -107,10 +107,10 @@ function Topbar() {
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             placeholder="Search notes, tasks, flashcards..."
-            className="flex-1 bg-transparent px-4 py-4 text-white outline-none placeholder:text-gray-400"
+            className="min-w-0 flex-1 bg-transparent px-4 py-[clamp(8px,1.6vh,16px)] text-white outline-none placeholder:text-gray-400"
           />
 
-          {/* Command palette shortcut badge — shows Ctrl+K on Windows/Linux, ⌘K on Mac */}
+          {/* Command palette shortcut badge */}
           <button
             type="button"
             onClick={openCommandPalette}
@@ -127,50 +127,56 @@ function Topbar() {
         </div>
       </div>
 
-      {/* Right */}
-      <div className="flex items-center gap-5">
+      {/* Right — ml-auto pins this flush to the right edge regardless of
+          how wide the search bar actually grows; pl gives it a guaranteed
+          minimum gap from search even on ultrawide screens */}
+      <div className="ml-auto flex shrink-0 items-center gap-[clamp(8px,1.2vw,20px)] pl-[clamp(16px,3vw,40px)]">
         {/* AI */}
         <button
-          className="flex items-center gap-2 rounded-2xl border border-purple-500/20 bg-purple-500/10 px-5 py-3 font-medium text-purple-300 transition-all hover:bg-purple-500/20 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]"
+          className="flex shrink-0 items-center gap-2 rounded-2xl border border-purple-500/20 bg-purple-500/10 px-[clamp(12px,1.5vw,20px)] py-[clamp(8px,1.5vh,12px)] font-medium text-purple-300 transition-all hover:bg-purple-500/20 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]"
           onClick={() => {
             navigate("/dashboard/ai-tutor");
           }}
         >
-          <Sparkles size={18} className="text-purple-400" />
-          StudyAI
+          <Sparkles size={18} className="shrink-0 text-purple-400" />
+          <span className="hidden md:inline">StudyAI</span>
         </button>
 
         {/* Notifications */}
-        <button className="rounded-2xl border border-white/10 bg-black/30 p-4 text-gray-300 transition-colors hover:border-purple-500/30 hover:text-white">
+        <button className="shrink-0 rounded-2xl border border-white/10 bg-black/30 p-[clamp(10px,1.5vh,16px)] text-gray-300 transition-colors hover:border-purple-500/30 hover:text-white">
           <Bell size={20} />
         </button>
 
         {/* Profile — clickable with dropdown */}
-        <div className="relative" ref={profileRef}>
+        <div className="relative shrink-0" ref={profileRef}>
           <div
             onClick={() => setIsProfileOpen((v) => !v)}
-            className="flex cursor-pointer items-center gap-4 rounded-2xl border border-transparent px-3 py-2 transition-all hover:border-purple-500/20 hover:bg-purple-500/10"
+            className="flex cursor-pointer items-center gap-3 rounded-2xl border border-transparent px-2 py-1.5 transition-all hover:border-purple-500/20 hover:bg-purple-500/10"
           >
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={displayName}
-                className="h-12 w-12 rounded-full border border-purple-500/30 object-cover"
+                className="h-[clamp(36px,5.5vh,48px)] w-[clamp(36px,5.5vh,48px)] shrink-0 rounded-full border border-purple-500/30 object-cover"
               />
             ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-purple-500/30 bg-linear-to-br from-purple-500 to-purple-700 text-sm font-semibold text-white">
+              <div className="flex h-[clamp(36px,5.5vh,48px)] w-[clamp(36px,5.5vh,48px)] shrink-0 items-center justify-center rounded-full border border-purple-500/30 bg-linear-to-br from-purple-500 to-purple-700 text-sm font-semibold text-white">
                 {getInitials(displayName)}
               </div>
             )}
 
-            <div>
-              <h3 className="font-semibold text-white">{displayName}</h3>
-              <p className="text-sm text-gray-400">{displaySubtitle}</p>
+            <div className="hidden sm:block">
+              <h3 className="text-[clamp(13px,1.6vh,15px)] font-semibold leading-tight text-white">
+                {displayName}
+              </h3>
+              <p className="text-[clamp(11px,1.4vh,13px)] leading-tight text-gray-400">
+                {displaySubtitle}
+              </p>
             </div>
 
             <ChevronDown
               size={16}
-              className={`text-gray-400 transition-transform duration-200 ${
+              className={`shrink-0 text-gray-400 transition-transform duration-200 ${
                 isProfileOpen ? "rotate-180" : ""
               }`}
             />
