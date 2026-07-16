@@ -8,7 +8,8 @@ import {
   BarChart3,
   LibraryBig,
   Trophy,
-  CircleStar
+  CircleStar,
+  HelpCircle
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -25,6 +26,7 @@ function Sidebar() {
     { icon: <LibraryBig size={20} />, title: "Resources", path: "/dashboard/resources" },
     { icon: <Trophy size={20} />, title: "Leaderboard", path: "/dashboard/leaderboard" },
     { icon: <CircleStar size={20} />, title: "Badges", path: "/dashboard/badges" },
+    { icon: <HelpCircle size={20} />, title: "FAQ", path: "/dashboard/faqs" },
   ];
 
   return (

@@ -19,6 +19,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
+import FaqPage from "./pages/Dashboard/FaqPage";
 
 
 function App() {
@@ -153,6 +154,15 @@ function App() {
               <Badges />
             </ProtectedRoute>
           }
+        />
+
+        <Route 
+          path="/dashboard/faqs" 
+          element={
+            <ProtectedRoute>
+              <FaqPage />
+            </ProtectedRoute>
+          } 
         />
 
       </Routes>
