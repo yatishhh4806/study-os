@@ -221,7 +221,7 @@ function RoadmapView({ roadmap, onRegenerate, onChangeGrade, isGenerating }) {
               {activeSubject.topics?.length > 0 && (
                 <div className="relative pl-6">
                   <div
-                    className="absolute bottom-2 left-[9px] top-2 w-px"
+                    className="absolute bottom-2 left-2.25 top-2 w-px"
                     style={{ background: `${accent}30` }}
                   />
                   <div className="space-y-4">
