@@ -219,7 +219,7 @@ export default function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-start justify-center pt-[12vh] px-4">
+    <div className="fixed inset-0 z-2000 flex items-start justify-center pt-[12vh] px-4">
       <style>{`
         @keyframes cmdkBackdropIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes cmdkPanelIn {
@@ -240,7 +240,7 @@ export default function CommandPalette() {
       <div className="cmdk-panel relative w-full max-w-xl rounded-2xl border border-white/10 bg-[#120f17]/95 backdrop-blur-xl shadow-2xl shadow-black/60 overflow-hidden">
         {/* search input */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/10">
-          <Search className="w-4 h-4 text-white/40 flex-shrink-0" />
+          <Search className="w-4 h-4 text-white/40 shrink-0" />
           <input
             ref={inputRef}
             value={query}
