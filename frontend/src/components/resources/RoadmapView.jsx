@@ -113,7 +113,7 @@ function RoadmapView({ roadmap, onRegenerate, onChangeGrade, isGenerating }) {
                   return (
                     <tr
                       key={i}
-                      className={`border-b border-white/5 transition hover:bg-white/[0.02] ${
+                      className={`border-b border-white/5 transition hover:bg-white/2 ${
                         isRest ? "text-gray-500" : "text-gray-200"
                       }`}
                     >
