@@ -71,7 +71,7 @@ function SearchResultsModal({ query, subject, onClose }) {
                         <img
                           src={v.thumbnail}
                           alt=""
-                          className="h-16 w-24 flex-shrink-0 rounded-lg object-cover"
+                          className="h-16 w-24 shrink-0 rounded-lg object-cover"
                         />
                       )}
                       <div className="min-w-0">

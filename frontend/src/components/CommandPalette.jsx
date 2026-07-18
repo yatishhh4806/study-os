@@ -255,7 +255,7 @@ export default function CommandPalette() {
         </div>
 
         {/* results */}
-        <div ref={listRef} className="max-h-[360px] overflow-y-auto p-2">
+        <div ref={listRef} className="max-h-90 overflow-y-auto p-2">
           {results.length === 0 && (
             <p className="px-3 py-8 text-center text-sm text-white/35">
               No results for "{query}"
@@ -280,7 +280,7 @@ export default function CommandPalette() {
                   }`}
                 >
                   <span
-                    className={`w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 ${
+                    className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
                       flatIndex === activeIndex
                         ? "border-purple-400/40 bg-purple-500/10 text-purple-300"
                         : "border-white/10 bg-white/5 text-white/50"
