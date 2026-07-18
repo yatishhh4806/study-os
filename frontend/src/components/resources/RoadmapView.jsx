@@ -232,7 +232,7 @@ function RoadmapView({ roadmap, onRegenerate, onChangeGrade, isGenerating }) {
                           style={{ borderColor: accent, background: "#09070f" }}
                         />
                         <div
-                          className="rounded-2xl border border-white/5 bg-white/3 p-4 transition group-hover:border-white/10 group-hover:bg-white/[0.05]"
+                          className="rounded-2xl border border-white/5 bg-white/3 p-4 transition group-hover:border-white/10 group-hover:bg-white/5"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="font-semibold text-gray-100">
