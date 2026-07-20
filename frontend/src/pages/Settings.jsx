@@ -12,7 +12,6 @@ import {
   Download,
   Moon,
   Sun,
-  Monitor,
   Check,
   AlertTriangle,
   KeyRound,
@@ -37,14 +36,6 @@ const NAV_SECTIONS = [
   { id: "integrations",  label: "Integrations",      icon: Cloud },
   { id: "security",      label: "Security",          icon: Shield },
   { id: "danger",        label: "Danger Zone",       icon: Trash2 },
-];
-
-const ACCENTS = [
-  { name: "Purple",  value: "#a855f7" },
-  { name: "Blue",    value: "#3b82f6" },
-  { name: "Emerald", value: "#10b981" },
-  { name: "Pink",    value: "#ec4899" },
-  { name: "Amber",   value: "#f59e0b" },
 ];
 
 // ── small reusable controls ─────────────────────────────────
@@ -439,58 +430,25 @@ export default function Settings() {
               id="appearance"
               icon={Palette}
               title="Appearance"
-              description="How StudyOS looks on your screen."
+              description="StudyOS is designed dark-and-purple, top to bottom."
               sectionRef={setSectionRef("appearance")}
             >
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="text-sm text-white/60 block mb-2.5">Theme</label>
-                  <Segmented
-                    value={prefs.theme}
-                    onChange={(v) => savePrefs({ theme: v })}
-                    options={[
-                      { value: "dark", label: "Dark", icon: Moon },
-                      { value: "light", label: "Light", icon: Sun },
-                      { value: "system", label: "System", icon: Monitor },
-                    ]}
+              <div className="flex items-center justify-between rounded-xl border border-purple-400/20 bg-purple-500/[0.05] px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-full ring-2 ring-white/10 flex-shrink-0"
+                    style={{ background: "#a855f7" }}
                   />
+                  <div>
+                    <p className="text-sm text-white font-medium">Dark · Purple</p>
+                    <p className="text-xs text-white/40 mt-0.5">
+                      This is the only theme StudyOS ships right now — no light mode, no other accents yet.
+                    </p>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="text-sm text-white/60 block mb-2.5">Interface Density</label>
-                  <Segmented
-                    value={prefs.density}
-                    onChange={(v) => savePrefs({ density: v })}
-                    options={[
-                      { value: "comfortable", label: "Comfortable", icon: Sun },
-                      { value: "compact", label: "Compact", icon: Moon },
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="text-sm text-white/60 block mb-3">Accent Color</label>
-                <div className="flex gap-3">
-                  {ACCENTS.map((a) => (
-                    <button
-                      key={a.value}
-                      title={a.name}
-                      onClick={() => savePrefs({ accentColor: a.value })}
-                      className="relative w-9 h-9 rounded-full transition-transform hover:scale-110"
-                      style={{ background: a.value }}
-                    >
-                      {prefs.accentColor === a.value && (
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white drop-shadow" />
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-white/30 mt-2.5">
-                  Saved with your account — theming the whole app to this color is a bigger visual pass, coming later.
-                </p>
+                <span className="text-xs font-medium px-3 py-1.5 rounded-lg border border-purple-400/25 bg-purple-500/10 text-purple-300 flex-shrink-0">
+                  Active
+                </span>
               </div>
             </SectionCard>
 
