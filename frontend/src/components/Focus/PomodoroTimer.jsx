@@ -213,7 +213,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
         </div>
 
         {/* Circular Timer Visual */}
-        <div className="relative w-70 h-70 md:w-75 md:h-[300px] mx-auto flex items-center justify-center">
+        <div className="relative w-70 h-70 md:w-75 md:h-75 mx-auto flex items-center justify-center">
           {/* Animated Ambient Color Sphere */}
           <div
             className="absolute inset-0 rounded-full transition-all duration-700"
@@ -224,7 +224,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
             }}
           />
           
-          <svg className="relative z-10 w-full h-full max-w-[300px] max-h-[300px] -rotate-90">
+          <svg className="relative z-10 w-full h-full max-w-75 max-h-75 -rotate-90">
             <circle cx="150" cy="150" r={radius} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
             <circle
               cx="150"
@@ -245,7 +245,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
 
           {/* Core Timer Overlay Content */}
           <div className="absolute z-10 flex flex-col items-center gap-1">
-            <div className="text-5xl md:text-6xl font-extrabold tracking-tighter tabular-nums bg-gradient-to-br from-white to-[#e5d9ff] bg-clip-text text-transparent drop-shadow-sm">
+            <div className="text-5xl md:text-6xl font-extrabold tracking-tighter tabular-nums bg-linear-to-br from-white to-[#e5d9ff] bg-clip-text text-transparent drop-shadow-sm">
               {format(secondsLeft)}
             </div>
             
