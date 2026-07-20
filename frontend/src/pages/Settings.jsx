@@ -4,20 +4,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Palette,
   BookOpen,
-  Bell,
-  Database,
-  Cloud,
   Shield,
   Trash2,
-  Download,
-  Moon,
-  Sun,
   Check,
   AlertTriangle,
-  KeyRound,
-  Smartphone,
   LogOut,
-  GitBranch,
   Loader2,
   Timer,
   CreditCard,
@@ -31,9 +22,6 @@ const NAV_SECTIONS = [
   { id: "billing",       label: "Billing",           icon: CreditCard },
   { id: "study",         label: "Study Preferences", icon: BookOpen },
   { id: "focus",         label: "Focus & Pomodoro",  icon: Timer },
-  { id: "notifications", label: "Notifications",     icon: Bell },
-  { id: "data",          label: "Data & Backup",     icon: Database },
-  { id: "integrations",  label: "Integrations",      icon: Cloud },
   { id: "security",      label: "Security",          icon: Shield },
   { id: "danger",        label: "Danger Zone",       icon: Trash2 },
 ];
@@ -155,7 +143,6 @@ export default function Settings() {
 
   const [prefs, setPrefs] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
   const [billingInterval, setBillingInterval] = useState("monthly");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -321,27 +308,6 @@ export default function Settings() {
   const scrollToSection = (id) => {
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-
-  async function handleExport() {
-    setExporting(true);
-    try {
-      const res = await api.get("/account/export", { responseType: "blob" });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `studyos-export-${Date.now()}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      flashSaved("Export downloaded");
-    } catch (err) {
-      console.error("Export failed:", err);
-      flashSaved("Export failed — try again");
-    } finally {
-      setExporting(false);
-    }
-  }
 
   async function handleDeleteAccount() {
     setDeleting(true);
@@ -580,119 +546,23 @@ export default function Settings() {
               </div>
             </SectionCard>
 
-            {/* Notifications */}
-            <SectionCard
-              id="notifications"
-              icon={Bell}
-              title="Notifications"
-              description="These preferences are saved, but no email/push delivery system exists yet — nothing will actually be sent until that's built."
-              sectionRef={setSectionRef("notifications")}
-            >
-              <div className="space-y-1">
-                {[
-                  ["studyReminders", "Study reminders"],
-                  ["flashcardReminders", "Flashcard reminders"],
-                  ["deadlineReminders", "Deadline reminders"],
-                  ["weeklyReports", "Weekly reports"],
-                ].map(([key, label]) => (
-                  <div key={key} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
-                    <span className="text-sm text-white/80">{label}</span>
-                    <Toggle
-                      checked={prefs.notifications[key]}
-                      onChange={(v) => savePrefs({ notifications: { ...prefs.notifications, [key]: v } })}
-                    />
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-
-            {/* Data & Backup */}
-            <SectionCard
-              id="data"
-              icon={Database}
-              title="Data & Backup"
-              description="Export a real copy of everything you've created in StudyOS."
-              sectionRef={setSectionRef("data")}
-            >
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={handleExport}
-                  disabled={exporting}
-                  className="flex items-center gap-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 px-5 py-3 text-sm font-medium transition-colors shadow-lg shadow-purple-900/30"
-                >
-                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  {exporting ? "Preparing…" : "Export Data"}
-                </button>
-              </div>
-              <p className="text-xs text-white/30 mt-3">
-                Downloads a JSON file with your subjects, notes, flashcards, tasks, focus sessions, and badges.
-              </p>
-            </SectionCard>
-
-            {/* Integrations */}
-            <SectionCard
-              id="integrations"
-              icon={Cloud}
-              title="Integrations"
-              description="Not built yet — no OAuth connections exist for these services."
-              sectionRef={setSectionRef("integrations")}
-            >
-              <div className="space-y-1">
-                {[
-                  { name: "Google Drive", detail: "Sync notes & flashcard backups", icon: Cloud },
-                  { name: "GitHub", detail: "Import code snippets into notes", icon: GitBranch },
-                ].map(({ name, detail, icon: Icon }) => (
-                  <div key={name} className="flex items-center justify-between py-3.5 border-b border-white/5 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/60">
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-white">{name}</p>
-                        <p className="text-xs text-white/40">{detail}</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-medium px-3.5 py-1.5 rounded-lg border border-white/10 text-white/30">
-                      Not available
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-
             {/* Security */}
             <SectionCard
               id="security"
               icon={Shield}
               title="Security"
-              description="These aren't built as real features yet — shown honestly disabled rather than faked."
+              description="Account session controls."
               sectionRef={setSectionRef("security")}
             >
-              <div className="space-y-1">
-                <div className="flex items-center justify-between py-3.5 border-b border-white/5 opacity-40">
-                  <div className="flex items-center gap-3">
-                    <KeyRound className="w-4 h-4 text-white/50" />
-                    <span className="text-sm text-white">Change Password</span>
-                  </div>
-                  <span className="text-xs text-white/40">Coming soon</span>
+              <button
+                onClick={async () => { await logout(); navigate("/login"); }}
+                className="w-full flex items-center justify-between py-1.5 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <LogOut className="w-4 h-4 text-white/50" />
+                  <span className="text-sm text-white">Log out</span>
                 </div>
-                <div className="flex items-center justify-between py-3.5 border-b border-white/5 opacity-40">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="w-4 h-4 text-white/50" />
-                    <span className="text-sm text-white">Two-Factor Authentication</span>
-                  </div>
-                  <span className="text-xs text-white/40">Coming soon</span>
-                </div>
-                <button
-                  onClick={async () => { await logout(); navigate("/login"); }}
-                  className="w-full flex items-center justify-between py-3.5 text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <LogOut className="w-4 h-4 text-white/50" />
-                    <span className="text-sm text-white">Log out</span>
-                  </div>
-                </button>
-              </div>
+              </button>
             </SectionCard>
 
             {/* Danger Zone */}
