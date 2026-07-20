@@ -24,7 +24,7 @@ export async function deleteAccount(req, res, next) {
       Flashcard.deleteMany({ userId }),
       Deck.deleteMany({ userId }),
       Task.deleteMany({ userId }),
-      FocusSession.deleteMany({ userId }),
+      FocusSession.deleteMany({ userId }),  
       UserBadge.deleteMany({ userId }),
     ]);
 
