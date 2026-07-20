@@ -40,6 +40,42 @@ export default function PomodoroTimer({ onSessionLogged }) {
   const accent = MODES[mode].color;
   const glow = MODES[mode].glow;
 
+  // BUG FIX: `user` typically loads asynchronously (null on first render,
+  // populated once the auth fetch resolves), so the useState initializer
+  // above can lock in hardcoded 25/5/15 defaults before real preferences
+  // ever arrive — and it never re-checks after that, even if you go change
+  // durations on the Settings page. This effect re-syncs whenever
+  // preferences change, as long as nothing active would get yanked out
+  // from under the user (a running timer, or a duration they're editing).
+  useEffect(() => {
+    if (!user?.preferences || running || editingDuration) return;
+    setCustomMins((prev) => {
+      const next = {
+        focus: user.preferences.pomodoroMinutes ?? MODES.focus.defaultMin,
+        short: user.preferences.shortBreakMinutes ?? MODES.short.defaultMin,
+        long: user.preferences.longBreakMinutes ?? MODES.long.defaultMin,
+      };
+      if (prev.focus === next.focus && prev.short === next.short && prev.long === next.long) {
+        return prev;
+      }
+      return next;
+    });
+  }, [
+    user?.preferences?.pomodoroMinutes,
+    user?.preferences?.shortBreakMinutes,
+    user?.preferences?.longBreakMinutes,
+    running,
+    editingDuration,
+  ]);
+
+  // Keep the visible countdown in lockstep with customMins for the active
+  // mode whenever it changes while idle (e.g. after the sync above, or
+  // after switching modes) — otherwise secondsLeft can go stale.
+  useEffect(() => {
+    if (running) return;
+    setSecondsLeft(customMins[mode] * 60);
+  }, [customMins, mode, running]);
+
   useEffect(() => {
     if (!running || mode !== "focus" || !sessionIdRef.current) return;
     const onVisibilityChange = () => {
@@ -76,17 +112,35 @@ export default function PomodoroTimer({ onSessionLogged }) {
     }
   }, []);
 
+  // BUG FIX: `autoStartBreaks` was saved to the DB from Settings but never
+  // read anywhere in this component — a completely dead toggle. This picks
+  // the next mode when a session ends and, if the preference is on (and
+  // we're not landing back on focus, which should always require a manual
+  // Start), auto-starts it instead of just sitting on Paused/Complete.
+  const advanceAfterCompletion = useCallback(
+    (finishedMode) => {
+      const nextMode = finishedMode === "focus" ? "short" : "focus";
+      const autoStart = finishedMode === "focus" && !!user?.preferences?.autoStartBreaks;
+
+      setMode(nextMode);
+      setSecondsLeft(customMins[nextMode] * 60);
+      setRunning(autoStart);
+    },
+    [customMins, user?.preferences?.autoStartBreaks]
+  );
+
   useEffect(() => {
     if (running) {
       intervalRef.current = setInterval(() => {
         setSecondsLeft((s) => {
           if (s <= 1) {
             clearInterval(intervalRef.current);
-            setRunning(false);
-            if (mode === "focus") {
+            const finishedMode = mode;
+            if (finishedMode === "focus") {
               setSessions((c) => c + 1);
               completeBackendSession();
             }
+            advanceAfterCompletion(finishedMode);
             return 0;
           }
           return s - 1;
@@ -94,7 +148,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
       }, 1000);
     }
     return () => clearInterval(intervalRef.current);
-  }, [running, mode, completeBackendSession]);
+  }, [running, mode, completeBackendSession, advanceAfterCompletion]);
 
   const switchMode = useCallback(async (m) => {
     if (m === mode) return;
@@ -183,14 +237,14 @@ export default function PomodoroTimer({ onSessionLogged }) {
       `}</style>
 
       <div
-        className="pt-card w-full max-w-115 bg-linear-to-b from-[#140e1c]/90 to-[#0a070f]/95 border rounded-4xl p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative z-10"
+        className="pt-card w-full max-w-[460px] bg-gradient-to-b from-[#140e1c]/90 to-[#0a070f]/95 border rounded-[32px] p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative z-10"
         style={{
           borderColor: `${accent}25`,
           boxShadow: `0 0 0 1px rgba(255,255,255,0.01), 0 30px 60px -20px rgba(0,0,0,0.65), 0 0 60px -25px ${glow}`,
         }}
       >
         {/* Mode Selector Tab Bar */}
-        <div className="flex gap-1.5 bg-white/3 p-1.5 rounded-2xl mb-8 border border-white/5">
+        <div className="flex gap-1.5 bg-white/[0.03] p-1.5 rounded-2xl mb-8 border border-white/5">
           {Object.entries(MODES).map(([key, m]) => {
             const active = key === mode;
             return (
@@ -213,7 +267,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
         </div>
 
         {/* Circular Timer Visual */}
-        <div className="relative w-70 h-70 md:w-75 md:h-75 mx-auto flex items-center justify-center">
+        <div className="relative w-[280px] h-[280px] md:w-[300px] md:h-[300px] mx-auto flex items-center justify-center">
           {/* Animated Ambient Color Sphere */}
           <div
             className="absolute inset-0 rounded-full transition-all duration-700"
@@ -224,7 +278,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
             }}
           />
           
-          <svg className="relative z-10 w-full h-full max-w-75 max-h-75 -rotate-90">
+          <svg className="relative z-10 w-full h-full max-w-[300px] max-h-[300px] -rotate-90">
             <circle cx="150" cy="150" r={radius} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
             <circle
               cx="150"
@@ -245,7 +299,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
 
           {/* Core Timer Overlay Content */}
           <div className="absolute z-10 flex flex-col items-center gap-1">
-            <div className="text-5xl md:text-6xl font-extrabold tracking-tighter tabular-nums bg-linear-to-br from-white to-[#e5d9ff] bg-clip-text text-transparent drop-shadow-sm">
+            <div className="text-5xl md:text-6xl font-extrabold tracking-tighter tabular-nums bg-gradient-to-br from-white to-[#e5d9ff] bg-clip-text text-transparent drop-shadow-sm">
               {format(secondsLeft)}
             </div>
             
