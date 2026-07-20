@@ -213,7 +213,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
         </div>
 
         {/* Circular Timer Visual */}
-        <div className="relative w-[280px] h-[280px] md:w-[300px] md:h-[300px] mx-auto flex items-center justify-center">
+        <div className="relative w-70 h-70 md:w-75 md:h-[300px] mx-auto flex items-center justify-center">
           {/* Animated Ambient Color Sphere */}
           <div
             className="absolute inset-0 rounded-full transition-all duration-700"
