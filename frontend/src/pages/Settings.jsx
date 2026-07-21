@@ -376,7 +376,7 @@ export default function Settings() {
                     : "border border-transparent text-white/55 hover:text-white hover:bg-white/5"
                 } ${id === "danger" ? "mt-4 text-red-400/80 hover:text-red-300" : ""}`}
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
+                <Icon className="w-4 h-4 shrink-0" />
                 {label}
               </button>
             ))}
@@ -399,10 +399,10 @@ export default function Settings() {
               description="StudyOS is designed dark-and-purple, top to bottom."
               sectionRef={setSectionRef("appearance")}
             >
-              <div className="flex items-center justify-between rounded-xl border border-purple-400/20 bg-purple-500/[0.05] px-5 py-4">
+              <div className="flex items-center justify-between rounded-xl border border-purple-400/20 bg-purple-500/5 px-5 py-4">
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-9 h-9 rounded-full ring-2 ring-white/10 flex-shrink-0"
+                    className="w-9 h-9 rounded-full ring-2 ring-white/10 shrink-0"
                     style={{ background: "#a855f7" }}
                   />
                   <div>
@@ -412,7 +412,7 @@ export default function Settings() {
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-medium px-3 py-1.5 rounded-lg border border-purple-400/25 bg-purple-500/10 text-purple-300 flex-shrink-0">
+                <span className="text-xs font-medium px-3 py-1.5 rounded-lg border border-purple-400/25 bg-purple-500/10 text-purple-300 shrink-0">
                   Active
                 </span>
               </div>
