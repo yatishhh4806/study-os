@@ -574,14 +574,14 @@ export default function Settings() {
               tone="danger"
               sectionRef={setSectionRef("danger")}
             >
-              <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/[0.04] px-5 py-4">
+              <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/4 px-5 py-4">
                 <div>
                   <p className="text-sm text-white font-medium">Delete Account</p>
                   <p className="text-xs text-white/40 mt-0.5">Permanently erase your notes, flashcards, tasks, and progress.</p>
                 </div>
                 <button
                   onClick={() => setDeleteOpen(true)}
-                  className="rounded-xl bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-sm font-semibold transition-colors flex-shrink-0"
+                  className="rounded-xl bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-sm font-semibold transition-colors shrink-0"
                 >
                   Delete Account
                 </button>
