@@ -278,7 +278,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
             }}
           />
           
-          <svg className="relative z-10 w-full h-full max-w-[300px] max-h-[300px] -rotate-90">
+          <svg className="relative z-10 w-full h-full max-w-75 max-h-75 -rotate-90">
             <circle cx="150" cy="150" r={radius} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
             <circle
               cx="150"
