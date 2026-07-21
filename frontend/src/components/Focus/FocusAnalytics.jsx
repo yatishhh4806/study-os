@@ -405,7 +405,7 @@ export default function FocusAnalytics({
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1 gap-3 mb-6">
-          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/[0.04]">
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/4">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <Trophy size={16} className="shrink-0" style={{ color: accent }} />
               Sessions
@@ -415,7 +415,7 @@ export default function FocusAnalytics({
             </span>
           </div>
 
-          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/4">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <Clock size={16} className="shrink-0" style={{ color: accent }} />
               Focus Time
