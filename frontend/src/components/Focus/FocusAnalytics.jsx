@@ -435,19 +435,19 @@ export default function FocusAnalytics({
             </span>
           </div>
 
-          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/4">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <TrendingUp size={16} className="shrink-0" style={{ color: accent }} />
               Peak Period
             </span>
-            <span className="text-sm font-bold text-white truncate max-w-[120px]" title={stats.peakPeriod}>
+            <span className="text-sm font-bold text-white truncate max-w-30" title={stats.peakPeriod}>
               {stats.peakPeriod}
             </span>
           </div>
         </div>
 
         {/* Weekly Progress Report */}
-        <div className="p-4 md:p-5 rounded-2xl border border-white/5 bg-white/[0.02] mb-6">
+        <div className="p-4 md:p-5 rounded-2xl border border-white/5 bg-white/2 mb-6">
           <div className="flex items-center justify-between mb-4">
             <span className="flex items-center gap-2 text-xs font-bold text-white/60 uppercase tracking-wider">
               <CalendarRange size={14} style={{ color: accent }} />
