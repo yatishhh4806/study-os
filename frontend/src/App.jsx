@@ -20,6 +20,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import FaqPage from "./pages/Dashboard/FaqPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy.jsx";
+import TermsOfService from "./pages/TermsOfService";
 
 
 function App() {
@@ -162,6 +164,20 @@ function App() {
             <ProtectedRoute>
               <FaqPage />
             </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/privacy" 
+          element={
+            <PrivacyPolicy />
+          } 
+        />
+
+        <Route 
+          path="/terms" 
+          element={
+            <TermsOfService />
           } 
         />
 

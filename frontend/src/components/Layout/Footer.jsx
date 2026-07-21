@@ -13,6 +13,11 @@ const SOCIALS = [
   { icon:<FaLinkedin size={18}/>,     label:"LinkedIn",  href:"https://www.linkedin.com",       color:"#60a5fa" },
 ];
 
+const LEGAL_LINKS = [
+  { label: "Privacy Policy", to: "/privacy" },
+  { label: "Terms of Service", to: "/terms" },
+];
+
 export default function Footer() {
   const [feedback, setFeedback]   = useState("");
   const [sent,     setSent]       = useState(false);
@@ -174,13 +179,13 @@ export default function Footer() {
             © 2026 StudyOS. All rights reserved.
           </p>
           <div style={{ display:"flex",alignItems:"center",gap:20 }}>
-            {["Privacy Policy","Terms of Service"].map(l=>(
-              <a key={l} href="#" style={{ fontSize:13,color:"rgba(255,255,255,.3)",
+            {LEGAL_LINKS.map(l=>(
+              <Link key={l.label} to={l.to} style={{ fontSize:13,color:"rgba(255,255,255,.3)",
                 textDecoration:"none",transition:"color .15s" }}
                 onMouseEnter={e=>e.currentTarget.style.color="#a855f7"}
                 onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,.3)"}>
-                {l}
-              </a>
+                {l.label}
+              </Link>
             ))}
           </div>
           <p style={{ fontSize:13,margin:0 }}>
