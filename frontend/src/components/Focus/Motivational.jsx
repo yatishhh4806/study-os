@@ -65,7 +65,7 @@ export default function MotivationStrip() {
 
       <button
         onClick={refresh}
-        className="shrink-0 w-9 h-9 rounded-xl border border-white/10 bg-white/[0.03] text-white/60 flex items-center justify-center cursor-pointer transition hover:rotate-45 hover:border-white/20 hover:text-white/80 active:scale-95 duration-200"
+        className="shrink-0 w-9 h-9 rounded-xl border border-white/10 bg-white/3 text-white/60 flex items-center justify-center cursor-pointer transition hover:rotate-45 hover:border-white/20 hover:text-white/80 active:scale-95 duration-200"
         aria-label="Get another quote"
       >
         <RefreshCw size={14} />

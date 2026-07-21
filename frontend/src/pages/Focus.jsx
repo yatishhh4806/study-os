@@ -34,8 +34,8 @@ function Focus() {
     >
       {/* Floating Background Ambient Glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 left-1/4 h-[500px] w-[500px] rounded-full bg-violet-600/10 blur-[120px] animate-float-slow" />
-        <div className="absolute bottom-10 right-1/4 h-[450px] w-[450px] rounded-full bg-cyan-600/5 blur-[100px] animate-pulse-slow" />
+        <div className="absolute -top-40 left-1/4 h-125 w-[500px] rounded-full bg-violet-600/10 blur-[120px] animate-float-slow" />
+        <div className="absolute bottom-10 right-1/4 h-112.5 w-[450px] rounded-full bg-cyan-600/5 blur-[100px] animate-pulse-slow" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-purple-900/5 blur-[150px]" />
       </div>
 
