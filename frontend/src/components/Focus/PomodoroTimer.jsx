@@ -237,14 +237,14 @@ export default function PomodoroTimer({ onSessionLogged }) {
       `}</style>
 
       <div
-        className="pt-card w-full max-w-[460px] bg-gradient-to-b from-[#140e1c]/90 to-[#0a070f]/95 border rounded-[32px] p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative z-10"
+        className="pt-card w-full max-w-115 bg-linear-to-b from-[#140e1c]/90 to-[#0a070f]/95 border rounded-4xl p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative z-10"
         style={{
           borderColor: `${accent}25`,
           boxShadow: `0 0 0 1px rgba(255,255,255,0.01), 0 30px 60px -20px rgba(0,0,0,0.65), 0 0 60px -25px ${glow}`,
         }}
       >
         {/* Mode Selector Tab Bar */}
-        <div className="flex gap-1.5 bg-white/[0.03] p-1.5 rounded-2xl mb-8 border border-white/5">
+        <div className="flex gap-1.5 bg-white/3 p-1.5 rounded-2xl mb-8 border border-white/5">
           {Object.entries(MODES).map(([key, m]) => {
             const active = key === mode;
             return (
@@ -267,7 +267,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
         </div>
 
         {/* Circular Timer Visual */}
-        <div className="relative w-[280px] h-[280px] md:w-[300px] md:h-[300px] mx-auto flex items-center justify-center">
+        <div className="relative w-70 h-[280px] md:w-[300px] md:h-[300px] mx-auto flex items-center justify-center">
           {/* Animated Ambient Color Sphere */}
           <div
             className="absolute inset-0 rounded-full transition-all duration-700"
