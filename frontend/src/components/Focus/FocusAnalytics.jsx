@@ -326,7 +326,7 @@ export default function FocusAnalytics({
   if (loading) {
     return (
       <div className="w-full select-none">
-        <div className="fa-card animate-pulse w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-white/10 rounded-3xl p-6 md:p-8">
+        <div className="fa-card animate-pulse w-full bg-linear-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-white/10 rounded-3xl p-6 md:p-8">
           <div className="mb-6 h-7 w-36 rounded-lg bg-white/10" />
           <div className="mb-6 h-24 rounded-2xl bg-white/5" />
           <div className="grid grid-cols-1 gap-4">
@@ -355,7 +355,7 @@ export default function FocusAnalytics({
         .fa-live-dot { animation: faLivePulse 1.4s ease-in-out infinite; }
       `}</style>
 
-      <div className="fa-card w-full bg-gradient-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative">
+      <div className="fa-card w-full bg-linear-to-b from-[#140e1c]/90 to-[#08060c]/95 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-2xl shadow-2xl relative">
         {/* Title Bar */}
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2.5 min-w-0">
