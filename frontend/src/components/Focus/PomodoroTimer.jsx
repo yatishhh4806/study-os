@@ -299,7 +299,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
 
           {/* Core Timer Overlay Content */}
           <div className="absolute z-10 flex flex-col items-center gap-1">
-            <div className="text-5xl md:text-6xl font-extrabold tracking-tighter tabular-nums bg-gradient-to-br from-white to-[#e5d9ff] bg-clip-text text-transparent drop-shadow-sm">
+            <div className="text-5xl md:text-6xl font-extrabold tracking-tighter tabular-nums bg-linear-to-br from-white to-[#e5d9ff] bg-clip-text text-transparent drop-shadow-sm">
               {format(secondsLeft)}
             </div>
             
@@ -312,7 +312,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
 
             {!running && (
               editingDuration ? (
-                <div className="flex items-center gap-2 mt-3 bg-white/[0.04] p-1 pl-3 pr-1 rounded-xl border border-white/10">
+                <div className="flex items-center gap-2 mt-3 bg-white/4 p-1 pl-3 pr-1 rounded-xl border border-white/10">
                   <input
                     type="number"
                     min="1"
@@ -335,7 +335,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
               ) : (
                 <button
                   onClick={startEditing}
-                  className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-xl border border-white/15 bg-white/[0.03] text-white/50 text-xs font-semibold hover:bg-white/[0.06] hover:text-white/80 transition cursor-pointer"
+                  className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-xl border border-white/15 bg-white/3 text-white/50 text-xs font-semibold hover:bg-white/6 hover:text-white/80 transition cursor-pointer"
                 >
                   <Pencil size={11} />
                   <span>{customMins[mode]}m</span>
@@ -360,7 +360,7 @@ export default function PomodoroTimer({ onSessionLogged }) {
           </button>
           
           <button
-            className="pt-btn flex items-center gap-2 px-6 py-3.5 rounded-2xl border border-white/10 cursor-pointer text-sm font-bold text-white bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all duration-300"
+            className="pt-btn flex items-center gap-2 px-6 py-3.5 rounded-2xl border border-white/10 cursor-pointer text-sm font-bold text-white bg-white/3 hover:bg-white/[0.07] hover:border-white/20 transition-all duration-300"
             onClick={reset}
           >
             <RotateCcw size={15} strokeWidth={2.5} />
