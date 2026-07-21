@@ -431,7 +431,7 @@ export default function Settings() {
               sectionRef={setSectionRef("billing")}
             >
               {user?.subscription?.plan === "pro" ? (
-                <div className="flex items-center justify-between rounded-xl border border-purple-400/25 bg-purple-500/[0.06] px-5 py-4">
+                <div className="flex items-center justify-between rounded-xl border border-purple-400/25 bg-purple-500/6 px-5 py-4">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-purple-500/15 border border-purple-400/30 flex items-center justify-center">
                       <Crown className="w-4 h-4 text-purple-300" />
@@ -483,7 +483,7 @@ export default function Settings() {
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between rounded-xl border border-purple-400/20 bg-purple-500/[0.04] px-5 py-4">
+                  <div className="flex items-center justify-between rounded-xl border border-purple-400/20 bg-purple-500/4 px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-lg bg-purple-500/10 border border-purple-400/25 flex items-center justify-center">
                         <Crown className="w-4 h-4 text-purple-300" />
@@ -498,7 +498,7 @@ export default function Settings() {
                     <button
                       onClick={handleUpgrade}
                       disabled={checkoutLoading}
-                      className="rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 px-4 py-2.5 text-sm font-semibold transition-colors shadow-lg shadow-purple-900/30 flex items-center gap-2 flex-shrink-0"
+                      className="rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 px-4 py-2.5 text-sm font-semibold transition-colors shadow-lg shadow-purple-900/30 flex items-center gap-2 shrink-0"
                     >
                       {checkoutLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       {checkoutLoading ? "Redirecting…" : "Upgrade"}
