@@ -373,7 +373,7 @@ export default function FocusAnalytics({
 
           <button
             onClick={openTargetModal}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.03] text-purple-400 text-xs font-bold transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer shrink-0"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-white/10 bg-white/3 text-purple-400 text-xs font-bold transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer shrink-0"
           >
             <Target size={12} />
             <span>Target</span>
@@ -494,7 +494,7 @@ export default function FocusAnalytics({
 
         {/* Insights Section */}
         {insights.length > 0 && (
-          <div className="p-4 rounded-2xl border border-white/5 bg-white/[0.01]">
+          <div className="p-4 rounded-2xl border border-white/5 bg-white/1">
             <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2.5">
               Focus Insights
             </h4>
@@ -521,7 +521,7 @@ export default function FocusAnalytics({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[320px] bg-gradient-to-b from-[#181020]/95 to-[#0a070f]/98 border border-white/10 rounded-3xl p-6 shadow-2xl relative"
+            className="w-full max-w-[320px] bg-linear-to-b from-[#181020]/95 to-[#0a070f]/98 border border-white/10 rounded-3xl p-6 shadow-2xl relative"
           >
             <div className="flex items-center justify-between mb-4">
               <span className="flex items-center gap-2 text-base font-bold text-white tracking-tight">
@@ -547,7 +547,7 @@ export default function FocusAnalytics({
                 value={draftTarget}
                 onChange={(e) => setDraftTarget(e.target.value)}
                 autoFocus
-                className="flex-1 p-3 rounded-xl border border-white/10 bg-white/[0.04] text-white text-base font-bold text-center outline-none focus:border-purple-400 transition-colors"
+                className="flex-1 p-3 rounded-xl border border-white/10 bg-white/4 text-white text-base font-bold text-center outline-none focus:border-purple-400 transition-colors"
               />
               <span className="text-xs text-white/40 font-semibold shrink-0">
                 hours / day
