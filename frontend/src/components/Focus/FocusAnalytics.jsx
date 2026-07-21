@@ -373,7 +373,7 @@ export default function FocusAnalytics({
 
           <button
             onClick={openTargetModal}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-white/10 bg-white/3 text-purple-400 text-xs font-bold transition hover:border-white/20 hover:bg-white/[0.06] cursor-pointer shrink-0"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-white/10 bg-white/3 text-purple-400 text-xs font-bold transition hover:border-white/20 hover:bg-white/6 cursor-pointer shrink-0"
           >
             <Target size={12} />
             <span>Target</span>
@@ -381,7 +381,7 @@ export default function FocusAnalytics({
         </div>
 
         {/* Daily Goal Progress Bar Card */}
-        <div className="p-4 md:p-5 rounded-2xl border border-white/10 bg-white/[0.02] mb-5 transition-all duration-300">
+        <div className="p-4 md:p-5 rounded-2xl border border-white/10 bg-white/2 mb-5 transition-all duration-300">
           <div className="flex justify-between items-baseline mb-2.5">
             <span className="text-sm font-semibold text-white/80">
               Daily Goal &middot; {targetHours}h
@@ -393,7 +393,7 @@ export default function FocusAnalytics({
 
           <div className="h-2 rounded-full bg-white/5 overflow-hidden">
             <div
-              className="fa-bar-fill h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300"
+              className="fa-bar-fill h-full rounded-full bg-linear-to-r from-purple-500 to-cyan-400 transition-all duration-300"
               style={{ width: `${goalProgress}%` }}
             />
           </div>
@@ -405,7 +405,7 @@ export default function FocusAnalytics({
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-1 gap-3 mb-6">
-          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04]">
+          <div className="fa-row flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/2 hover:bg-white/[0.04]">
             <span className="flex items-center gap-2.5 text-sm text-white/80">
               <Trophy size={16} className="shrink-0" style={{ color: accent }} />
               Sessions
