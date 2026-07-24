@@ -206,7 +206,7 @@ export default function Signup() {
             <br />
             LEARNING
           </h1>
-          <p className="max-w-md leading-7 text-gray-300 [font-size:clamp(0.875rem,2vh,1.125rem)] [margin-top:clamp(0.75rem,2vh,1rem)] [@media(min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
+          <p className="max-w-md leading-7 text-gray-300 text-[clamp(0.875rem,2vh,1.125rem)] mt-[clamp(0.75rem,2vh,1rem)](min-height:1000px)]:mt-4 [@media(min-height:1000px)]:text-lg">
             Join thousands of students using StudyOS to organize their academics
             and boost productivity.
           </p>
@@ -214,7 +214,7 @@ export default function Signup() {
       </div>
 
       {/* RIGHT */}
-      <div className="relative flex flex-1 overflow-y-auto px-4 sm:px-8 [padding-top:clamp(1.5rem,4vh,4rem)] [padding-bottom:clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:py-16">
+      <div className="relative flex flex-1 overflow-y-auto px-4 sm:px-8 [padding-top:clamp(1.5rem,4vh,4rem)] pb-[clamp(1.5rem,4vh,4rem)] [@media(min-height:1000px)]:py-16">
         <div className="absolute rounded-full bg-purple-500/5 [width:clamp(14rem,28vh,25rem)] [height:clamp(14rem,28vh,25rem)] [filter:blur(clamp(5rem,8vh,8.75rem))] [@media(min-height:1000px)]:h-100 [@media(min-height:1000px)]:w-100 [@media(min-height:1000px)]:blur-[140px]" />
 
         <div className="relative z-10 m-auto w-full [max-width:clamp(22rem,32vw,28rem)]">
