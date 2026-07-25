@@ -226,7 +226,7 @@ export default function Signup() {
             Create Account
           </h2>
 
-          <p className="mt-2 text-center text-gray-400 [font-size:clamp(0.8125rem,1.6vh,1rem)]">
+          <p className="mt-2 text-center text-gray-400 text-[clamp(0.8125rem,1.6vh,1rem)]">
             Already have an account?
             <Link to="/login" className="ml-2 font-semibold text-purple-400 hover:text-purple-300">
               Sign In
@@ -234,7 +234,7 @@ export default function Signup() {
           </p>
 
           {/* Progress */}
-          <div className="flex items-center justify-center gap-3 [margin-top:clamp(1rem,2.5vh,1.5rem)]">
+          <div className="flex items-center justify-center gap-3 mt-[clamp(1rem,2.5vh,1.5rem)]">
             <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 1 ? "bg-purple-500" : "bg-white/10"}`} />
             <div className={`h-1.5 w-16 rounded-full transition-all ${step >= 2 ? "bg-purple-500" : "bg-white/10"}`} />
           </div>
@@ -249,7 +249,7 @@ export default function Signup() {
             {/* ── STEP 1 ── */}
             {step === 1 && (
               <>
-                <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)]">
+                <div className="mt-[clamp(1rem,2.5vh,1.5rem)]">
                   <label className={labelClass}>Full Name</label>
                   <input
                     name="fullName"
@@ -261,7 +261,7 @@ export default function Signup() {
                   <FieldError msg={errors.fullName} />
                 </div>
 
-                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Email</label>
                   <input
                     name="email"
@@ -273,7 +273,7 @@ export default function Signup() {
                   <FieldError msg={errors.email} />
                 </div>
 
-                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Password</label>
                   <input
                     name="password"
@@ -285,7 +285,7 @@ export default function Signup() {
                   <FieldError msg={errors.password} />
                 </div>
 
-                <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                   <label className={labelClass}>Confirm Password</label>
                   <input
                     name="confirmPassword"
@@ -297,7 +297,7 @@ export default function Signup() {
                   <FieldError msg={errors.confirmPassword} />
                 </div>
 
-                <div className="flex items-center gap-4 [margin-top:clamp(1rem,2.5vh,2rem)] [margin-bottom:clamp(1rem,2.5vh,2rem)]">
+                <div className="flex items-center gap-4 mt-[clamp(1rem,2.5vh,2rem)] mb-[clamp(1rem,2.5vh,2rem)]">
                   <div className="h-px flex-1 bg-white/10" />
                   <span className="text-xs text-gray-500">or continue with</span>
                   <div className="h-px flex-1 bg-white/10" />
@@ -308,7 +308,7 @@ export default function Signup() {
                     type="button"
                     onClick={() => googleSignup()}
                     disabled={googleLoading}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed text-[clamp(0.8125rem,1.6vh,1rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
                   >
                     <FcGoogle size={20} />
                     {googleLoading ? "Signing in..." : "Google"}
@@ -316,7 +316,7 @@ export default function Signup() {
                   <button
                     type="button"
                     onClick={handleGithubSignup}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 [font-size:clamp(0.8125rem,1.6vh,1rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/20 text-white transition hover:border-purple-500/40 hover:bg-white/5 text-[clamp(0.8125rem,1.6vh,1rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
                   >
                     <FaGithub size={18} />
                     GitHub
