@@ -18,7 +18,7 @@ export default function TermsOfService() {
     <div className="min-h-screen bg-[#09070f] text-white">
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -right-20 -top-20 h-120 w-120 rounded-full bg-purple-500/10 blur-[160px]" />
-        <div className="absolute -left-20 bottom-0 h-[24rem] w-[24rem] rounded-full bg-fuchsia-500/[0.06] blur-[160px]" />
+        <div className="absolute -left-20 bottom-0 h-96 w-[24rem] rounded-full bg-fuchsia-500/6 blur-[160px]" />
       </div>
 
       <div className="max-w-3xl mx-auto px-6 py-12">

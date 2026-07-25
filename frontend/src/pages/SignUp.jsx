@@ -487,7 +487,7 @@ export default function Signup() {
                       setErrors({});
                       setStep(1);
                     }}
-                    className="flex-1 rounded-xl border border-white/10 font-semibold text-white transition hover:bg-white/5 [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
+                    className="flex-1 rounded-xl border border-white/10 font-semibold text-white transition hover:bg-white/5 pt-[clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                   >
                     ← Back
                   </button>
