@@ -326,7 +326,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="w-full rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 text-[clamp(0.875rem,1.8vh,1rem)] mt-[clamp(1rem,2.5vh,1.5rem)] pt-[clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
+                  className="w-full rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 text-[clamp(0.875rem,1.8vh,1rem)] mt-[clamp(1rem,2.5vh,1.5rem)] pt-[clamp(0.625rem,1.8vh,1rem)] pb-[clamp(0.625rem,1.8vh,1rem)]"
                 >
                   Next →
                 </button>
@@ -336,7 +336,7 @@ export default function Signup() {
             {/* ── STEP 2 ── */}
             {step === 2 && (
               <>
-                <div className="[margin-top:clamp(1rem,2.5vh,1.5rem)]">
+                <div className="mt-[clamp(1rem,2.5vh,1.5rem)]">
                   <label className={labelClass}>Institution Type</label>
                   <select
                     name="institutionType"
@@ -363,7 +363,7 @@ export default function Signup() {
 
                 {!isSchool(formData.institutionType) && (
                   <>
-                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Course / Degree</label>
                       <select
                         name="course"
@@ -379,7 +379,7 @@ export default function Signup() {
                       </select>
                     </div>
 
-                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Branch / Stream</label>
                       <input
                         name="branch"
@@ -392,7 +392,7 @@ export default function Signup() {
                       <FieldError msg={errors.branch} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 [margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="grid grid-cols-2 gap-3 mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <div>
                         <label className={labelClass}>Year</label>
                         <select
@@ -429,7 +429,7 @@ export default function Signup() {
 
                 {isSchool(formData.institutionType) && (
                   <>
-                    <div className="[margin-top:clamp(0.75rem,2vh,1.25rem)]">
+                    <div className="mt-[clamp(0.75rem,2vh,1.25rem)]">
                       <label className={labelClass}>Class</label>
                       <select
                         name="schoolClass"
