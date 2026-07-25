@@ -326,7 +326,7 @@ export default function Signup() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="w-full rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 [font-size:clamp(0.875rem,1.8vh,1rem)] [margin-top:clamp(1rem,2.5vh,1.5rem)] [padding-top:clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
+                  className="w-full rounded-xl bg-purple-500 font-bold text-white shadow-lg shadow-purple-500/30 transition hover:scale-[1.02] hover:bg-purple-600 text-[clamp(0.875rem,1.8vh,1rem)] mt-[clamp(1rem,2.5vh,1.5rem)] pt-[clamp(0.625rem,1.8vh,1rem)] [padding-bottom:clamp(0.625rem,1.8vh,1rem)]"
                 >
                   Next →
                 </button>
